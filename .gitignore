@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI assistant files — never commit
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.codex/
+.ai/

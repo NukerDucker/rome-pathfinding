@@ -1,121 +1,326 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
+import { CITIES, ROMANIA, type NodeId } from './romania'
+import { ALGORITHMS, type Step } from './search'
 import './App.css'
 
+const ALGO_FOOTNOTES: Record<string, string> = {
+  bfs: '*Optimal if step costs are equal. *Complete if branching factor b is finite.',
+  dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
+}
+
+type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
+type EdgePair = { a: NodeId; b: NodeId }
+
+const MIN_DELAY = 0
+const MAX_DELAY = 1500
+const DEFAULT_DELAY = 600
+
+const BASE_EDGES: EdgePair[] = buildBaseEdges()
+
+function buildBaseEdges(): EdgePair[] {
+  const seen = new Set<string>()
+  const out: EdgePair[] = []
+  for (const id of CITIES) {
+    for (const edge of ROMANIA[id].edges) {
+      const key = [id, edge.to].sort().join('|')
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push({ a: id, b: edge.to })
+    }
+  }
+  return out
+}
+
+function nodeState(
+  node: NodeId,
+  step: Step,
+  isFinalFrame: boolean,
+  found: boolean,
+  path: NodeId[],
+): NodeState {
+  if (isFinalFrame && found && path.includes(node)) return 'path'
+  if (node === step.current) return 'current'
+  if (step.frontier.includes(node)) return 'frontier'
+  if (step.visited.includes(node)) return 'visited'
+  return 'unvisited'
+}
+
+function renderTreeEdges(step: Step, parent: Record<NodeId, NodeId | null>, start: NodeId) {
+  const nodes = new Set<NodeId>([...step.visited, ...step.frontier, step.current])
+  const edges = []
+  for (const n of nodes) {
+    if (n === start) continue
+    const p = parent[n]
+    if (p === undefined || p === null) continue
+    edges.push(
+      <line
+        key={`tree-${p}-${n}`}
+        className="edge-tree"
+        x1={ROMANIA[p].x}
+        y1={ROMANIA[p].y}
+        x2={ROMANIA[n].x}
+        y2={ROMANIA[n].y}
+      />,
+    )
+  }
+  return edges
+}
+
+function renderPathEdges(path: NodeId[]) {
+  const edges = []
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i]
+    const b = path[i + 1]
+    edges.push(
+      <line
+        key={`path-${a}-${b}`}
+        className="edge-path"
+        x1={ROMANIA[a].x}
+        y1={ROMANIA[a].y}
+        x2={ROMANIA[b].x}
+        y2={ROMANIA[b].y}
+      />,
+    )
+  }
+  return edges
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [algo, setAlgo] = useState('bfs')
+  const [start, setStart] = useState<NodeId>('Arad')
+  const [goal, setGoal] = useState<NodeId>('Bucharest')
+  const [stepIdx, setStepIdx] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [delay, setDelay] = useState(DEFAULT_DELAY)
+
+  const meta = ALGORITHMS[algo]
+  const result = meta.run(start, goal)
+  const lastIdx = result.steps.length - 1
+  const clampedIdx = Math.min(stepIdx, Math.max(lastIdx, 0))
+  const step: Step | undefined = result.steps[clampedIdx]
+  const isFinalFrame = clampedIdx === lastIdx
+
+  useEffect(() => {
+    if (!playing || stepIdx >= lastIdx) return
+    const id = setTimeout(() => {
+      if (stepIdx + 1 >= lastIdx) setPlaying(false)
+      setStepIdx(stepIdx + 1)
+    }, delay)
+    return () => clearTimeout(id)
+  }, [playing, stepIdx, delay, lastIdx])
+
+  function handleAlgoChange(next: string) {
+    setAlgo(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleStartChange(next: NodeId) {
+    setStart(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleGoalChange(next: NodeId) {
+    setGoal(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleReset() {
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleStepBack() {
+    setPlaying(false)
+    setStepIdx((i) => Math.max(0, i - 1))
+  }
+
+  function handleStepForward() {
+    setPlaying(false)
+    setStepIdx((i) => Math.min(lastIdx, i + 1))
+  }
+
+  function handlePlayPause() {
+    if (clampedIdx >= lastIdx) return
+    setPlaying((p) => !p)
+  }
+
+  const pathLabel = result.found
+    ? `${result.path.join(' → ')} (${result.path.length} cities)`
+    : '—'
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <main className="app">
+      <section className="map-panel">
+        <svg
+          className="map"
+          viewBox="0 0 560 420"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-labelledby="map-title"
         >
-          Count is {count}
-        </button>
+          <title id="map-title">Romania road map — {meta.label} visualizer</title>
+          {BASE_EDGES.map((edge) => (
+            <line
+              key={`${edge.a}-${edge.b}`}
+              className="edge-base"
+              x1={ROMANIA[edge.a].x}
+              y1={ROMANIA[edge.a].y}
+              x2={ROMANIA[edge.b].x}
+              y2={ROMANIA[edge.b].y}
+            />
+          ))}
+          {step && renderTreeEdges(step, result.parent, start)}
+          {step && isFinalFrame && result.found && renderPathEdges(result.path)}
+          {CITIES.map((city) => {
+            const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
+            const coord = ROMANIA[city]
+            return (
+              <g key={city} className={`node node-${state}`}>
+                <circle cx={coord.x} cy={coord.y} r={14} />
+                <text x={coord.x} y={coord.y - 20}>
+                  {city}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+
+        <div className="controls">
+          <label className="control">
+            Algorithm
+            <select value={algo} onChange={(e) => handleAlgoChange(e.target.value)}>
+              {Object.entries(ALGORITHMS).map(([key, algoMeta]) => (
+                <option key={key} value={key}>
+                  {algoMeta.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="control">
+            Start
+            <select value={start} onChange={(e) => handleStartChange(e.target.value)}>
+              {CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="control">
+            Goal
+            <select value={goal} onChange={(e) => handleGoalChange(e.target.value)}>
+              {CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="transport">
+            <button type="button" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
+              ⏮
+            </button>
+            <button type="button" aria-label="Step back" onClick={handleStepBack} disabled={clampedIdx === 0}>
+              ⏪
+            </button>
+            <button
+              type="button"
+              aria-label={playing ? 'Pause' : 'Play'}
+              onClick={handlePlayPause}
+              disabled={clampedIdx >= lastIdx}
+            >
+              {playing ? '⏸' : '▶'}
+            </button>
+            <button
+              type="button"
+              aria-label="Step forward"
+              onClick={handleStepForward}
+              disabled={clampedIdx >= lastIdx}
+            >
+              ⏩
+            </button>
+          </div>
+
+          <label className="control speed">
+            <span className="speed-labels">
+              <span>Slow</span>
+              <span>Fast</span>
+            </span>
+            <input
+              type="range"
+              min={MIN_DELAY}
+              max={MAX_DELAY}
+              step={50}
+              value={MAX_DELAY - delay}
+              onChange={(e) => setDelay(MAX_DELAY - Number(e.target.value))}
+              aria-label="Animation speed, slow to fast"
+            />
+          </label>
+        </div>
       </section>
 
-      <div className="ticks"></div>
+      <section className="stats-panel">
+        <h1>{meta.label} Pathfinding</h1>
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Algorithm</dt>
+            <dd>{meta.label}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Time</dt>
+            <dd>{meta.time}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Space</dt>
+            <dd>{meta.space}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Optimal</dt>
+            <dd>{meta.optimal}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Complete</dt>
+            <dd>{meta.complete}</dd>
+          </div>
+        </dl>
+        <p className="footnotes">{ALGO_FOOTNOTES[algo] ?? ''}</p>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
+        <hr />
+
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Step</dt>
+            <dd>
+              {result.steps.length === 0 ? 0 : clampedIdx + 1} / {result.steps.length}
+            </dd>
+          </div>
+          <div className="stats-row">
+            <dt>Current</dt>
+            <dd>{step?.current ?? '—'}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Visited</dt>
+            <dd>{step?.visited.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Frontier</dt>
+            <dd>{step?.frontier.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Generated</dt>
+            <dd>{result.generated}</dd>
+          </div>
+          <div className="stats-row path-row">
+            <dt>Path</dt>
+            <dd>{isFinalFrame ? pathLabel : '—'}</dd>
+          </div>
+        </dl>
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
