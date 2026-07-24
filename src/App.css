@@ -221,6 +221,55 @@
   margin: 4px 0 0;
 }
 
+.compare-panel {
+  padding: 0 24px 32px;
+  box-sizing: border-box;
+  width: 100%;
+
+  @media (max-width: 1024px) {
+    padding: 0 16px 20px;
+  }
+}
+
+.compare-panel h2 {
+  margin: 0 0 12px;
+}
+
+.compare-scroll {
+  overflow-x: auto;
+}
+
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.compare th,
+.compare td {
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.compare thead th {
+  color: var(--text);
+  font-weight: 500;
+  border-bottom: 2px solid var(--border);
+}
+
+.compare tbody th[scope='row'],
+.compare thead th:first-child {
+  text-align: left;
+  color: var(--text-h);
+}
+
+.compare td {
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .node circle {
     transition: none;

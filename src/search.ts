@@ -1,4 +1,4 @@
-import type { NodeId } from './romania'
+import { ROMANIA, type NodeId } from './romania'
 import { bfs } from './bfs'
 import { dfs } from './dfs'
 
@@ -37,8 +37,24 @@ export function reconstructPath(parent: Record<NodeId, NodeId | null>, goal: Nod
   return path
 }
 
+// Sum edge km along a path (solution quality). Returns 0 for a trivial/empty path.
+export function pathCost(path: NodeId[]): number {
+  let cost = 0
+  for (let i = 0; i < path.length - 1; i++) {
+    const edge = ROMANIA[path[i]].edges.find((e) => e.to === path[i + 1])
+    if (edge === undefined) return NaN // non-adjacent hop — broken path
+    cost += edge.km
+  }
+  return cost
+}
+
 export const ALGORITHMS: Record<string, AlgoMeta> = {
   bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes*' },
   dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(b·m)', optimal: 'No', complete: 'Yes*' },
   // friend adds greedy/astar here (one line each) — see HEURISTIC_GUIDE.md
+}
+
+// Self-check: known Arad -> Bucharest cost (140 + 99 + 211).
+if (pathCost(['Arad', 'Sibiu', 'Fagaras', 'Bucharest']) !== 450) {
+  throw new Error('search.ts self-check failed: pathCost Arad->Bucharest should be 450')
 }

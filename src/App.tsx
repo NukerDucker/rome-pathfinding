@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, type NodeId } from './romania'
-import { ALGORITHMS, type Step } from './search'
+import { ALGORITHMS, pathCost, type Step } from './search'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -25,6 +25,42 @@ type EdgePair = { a: NodeId; b: NodeId }
 const MIN_DELAY = 0
 const MAX_DELAY = 1500
 const DEFAULT_DELAY = 600
+const BENCH_ITERS = 400 // averaging window for execution-time measurement
+
+type CompareRow = {
+  key: string
+  label: string
+  ms: number
+  peakFrontier: number
+  generated: number
+  cost: number
+  hops: number
+  found: boolean
+}
+
+// Run every registered algorithm on the same start/goal and collect metrics:
+// execution time (mean of BENCH_ITERS runs), memory (peak frontier size),
+// solution quality (path cost in km). Peak frontier derives from steps —
+// no search-internal contract change needed.
+function compareAlgorithms(start: NodeId, goal: NodeId): CompareRow[] {
+  return Object.entries(ALGORITHMS).map(([key, meta]) => {
+    const res = meta.run(start, goal)
+    const t0 = performance.now()
+    for (let i = 0; i < BENCH_ITERS; i++) meta.run(start, goal)
+    const ms = (performance.now() - t0) / BENCH_ITERS
+    const peakFrontier = res.steps.reduce((max, s) => Math.max(max, s.frontier.length), 0)
+    return {
+      key,
+      label: meta.label,
+      ms,
+      peakFrontier,
+      generated: res.generated,
+      cost: res.found ? pathCost(res.path) : NaN,
+      hops: res.found ? res.path.length - 1 : 0,
+      found: res.found,
+    }
+  })
+}
 
 const BASE_EDGES: EdgePair[] = buildBaseEdges()
 
@@ -106,6 +142,7 @@ function App() {
 
   const meta = ALGORITHMS[algo]
   const result = meta.run(start, goal)
+  const comparison = compareAlgorithms(start, goal)
   const lastIdx = result.steps.length - 1
   const clampedIdx = Math.min(stepIdx, Math.max(lastIdx, 0))
   const step: Step | undefined = result.steps[clampedIdx]
@@ -163,6 +200,7 @@ function App() {
     : '—'
 
   return (
+    <>
     <main className="app">
       <section className="map-panel">
         <svg
@@ -358,6 +396,47 @@ function App() {
         </CardContent>
       </Card>
     </main>
+
+      <section className="compare-panel" aria-labelledby="compare-title">
+        <Card>
+          <CardContent>
+            <h2 id="compare-title">
+              Algorithm comparison — {start} → {goal}
+            </h2>
+            <div className="compare-scroll">
+              <table className="compare">
+                <thead>
+                  <tr>
+                    <th scope="col">Algorithm</th>
+                    <th scope="col">Time (ms)</th>
+                    <th scope="col">Memory (peak frontier)</th>
+                    <th scope="col">Generated</th>
+                    <th scope="col">Path cost (km)</th>
+                    <th scope="col">Hops</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.map((row) => (
+                    <tr key={row.key}>
+                      <th scope="row">{row.label}</th>
+                      <td>{row.ms.toFixed(3)}</td>
+                      <td>{row.peakFrontier}</td>
+                      <td>{row.generated}</td>
+                      <td>{row.found ? row.cost : '—'}</td>
+                      <td>{row.found ? row.hops : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="footnotes">
+              Time = mean of {BENCH_ITERS} runs. Memory = peak frontier size (space proxy). Path
+              cost = Σ road km (lower = better quality).
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+    </>
   )
 }
 
