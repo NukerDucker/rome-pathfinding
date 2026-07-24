@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, type NodeId } from './romania'
 import { ALGORITHMS, type Step } from './search'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Slider } from '@/components/ui/slider'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import './App.css'
 
 const ALGO_FOOTNOTES: Record<string, string> = {
@@ -156,7 +167,7 @@ function App() {
       <section className="map-panel">
         <svg
           className="map"
-          viewBox="0 0 560 420"
+          viewBox="-40 -30 640 490"
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-labelledby="map-title"
@@ -188,138 +199,164 @@ function App() {
           })}
         </svg>
 
+        <ul className="legend" aria-label="Node state colors">
+          <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+          <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+          <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+          <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+          <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+        </ul>
+
         <div className="controls">
-          <label className="control">
-            Algorithm
-            <select value={algo} onChange={(e) => handleAlgoChange(e.target.value)}>
-              {Object.entries(ALGORITHMS).map(([key, algoMeta]) => (
-                <option key={key} value={key}>
-                  {algoMeta.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="control">
-            Start
-            <select value={start} onChange={(e) => handleStartChange(e.target.value)}>
-              {CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="control">
-            Goal
-            <select value={goal} onChange={(e) => handleGoalChange(e.target.value)}>
-              {CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="control">
+            <span id="algo-label">Algorithm</span>
+            <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+              <SelectTrigger className="w-36" aria-labelledby="algo-label">
+                <SelectValue>{(v) => ALGORITHMS[v as string]?.label ?? v}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ALGORITHMS).map(([key, algoMeta]) => (
+                  <SelectItem key={key} value={key}>
+                    {algoMeta.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="control">
+            <span id="start-label">Start</span>
+            <Select value={start} onValueChange={(v) => v && handleStartChange(v as NodeId)}>
+              <SelectTrigger className="w-36" aria-labelledby="start-label">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CITIES.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="control">
+            <span id="goal-label">Goal</span>
+            <Select value={goal} onValueChange={(v) => v && handleGoalChange(v as NodeId)}>
+              <SelectTrigger className="w-36" aria-labelledby="goal-label">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CITIES.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="transport">
-            <button type="button" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
-              ⏮
-            </button>
-            <button type="button" aria-label="Step back" onClick={handleStepBack} disabled={clampedIdx === 0}>
-              ⏪
-            </button>
-            <button
-              type="button"
+            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
+              <RotateCcw aria-hidden="true" />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={clampedIdx === 0}>
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               aria-label={playing ? 'Pause' : 'Play'}
               onClick={handlePlayPause}
               disabled={clampedIdx >= lastIdx}
             >
-              {playing ? '⏸' : '▶'}
-            </button>
-            <button
-              type="button"
+              {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               aria-label="Step forward"
               onClick={handleStepForward}
               disabled={clampedIdx >= lastIdx}
             >
-              ⏩
-            </button>
+              <ChevronRight aria-hidden="true" />
+            </Button>
           </div>
 
-          <label className="control speed">
+          <div className="control speed">
             <span className="speed-labels">
               <span>Slow</span>
               <span>Fast</span>
             </span>
-            <input
-              type="range"
+            <Slider
               min={MIN_DELAY}
               max={MAX_DELAY}
               step={50}
               value={MAX_DELAY - delay}
-              onChange={(e) => setDelay(MAX_DELAY - Number(e.target.value))}
+              onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
               aria-label="Animation speed, slow to fast"
             />
-          </label>
+          </div>
         </div>
       </section>
 
-      <section className="stats-panel">
-        <h1>{meta.label} Pathfinding</h1>
-        <dl className="stats">
-          <div className="stats-row">
-            <dt>Algorithm</dt>
-            <dd>{meta.label}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Time</dt>
-            <dd>{meta.time}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Space</dt>
-            <dd>{meta.space}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Optimal</dt>
-            <dd>{meta.optimal}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Complete</dt>
-            <dd>{meta.complete}</dd>
-          </div>
-        </dl>
-        <p className="footnotes">{ALGO_FOOTNOTES[algo] ?? ''}</p>
+      <Card className="stats-panel">
+        <CardContent>
+          <h1>{meta.label} Pathfinding</h1>
+          <dl className="stats">
+            <div className="stats-row">
+              <dt>Algorithm</dt>
+              <dd>{meta.label}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Time</dt>
+              <dd>{meta.time}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Space</dt>
+              <dd>{meta.space}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Optimal</dt>
+              <dd>{meta.optimal}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Complete</dt>
+              <dd>{meta.complete}</dd>
+            </div>
+          </dl>
+          <p className="footnotes">{ALGO_FOOTNOTES[algo] ?? ''}</p>
 
-        <hr />
+          <hr className="my-3 border-border" />
 
-        <dl className="stats">
-          <div className="stats-row">
-            <dt>Step</dt>
-            <dd>
-              {result.steps.length === 0 ? 0 : clampedIdx + 1} / {result.steps.length}
-            </dd>
-          </div>
-          <div className="stats-row">
-            <dt>Current</dt>
-            <dd>{step?.current ?? '—'}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Visited</dt>
-            <dd>{step?.visited.length ?? 0}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Frontier</dt>
-            <dd>{step?.frontier.length ?? 0}</dd>
-          </div>
-          <div className="stats-row">
-            <dt>Generated</dt>
-            <dd>{result.generated}</dd>
-          </div>
-          <div className="stats-row path-row">
-            <dt>Path</dt>
-            <dd>{isFinalFrame ? pathLabel : '—'}</dd>
-          </div>
-        </dl>
-      </section>
+          <dl className="stats">
+            <div className="stats-row">
+              <dt>Step</dt>
+              <dd>
+                {result.steps.length === 0 ? 0 : clampedIdx + 1} / {result.steps.length}
+              </dd>
+            </div>
+            <div className="stats-row">
+              <dt>Current</dt>
+              <dd>{step?.current ?? '—'}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Visited</dt>
+              <dd>{step?.visited.length ?? 0}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Frontier</dt>
+              <dd>{step?.frontier.length ?? 0}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Generated</dt>
+              <dd>{result.generated}</dd>
+            </div>
+            <div className="stats-row path-row">
+              <dt>Path</dt>
+              <dd>{isFinalFrame ? pathLabel : '—'}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
     </main>
   )
 }

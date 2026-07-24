@@ -1,12 +1,15 @@
 :root {
+  /* map's brand purple — kept separate so shadcn's --accent token can't clobber it */
+  --map-accent: #aa3bff;
   --state-frontier: #d97706;
-  --state-current: var(--accent);
+  --state-current: var(--map-accent);
   --state-visited: #9ca3af;
   --state-path: #16a34a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --map-accent: #c084fc;
     --state-frontier: #fbbf24;
     --state-visited: #6b7280;
     --state-path: #4ade80;
@@ -52,7 +55,7 @@
 }
 
 .edge-tree {
-  stroke: var(--accent);
+  stroke: var(--map-accent);
   stroke-width: 3;
 }
 
@@ -101,6 +104,51 @@
   stroke: var(--state-path);
 }
 
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex: none;
+}
+
+.swatch-current {
+  background: var(--state-current);
+  border-color: var(--text-h);
+}
+.swatch-frontier {
+  background: var(--state-frontier);
+  border-color: var(--state-frontier);
+}
+.swatch-visited {
+  background: var(--state-visited);
+  border-color: var(--state-visited);
+}
+.swatch-path {
+  background: var(--state-path);
+  border-color: var(--state-path);
+}
+.swatch-unvisited {
+  background: var(--bg);
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -116,46 +164,13 @@
   color: var(--text);
 }
 
-.control select {
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  font: inherit;
-}
-
 .transport {
   display: flex;
   gap: 6px;
 }
 
-.transport button {
-  font-size: 18px;
-  line-height: 1;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  cursor: pointer;
-  transition: border-color 0.15s;
-
-  &:hover:not(:disabled) {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
 .speed {
-  min-width: 160px;
+  min-width: 180px;
 }
 
 .speed-labels {
@@ -164,21 +179,9 @@
   font-size: 11px;
 }
 
-.speed input[type='range'] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.stats-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
 .stats-panel h1 {
   font-size: 28px;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .stats {
@@ -218,9 +221,8 @@
   margin: 4px 0 0;
 }
 
-.stats-panel hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 12px 0;
-  width: 100%;
+@media (prefers-reduced-motion: reduce) {
+  .node circle {
+    transition: none;
+  }
 }
