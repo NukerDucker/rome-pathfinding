@@ -5,6 +5,8 @@
   --state-current: var(--map-accent);
   --state-visited: #9ca3af;
   --state-path: #16a34a;
+  --marker-start: #16a34a;
+  --marker-goal: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -13,6 +15,8 @@
     --state-frontier: #fbbf24;
     --state-visited: #6b7280;
     --state-path: #4ade80;
+    --marker-start: #4ade80;
+    --marker-goal: #f87171;
   }
 }
 
@@ -104,6 +108,47 @@
   stroke: var(--state-path);
 }
 
+.node-glow {
+  fill: none;
+  stroke: var(--map-accent);
+  stroke-width: 6;
+  opacity: 0.55;
+  filter: blur(4px);
+  animation: node-glow-pulse 1.1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.node-hover circle:not(.node-glow):not(.marker-ring) {
+  stroke: var(--map-accent);
+  stroke-width: 3;
+}
+
+.marker-ring {
+  fill: none;
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+
+.node .marker-start {
+  stroke: var(--marker-start);
+}
+
+.node .marker-goal {
+  stroke: var(--marker-goal);
+}
+
+@keyframes node-glow-pulse {
+  0%,
+  100% {
+    r: 16;
+    opacity: 0.55;
+  }
+  50% {
+    r: 20;
+    opacity: 0.85;
+  }
+}
+
 .legend {
   list-style: none;
   margin: 0;
@@ -148,6 +193,16 @@
 .swatch-unvisited {
   background: var(--bg);
 }
+.swatch-start-ring {
+  background: transparent;
+  border-color: var(--marker-start);
+  border-width: 2px;
+}
+.swatch-goal-ring {
+  background: transparent;
+  border-color: var(--marker-goal);
+  border-width: 2px;
+}
 
 .controls {
   display: flex;
@@ -177,6 +232,11 @@
   display: flex;
   justify-content: space-between;
   font-size: 11px;
+}
+
+.speed-value {
+  font-family: var(--mono);
+  color: var(--text-h);
 }
 
 .stats-panel h1 {
@@ -273,5 +333,9 @@
 @media (prefers-reduced-motion: reduce) {
   .node circle {
     transition: none;
+  }
+
+  .node-glow {
+    animation: none;
   }
 }

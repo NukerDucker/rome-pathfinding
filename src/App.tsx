@@ -139,6 +139,7 @@ function App() {
   const [stepIdx, setStepIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [delay, setDelay] = useState(DEFAULT_DELAY)
+  const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
 
   const meta = ALGORITHMS[algo]
   const result = meta.run(start, goal)
@@ -226,8 +227,14 @@ function App() {
           {CITIES.map((city) => {
             const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
             const coord = ROMANIA[city]
+            const isHovered = city === hoveredCity
+            const isStart = city === start && !isFinalFrame
+            const isGoal = city === goal && !isFinalFrame
             return (
-              <g key={city} className={`node node-${state}`}>
+              <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
+                {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={14} />}
+                {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={19} />}
+                {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={16.5} />}
                 <circle cx={coord.x} cy={coord.y} r={14} />
                 <text x={coord.x} y={coord.y - 20}>
                   {city}
@@ -243,6 +250,8 @@ function App() {
           <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
           <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
           <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+          <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+          <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
         </ul>
 
         <div className="controls">
@@ -263,13 +272,22 @@ function App() {
           </div>
           <div className="control">
             <span id="start-label">Start</span>
-            <Select value={start} onValueChange={(v) => v && handleStartChange(v as NodeId)}>
+            <Select
+              value={start}
+              onValueChange={(v) => v && handleStartChange(v as NodeId)}
+              onOpenChange={(open) => !open && setHoveredCity(null)}
+            >
               <SelectTrigger className="w-36" aria-labelledby="start-label">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {CITIES.map((city) => (
-                  <SelectItem key={city} value={city}>
+                  <SelectItem
+                    key={city}
+                    value={city}
+                    onMouseEnter={() => setHoveredCity(city)}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
                     {city}
                   </SelectItem>
                 ))}
@@ -278,13 +296,22 @@ function App() {
           </div>
           <div className="control">
             <span id="goal-label">Goal</span>
-            <Select value={goal} onValueChange={(v) => v && handleGoalChange(v as NodeId)}>
+            <Select
+              value={goal}
+              onValueChange={(v) => v && handleGoalChange(v as NodeId)}
+              onOpenChange={(open) => !open && setHoveredCity(null)}
+            >
               <SelectTrigger className="w-36" aria-labelledby="goal-label">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {CITIES.map((city) => (
-                  <SelectItem key={city} value={city}>
+                  <SelectItem
+                    key={city}
+                    value={city}
+                    onMouseEnter={() => setHoveredCity(city)}
+                    onMouseLeave={() => setHoveredCity(null)}
+                  >
                     {city}
                   </SelectItem>
                 ))}
@@ -322,6 +349,7 @@ function App() {
           <div className="control speed">
             <span className="speed-labels">
               <span>Slow</span>
+              <span className="speed-value">{delay}ms</span>
               <span>Fast</span>
             </span>
             <Slider
