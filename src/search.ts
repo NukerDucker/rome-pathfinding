@@ -1,6 +1,7 @@
 import { ROMANIA, type NodeId } from './romania'
 import { bfs } from './bfs'
 import { dfs } from './dfs'
+import { ucs } from './ucs'
 
 export type Step = { current: NodeId; frontier: NodeId[]; visited: NodeId[] }
 
@@ -51,6 +52,7 @@ export function pathCost(path: NodeId[]): number {
 export const ALGORITHMS: Record<string, AlgoMeta> = {
   bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes*' },
   dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(b·m)', optimal: 'No', complete: 'Yes*' },
+  ucs: { label: 'UCS', run: ucs, time: 'O(b^(1+floor(C*/e)))', space: 'O(b^(1+floor(C*/e)))', optimal: 'Yes', complete: 'Yes' },
   // friend adds greedy/astar here (one line each) — see HEURISTIC_GUIDE.md
 }
 
