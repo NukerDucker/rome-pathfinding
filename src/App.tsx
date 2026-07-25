@@ -199,6 +199,8 @@ function App() {
     ? `${result.path.join(' → ')} (${result.path.length} cities)`
     : '—'
 
+  const costLabel = result.found ? `${pathCost(result.path)} km` : '—'
+
   return (
     <>
     <main className="app">
@@ -387,6 +389,10 @@ function App() {
             <div className="stats-row">
               <dt>Generated</dt>
               <dd>{result.generated}</dd>
+            </div>
+            <div className="stats-row">
+              <dt>Path Cost</dt>
+              <dd>{isFinalFrame ? costLabel : '—'}</dd>
             </div>
             <div className="stats-row path-row">
               <dt>Path</dt>
