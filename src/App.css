@@ -44,6 +44,8 @@
 .map {
   width: 100%;
   height: auto;
+  min-height: 500px;
+  max-height: 70vh;
   background: var(--code-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -51,7 +53,7 @@
 
 .edge-base {
   stroke: var(--border);
-  stroke-width: 1.5;
+  stroke-width: 8;
 }
 
 .edge-tree {
@@ -64,9 +66,27 @@
   stroke-width: 5;
 }
 
+.edge-arc {
+  fill: none;
+  stroke: #f5c518;
+  stroke-width: 16;
+}
+
+.edge-arc-chord {
+  stroke: #f5c51844;
+  stroke-width: 16;
+  stroke-dasharray: 4 6;
+}
+
+.edge-arc-dot {
+  fill: #f5c518;
+  stroke: #1a1a2e;
+  stroke-width: 16;
+}
+
 .node circle {
   stroke: var(--border);
-  stroke-width: 1.5;
+  stroke-width: 8;
   transition:
     fill 0.15s,
     stroke 0.15s;
@@ -74,7 +94,7 @@
 
 .node text {
   fill: var(--text-h);
-  font-size: 11px;
+  font-size: 56px;
   text-anchor: middle;
   pointer-events: none;
 }
