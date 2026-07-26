@@ -17,10 +17,10 @@ import { ROMANIA, CITIES } from './romania'
 
 // ── friction grid parameters ───────────────────────────────────────────────
 
-const MAP_W = 560
-const MAP_H = 420
-const FRIC_STEP = 3          // pixel width of each grid cell
-const FRIC_RADIUS = 21       // max px distance from road edge
+const MAP_W = 4000
+const MAP_H = 2250
+const FRIC_STEP = 20          // pixel width of each grid cell
+const FRIC_RADIUS = 150       // max px distance from road edge
 const FRIC_GW = Math.floor(MAP_W / FRIC_STEP)  // 186
 const FRIC_GH = Math.floor(MAP_H / FRIC_STEP)  // 140
 
@@ -104,7 +104,7 @@ function frictionAt(px: number, py: number): number {
 
 const BASE_BULGE = 0.02
 const BULGE_SCALE = 0.07
-const BULGE_CAP = 0.01
+const BULGE_CAP = 0.08
 
 const BX = ROMANIA['Bucharest'].x
 const BY = ROMANIA['Bucharest'].y
