@@ -178,3 +178,34 @@ export function h(node: NodeId, goal: NodeId): number {
   // Precomputed
   return (FRIC_SUM[`${node}|${goal}`] ?? 0) * (ARC_LEN[`${node}|${goal}`] ?? 0) / 3
 }
+
+
+// ── rendering helpers ──────────────────────────────────────────────────────
+
+/** Ellipse parameters for rendering the arc. Pure math, O(1). */
+export function arcGeometry(start: string, goal: string) {
+  const ca = ROMANIA[start], cb = ROMANIA[goal]
+  const dx = cb.x - ca.x, dy = cb.y - ca.y
+  const chord = Math.hypot(dx, dy)
+  if (chord === 0) return null
+  const a = chord / 2, mx = ca.x + dx / 2, my = ca.y + dy / 2
+  const ux = dx / chord, uy = dy / chord
+  const vx = BX - mx, vy = BY - my
+  const dbuc = Math.hypot(vx, vy)
+  const bf = Math.min(BASE_BULGE + BULGE_SCALE * dbuc / chord, BULGE_CAP)
+  const b = chord * bf, wLen = dbuc || 1
+  return { mx, my, a, b, ux, uy, wx: vx / wLen, wy: vy / wLen }
+}
+
+/** Sample points along the arc at t = pi/6, pi/2, 5pi/6. */
+export function arcSamplePoints(start: string, goal: string) {
+  const g = arcGeometry(start, goal)
+  if (!g) return []
+  const pts: { x: number; y: number }[] = []
+  for (const t of [Math.PI / 6, Math.PI / 2, 5 * Math.PI / 6]) {
+    const ct = Math.cos(t), st = Math.sin(t)
+    pts.push({ x: g.mx + g.a * ct * g.ux + g.b * st * g.wx,
+               y: g.my + g.a * ct * g.uy + g.b * st * g.wy })
+  }
+  return pts
+}
