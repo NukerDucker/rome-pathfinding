@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step } from './search'
+import { arcGeometry, arcSamplePoints } from './heuristic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -113,6 +114,28 @@ function renderTreeEdges(step: Step, parent: Record<NodeId, NodeId | null>, star
   return edges
 }
 
+function renderArcEdges(start: NodeId, goal: NodeId) {
+  const g = arcGeometry(start, goal)
+  if (!g) return null
+  const chordEl = (
+    <line key="arc-chord" className="edge-arc-chord"
+      x1={ROMANIA[start].x} y1={ROMANIA[start].y}
+      x2={ROMANIA[goal].x} y2={ROMANIA[goal].y} />
+  )
+  let pts = ''
+  const STEPS = 50
+  for (let i = 0; i <= STEPS; i++) {
+    const t = Math.PI * i / STEPS
+    const ct = Math.cos(t), st = Math.sin(t)
+    pts += (g.mx + g.a*ct*g.ux + g.b*st*g.wx) + ',' + (g.my + g.a*ct*g.uy + g.b*st*g.wy) + ' '
+  }
+  const curveEl = <polyline key="arc-curve" className="edge-arc" points={pts.trim()} />
+  const dots = arcSamplePoints(start, goal).map((p, i) => (
+    <circle key={`arc-dot-${i}`} className="edge-arc-dot" cx={p.x} cy={p.y} r={3} />
+  ))
+  return [chordEl, curveEl, ...dots]
+}
+
 function renderPathEdges(path: NodeId[]) {
   const edges = []
   for (let i = 0; i < path.length - 1; i++) {
@@ -205,7 +228,7 @@ function App() {
       <section className="map-panel">
         <svg
           className="map"
-          viewBox="-40 -30 640 490"
+          viewBox="500 300 3000 1650"
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-labelledby="map-title"
@@ -221,6 +244,7 @@ function App() {
               y2={ROMANIA[edge.b].y}
             />
           ))}
+          {["greedy","astar"].includes(algo) && renderArcEdges(start, goal)} 
           {step && renderTreeEdges(step, result.parent, start)}
           {step && isFinalFrame && result.found && renderPathEdges(result.path)}
           {CITIES.map((city) => {
@@ -228,8 +252,8 @@ function App() {
             const coord = ROMANIA[city]
             return (
               <g key={city} className={`node node-${state}`}>
-                <circle cx={coord.x} cy={coord.y} r={14} />
-                <text x={coord.x} y={coord.y - 20}>
+                <circle cx={coord.x} cy={coord.y} r={72} />
+                <text x={coord.x} y={coord.y - 96}>
                   {city}
                 </text>
               </g>
