@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
-import { CITIES, ROMANIA, type NodeId } from './romania'
-import { ALGORITHMS, pathCost, type Step } from './search'
+import { CITIES, ROMANIA, type NodeId } from './romania.ts'
+import { ALGORITHMS, pathCost, type Step } from './search.ts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -17,6 +17,7 @@ import './App.css'
 const ALGO_FOOTNOTES: Record<string, string> = {
   bfs: '*Optimal if step costs are equal. *Complete if branching factor b is finite.',
   dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
+  biucs: 'Actual steps is half of displayed steps due to limitations. C is cost between path, e is minimum cost between nodes.',
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
