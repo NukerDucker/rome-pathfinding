@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step } from './search'
 import { Button } from '@/components/ui/button'
@@ -138,6 +138,15 @@ function labelWidth(km: number): number {
   return 12 + String(km).length * 5.5
 }
 
+// Random start/goal pair. Drawing the goal from the cities minus the chosen
+// start keeps every pair equally likely without a retry loop, and rules out the
+// degenerate start === goal search.
+function randomPair(): { start: NodeId; goal: NodeId } {
+  const start = CITIES[Math.floor(Math.random() * CITIES.length)]
+  const rest = CITIES.filter((city) => city !== start)
+  return { start, goal: rest[Math.floor(Math.random() * rest.length)] }
+}
+
 function nodeState(
   node: NodeId,
   step: Step,
@@ -199,6 +208,14 @@ function App() {
 
   function handleGoalChange(next: NodeId) {
     setGoal(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleRandomize() {
+    const next = randomPair()
+    setStart(next.start)
+    setGoal(next.goal)
     setStepIdx(0)
     setPlaying(false)
   }
@@ -365,6 +382,16 @@ function App() {
               </SelectContent>
             </Select>
           </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Randomize start and goal cities"
+            title="Randomize start and goal cities"
+            onClick={handleRandomize}
+          >
+            <Dices aria-hidden="true" />
+          </Button>
 
           <div className="transport">
             <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
