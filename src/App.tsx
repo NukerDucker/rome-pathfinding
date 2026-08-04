@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
-import { CITIES, ROMANIA, type NodeId } from './romania'
+import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step } from './search'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,7 +20,16 @@ const ALGO_FOOTNOTES: Record<string, string> = {
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
-type EdgePair = { a: NodeId; b: NodeId }
+type EdgeState = 'base' | 'tree' | 'path'
+type EdgePair = { a: NodeId; b: NodeId; km: number }
+type EdgeView = EdgePair & { state: EdgeState }
+
+// Map geometry (SVG user units, viewBox 0 0 600 450).
+const NODE_R = 11
+const LABEL_H = 13
+const LABEL_RX = 3.5
+// Later states paint over earlier ones, so a road on the solution path wins.
+const EDGE_ORDER: Record<EdgeState, number> = { base: 0, tree: 1, path: 2 }
 
 const MIN_DELAY = 0
 const MAX_DELAY = 1500
@@ -69,13 +78,64 @@ function buildBaseEdges(): EdgePair[] {
   const out: EdgePair[] = []
   for (const id of CITIES) {
     for (const edge of ROMANIA[id].edges) {
-      const key = [id, edge.to].sort().join('|')
+      const key = edgeKey(id, edge.to)
       if (seen.has(key)) continue
       seen.add(key)
-      out.push({ a: id, b: edge.to })
+      out.push({ a: id, b: edge.to, km: edge.km })
     }
   }
   return out
+}
+
+// Roads are undirected; key both endpoints in a fixed order so a parent->child
+// tree edge and the base edge it rides on hash the same.
+function edgeKey(a: NodeId, b: NodeId): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`
+}
+
+function treeEdgeKeys(
+  step: Step,
+  parent: Record<NodeId, NodeId | null>,
+  start: NodeId,
+): Set<string> {
+  const nodes = new Set<NodeId>([...step.visited, ...step.frontier, step.current])
+  const keys = new Set<string>()
+  for (const n of nodes) {
+    if (n === start) continue
+    const p = parent[n]
+    if (p === undefined || p === null) continue
+    keys.add(edgeKey(p, n))
+  }
+  return keys
+}
+
+function pathEdgeKeys(path: NodeId[]): Set<string> {
+  const keys = new Set<string>()
+  for (let i = 0; i < path.length - 1; i++) keys.add(edgeKey(path[i], path[i + 1]))
+  return keys
+}
+
+// One pass over the road network: every road is drawn exactly once, coloured by
+// whether the search currently owns it. Sorted so highlights paint last.
+function buildEdgeViews(
+  step: Step | undefined,
+  parent: Record<NodeId, NodeId | null>,
+  start: NodeId,
+  path: NodeId[],
+  showPath: boolean,
+): EdgeView[] {
+  const tree = step ? treeEdgeKeys(step, parent, start) : new Set<string>()
+  const onPath = showPath ? pathEdgeKeys(path) : new Set<string>()
+  return BASE_EDGES.map((edge) => {
+    const key = edgeKey(edge.a, edge.b)
+    const state: EdgeState = onPath.has(key) ? 'path' : tree.has(key) ? 'tree' : 'base'
+    return { ...edge, state }
+  }).sort((x, y) => EDGE_ORDER[x.state] - EDGE_ORDER[y.state])
+}
+
+// Pill width tracks digit count so 2- and 3-digit distances both sit snugly.
+function labelWidth(km: number): number {
+  return 12 + String(km).length * 5.5
 }
 
 function nodeState(
@@ -90,46 +150,6 @@ function nodeState(
   if (step.frontier.includes(node)) return 'frontier'
   if (step.visited.includes(node)) return 'visited'
   return 'unvisited'
-}
-
-function renderTreeEdges(step: Step, parent: Record<NodeId, NodeId | null>, start: NodeId) {
-  const nodes = new Set<NodeId>([...step.visited, ...step.frontier, step.current])
-  const edges = []
-  for (const n of nodes) {
-    if (n === start) continue
-    const p = parent[n]
-    if (p === undefined || p === null) continue
-    edges.push(
-      <line
-        key={`tree-${p}-${n}`}
-        className="edge-tree"
-        x1={ROMANIA[p].x}
-        y1={ROMANIA[p].y}
-        x2={ROMANIA[n].x}
-        y2={ROMANIA[n].y}
-      />,
-    )
-  }
-  return edges
-}
-
-function renderPathEdges(path: NodeId[]) {
-  const edges = []
-  for (let i = 0; i < path.length - 1; i++) {
-    const a = path[i]
-    const b = path[i + 1]
-    edges.push(
-      <line
-        key={`path-${a}-${b}`}
-        className="edge-path"
-        x1={ROMANIA[a].x}
-        y1={ROMANIA[a].y}
-        x2={ROMANIA[b].x}
-        y2={ROMANIA[b].y}
-      />,
-    )
-  }
-  return edges
 }
 
 function App() {
@@ -148,6 +168,13 @@ function App() {
   const clampedIdx = Math.min(stepIdx, Math.max(lastIdx, 0))
   const step: Step | undefined = result.steps[clampedIdx]
   const isFinalFrame = clampedIdx === lastIdx
+  const edgeViews = buildEdgeViews(
+    step,
+    result.parent,
+    start,
+    result.path,
+    isFinalFrame && result.found,
+  )
 
   useEffect(() => {
     if (!playing || stepIdx >= lastIdx) return
@@ -206,24 +233,39 @@ function App() {
       <section className="map-panel">
         <svg
           className="map"
-          viewBox="-40 -30 640 490"
+          viewBox="0 0 600 450"
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-labelledby="map-title"
         >
           <title id="map-title">Romania road map — {meta.label} visualizer</title>
-          {BASE_EDGES.map((edge) => (
+          <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
+
+          {edgeViews.map((edge) => (
             <line
-              key={`${edge.a}-${edge.b}`}
-              className="edge-base"
+              key={`road-${edge.a}-${edge.b}`}
+              className={`edge edge-${edge.state}`}
               x1={ROMANIA[edge.a].x}
               y1={ROMANIA[edge.a].y}
               x2={ROMANIA[edge.b].x}
               y2={ROMANIA[edge.b].y}
             />
           ))}
-          {step && renderTreeEdges(step, result.parent, start)}
-          {step && isFinalFrame && result.found && renderPathEdges(result.path)}
+
+          {edgeViews.map((edge) => {
+            const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
+            const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
+            const w = labelWidth(edge.km)
+            return (
+              <g key={`km-${edge.a}-${edge.b}`} className={`edge-label edge-label-${edge.state}`}>
+                <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
+                <text x={mx} y={my} dominantBaseline="central">
+                  {edge.km}
+                </text>
+              </g>
+            )
+          })}
+
           {CITIES.map((city) => {
             const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
             const coord = ROMANIA[city]
@@ -232,12 +274,13 @@ function App() {
             const isGoal = city === goal && !isFinalFrame
             return (
               <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
-                {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={14} />}
-                {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={19} />}
-                {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={16.5} />}
-                <circle cx={coord.x} cy={coord.y} r={14} />
-                <text x={coord.x} y={coord.y - 20}>
-                  {city}
+                <title>{city}</title>
+                {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
+                {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
+                {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
+                <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+                <text x={coord.x} y={coord.y} dominantBaseline="central">
+                  {cityCode(city)}
                 </text>
               </g>
             )
@@ -253,6 +296,10 @@ function App() {
           <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
           <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
         </ul>
+        <p className="footnotes">
+          Nodes are city initials and edge pills are road distances in km — hover a node for its
+          full name.
+        </p>
 
         <div className="controls">
           <div className="control">
