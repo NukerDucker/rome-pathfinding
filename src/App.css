@@ -97,6 +97,25 @@
   stroke-width: 4.5;
 }
 
+/* Elliptical-arc heuristic overlay (illustrative — greedy/astar only). */
+.edge-arc {
+  fill: none;
+  stroke: #f5c518;
+  stroke-width: 2.5;
+}
+
+.edge-arc-chord {
+  stroke: #f5c51844;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+
+.edge-arc-dot {
+  fill: #f5c518;
+  stroke: var(--code-bg);
+  stroke-width: 1;
+}
+
 /* Distance pill straddling the midpoint of each road. */
 .edge-label rect {
   fill: var(--bg);

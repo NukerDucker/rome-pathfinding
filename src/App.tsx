@@ -17,6 +17,10 @@ import './App.css'
 const ALGO_FOOTNOTES: Record<string, string> = {
   bfs: '*Optimal if step costs are equal. *Complete if branching factor b is finite.',
   dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
+  greedy: '*Not optimal — ignores path cost so far. *Complete if branching factor b is finite (graph-search avoids cycles).',
+  astar: '*Optimal if the heuristic is admissible (elliptical-arc heuristic, verified admissible). *Complete if branching factor b is finite.',
+  ucs: 'Optimal and complete for non-negative step costs (graph-search, Dijkstra-equivalent).',
+  biucs: 'Optimal and complete for non-negative step costs — searches from both ends and meets in the middle.',
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
@@ -28,6 +32,62 @@ type EdgeView = EdgePair & { state: EdgeState }
 const NODE_R = 11
 const LABEL_H = 13
 const LABEL_RX = 3.5
+
+// Elliptical-arc heuristic overlay (illustrative only — matches the ellipse
+// math in heuristic.ts, but recomputed in this map's own 600x450 coords so it
+// aligns with the rendered roads; heuristic.ts uses a private 4000x2250 space
+// for its own math). Bulge params are chord-relative ratios, so they carry
+// over unchanged.
+const ARC_BASE_BULGE = 0.02
+const ARC_BULGE_SCALE = 0.07
+const ARC_BULGE_CAP = 0.08
+
+function mapArcGeometry(start: NodeId, goal: NodeId) {
+  const ca = ROMANIA[start], cb = ROMANIA[goal]
+  const dx = cb.x - ca.x, dy = cb.y - ca.y
+  const chord = Math.hypot(dx, dy)
+  if (chord === 0) return null
+  const a = chord / 2, mx = ca.x + dx / 2, my = ca.y + dy / 2
+  const ux = dx / chord, uy = dy / chord
+  const bucharest = ROMANIA['Bucharest']
+  const vx = bucharest.x - mx, vy = bucharest.y - my
+  const dbuc = Math.hypot(vx, vy)
+  const bf = Math.min(ARC_BASE_BULGE + ARC_BULGE_SCALE * dbuc / chord, ARC_BULGE_CAP)
+  const b = chord * bf, wLen = dbuc || 1
+  return { mx, my, a, b, ux, uy, wx: vx / wLen, wy: vy / wLen }
+}
+
+function mapArcSamplePoints(start: NodeId, goal: NodeId) {
+  const g = mapArcGeometry(start, goal)
+  if (!g) return []
+  const pts: { x: number; y: number }[] = []
+  for (const t of [Math.PI / 6, Math.PI / 2, 5 * Math.PI / 6]) {
+    const ct = Math.cos(t), st = Math.sin(t)
+    pts.push({ x: g.mx + g.a * ct * g.ux + g.b * st * g.wx, y: g.my + g.a * ct * g.uy + g.b * st * g.wy })
+  }
+  return pts
+}
+
+function renderArcEdges(start: NodeId, goal: NodeId) {
+  const g = mapArcGeometry(start, goal)
+  if (!g) return null
+  const ca = ROMANIA[start], cb = ROMANIA[goal]
+  const chordEl = (
+    <line key="arc-chord" className="edge-arc-chord" x1={ca.x} y1={ca.y} x2={cb.x} y2={cb.y} />
+  )
+  let pts = ''
+  const STEPS = 50
+  for (let i = 0; i <= STEPS; i++) {
+    const t = Math.PI * i / STEPS
+    const ct = Math.cos(t), st = Math.sin(t)
+    pts += (g.mx + g.a * ct * g.ux + g.b * st * g.wx) + ',' + (g.my + g.a * ct * g.uy + g.b * st * g.wy) + ' '
+  }
+  const curveEl = <polyline key="arc-curve" className="edge-arc" points={pts.trim()} />
+  const dots = mapArcSamplePoints(start, goal).map((p, i) => (
+    <circle key={`arc-dot-${i}`} className="edge-arc-dot" cx={p.x} cy={p.y} r={2.5} />
+  ))
+  return [chordEl, curveEl, ...dots]
+}
 // Later states paint over earlier ones, so a road on the solution path wins.
 const EDGE_ORDER: Record<EdgeState, number> = { base: 0, tree: 1, path: 2 }
 
@@ -282,6 +342,8 @@ function App() {
               </g>
             )
           })}
+
+          {['greedy', 'astar'].includes(algo) && renderArcEdges(start, goal)}
 
           {CITIES.map((city) => {
             const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
