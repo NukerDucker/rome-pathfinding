@@ -30,3 +30,6 @@ GEMINI.md
 .claude/
 .codex/
 .ai/
+
+# npm lockfile — this project uses bun.lock
+package-lock.json
