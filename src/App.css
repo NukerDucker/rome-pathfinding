@@ -68,9 +68,22 @@
   min-width: 0;
 }
 
-.map {
-  width: 100%;
-  height: auto;
+.map-container{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  @media (max-width: 1600px) {
+    flex-direction: column;
+  }
+}
+
+.map {  
+  @media (max-width: 1600px and min-width: 480px) {
+    height: 45vh;
+  }
+  @media (max-width: 480px){
+    width: 100%;
+  }
 }
 
 .map-bg {

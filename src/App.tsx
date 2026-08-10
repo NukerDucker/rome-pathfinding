@@ -161,8 +161,79 @@ function nodeState(
   return 'unvisited'
 }
 
+type SVGMapParams = {
+  start: NodeId;
+  goal: NodeId,
+  step: Step,
+  isFinalFrame: boolean,
+  result: SearchResult,
+  hoveredCity: NodeId | null,
+};
+
+function SVGMap({meta, edgeViews, step, isFinalFrame, result, hoveredCity, start, goal}: SVGMapParams){
+  return(
+    <svg
+      className="map"
+      viewBox="0 0 600 450"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-labelledby="map-title"
+      >
+      <title id="map-title">Romania road map — {meta.label} visualizer</title>
+      <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
+
+      {edgeViews.map((edge) => (
+        <line
+        key={`road-${edge.a}-${edge.b}`}
+        className={`edge edge-${edge.state}`}
+        x1={ROMANIA[edge.a].x}
+        y1={ROMANIA[edge.a].y}
+        x2={ROMANIA[edge.b].x}
+        y2={ROMANIA[edge.b].y}
+        />
+      ))}
+
+      {edgeViews.map((edge) => {
+        const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
+        const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
+        const w = labelWidth(edge.km)
+        return (
+        <g key={`km-${edge.a}-${edge.b}`} className={`edge-label edge-label-${edge.state}`}>
+          <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
+          <text x={mx} y={my} dominantBaseline="central">
+          {edge.km}
+          </text>
+        </g>
+        )
+      })}
+
+      {CITIES.map((city) => {
+        const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
+        const coord = ROMANIA[city]
+        const isHovered = city === hoveredCity
+        const isStart = city === start && !isFinalFrame
+        const isGoal = city === goal && !isFinalFrame
+        return (
+        <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
+          <title>{city}</title>
+          {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
+          {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
+          {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
+          <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+          <text x={coord.x} y={coord.y} dominantBaseline="central">
+          {cityCode(city)}
+          </text>
+        </g>
+        )
+      })}
+    </svg>
+  );
+}
+
 function App() {
   const [algo, setAlgo] = useState('bfs')
+  const [algo2, setAlgo2] = useState('bfs')
+  
   const [start, setStart] = useState<NodeId>('Arad')
   const [goal, setGoal] = useState<NodeId>('Bucharest')
   const [stepIdx, setStepIdx] = useState(0)
@@ -171,12 +242,17 @@ function App() {
   const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
 
   const meta = ALGORITHMS[algo]
+  const meta2 = ALGORITHMS[algo2]
   const result = meta.run(start, goal)
+  const result2 = meta2.run(start, goal)
   const comparison = compareAlgorithms(start, goal)
   const lastIdx = result.steps.length - 1
-  const clampedIdx = Math.min(stepIdx, Math.max(lastIdx, 0))
-  const step: Step | undefined = result.steps[clampedIdx]
-  const isFinalFrame = clampedIdx === lastIdx
+  const lastIdx2 = result2.steps.length - 1;
+  const absoluteLastIdx = Math.max(lastIdx, lastIdx2);
+  const step: Step | undefined = result.steps[Math.min(stepIdx, lastIdx)]
+  const step2: Step | undefined = result2.steps[Math.min(stepIdx, lastIdx2)]
+  const isFinalFrame = stepIdx >= lastIdx
+  const isFinalFrame2 = stepIdx >= lastIdx2
   const edgeViews = buildEdgeViews(
     step,
     result.parent,
@@ -184,18 +260,31 @@ function App() {
     result.path,
     isFinalFrame && result.found,
   )
+  const edgeViews2 = buildEdgeViews(
+    step2,
+    result2.parent,
+    start,
+    result2.path,
+    isFinalFrame2 && result2.found,
+  )
 
   useEffect(() => {
-    if (!playing || stepIdx >= lastIdx) return
+    if (!playing || stepIdx >= absoluteLastIdx) return
     const id = setTimeout(() => {
-      if (stepIdx + 1 >= lastIdx) setPlaying(false)
+      console.log(stepIdx, absoluteLastIdx);
+      if (stepIdx + 1 >= absoluteLastIdx) setPlaying(false)
       setStepIdx(stepIdx + 1)
     }, delay)
     return () => clearTimeout(id)
-  }, [playing, stepIdx, delay, lastIdx])
+  }, [playing, stepIdx, delay, absoluteLastIdx])
 
   function handleAlgoChange(next: string) {
     setAlgo(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+  function handleAlgoChange2(next: string) {
+    setAlgo2(next)
     setStepIdx(0)
     setPlaying(false)
   }
@@ -232,12 +321,12 @@ function App() {
 
   function handleStepForward() {
     setPlaying(false)
-    setStepIdx((i) => Math.min(lastIdx, i + 1))
+    setStepIdx((i) => Math.min(absoluteLastIdx, i + 1))
   }
 
   function handlePlayPause() {
-    if (clampedIdx >= lastIdx) return
-    setPlaying((p) => !p)
+    if (stepIdx >= absoluteLastIdx) return
+    setPlaying(playing => !playing)
   }
 
   const pathLabel = result.found
@@ -248,61 +337,28 @@ function App() {
     <>
     <main className="app">
       <section className="map-panel">
-        <svg
-          className="map"
-          viewBox="0 0 600 450"
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-labelledby="map-title"
-        >
-          <title id="map-title">Romania road map — {meta.label} visualizer</title>
-          <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
-
-          {edgeViews.map((edge) => (
-            <line
-              key={`road-${edge.a}-${edge.b}`}
-              className={`edge edge-${edge.state}`}
-              x1={ROMANIA[edge.a].x}
-              y1={ROMANIA[edge.a].y}
-              x2={ROMANIA[edge.b].x}
-              y2={ROMANIA[edge.b].y}
-            />
-          ))}
-
-          {edgeViews.map((edge) => {
-            const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
-            const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
-            const w = labelWidth(edge.km)
-            return (
-              <g key={`km-${edge.a}-${edge.b}`} className={`edge-label edge-label-${edge.state}`}>
-                <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
-                <text x={mx} y={my} dominantBaseline="central">
-                  {edge.km}
-                </text>
-              </g>
-            )
-          })}
-
-          {CITIES.map((city) => {
-            const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
-            const coord = ROMANIA[city]
-            const isHovered = city === hoveredCity
-            const isStart = city === start && !isFinalFrame
-            const isGoal = city === goal && !isFinalFrame
-            return (
-              <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
-                <title>{city}</title>
-                {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
-                {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
-                {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
-                <circle cx={coord.x} cy={coord.y} r={NODE_R} />
-                <text x={coord.x} y={coord.y} dominantBaseline="central">
-                  {cityCode(city)}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
+    <div className="map-container">
+      <SVGMap
+        start={start}
+        goal={goal}
+        step={step}
+        isFinalFrame={isFinalFrame}
+        result={result}
+        hoveredCity={hoveredCity}
+        meta={meta}
+        edgeViews={edgeViews}
+      />
+      <SVGMap
+        start={start}
+        goal={goal}
+        step={step2}
+        isFinalFrame={isFinalFrame2}
+        result={result2}
+        hoveredCity={hoveredCity}
+        meta={meta2}
+        edgeViews={edgeViews2}
+      />   
+    </div>
 
         <ul className="legend" aria-label="Node state colors">
           <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
@@ -322,6 +378,21 @@ function App() {
           <div className="control">
             <span id="algo-label">Algorithm</span>
             <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+              <SelectTrigger className="w-36" aria-labelledby="algo-label">
+                <SelectValue>{(v) => ALGORITHMS[v as string]?.label ?? v}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ALGORITHMS).map(([key, algoMeta]) => (
+                  <SelectItem key={key} value={key}>
+                    {algoMeta.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="control">
+            <span id="algo-label">Algorithm</span>
+            <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
               <SelectTrigger className="w-36" aria-labelledby="algo-label">
                 <SelectValue>{(v) => ALGORITHMS[v as string]?.label ?? v}</SelectValue>
               </SelectTrigger>
@@ -394,10 +465,10 @@ function App() {
           </Button>
 
           <div className="transport">
-            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
+            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={stepIdx === 0}>
               <RotateCcw aria-hidden="true" />
             </Button>
-            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={clampedIdx === 0}>
+            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
               <ChevronLeft aria-hidden="true" />
             </Button>
             <Button
@@ -405,7 +476,7 @@ function App() {
               size="icon"
               aria-label={playing ? 'Pause' : 'Play'}
               onClick={handlePlayPause}
-              disabled={clampedIdx >= lastIdx}
+              disabled={stepIdx >= absoluteLastIdx}
             >
               {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
             </Button>
@@ -414,7 +485,7 @@ function App() {
               size="icon"
               aria-label="Step forward"
               onClick={handleStepForward}
-              disabled={clampedIdx >= lastIdx}
+              disabled={stepIdx >= absoluteLastIdx}
             >
               <ChevronRight aria-hidden="true" />
             </Button>
@@ -471,7 +542,7 @@ function App() {
             <div className="stats-row">
               <dt>Step</dt>
               <dd>
-                {result.steps.length === 0 ? 0 : clampedIdx + 1} / {result.steps.length}
+                {result.steps.length === 0 ? 0 : Math.min(stepIdx, lastIdx) + 1} / {result.steps.length}
               </dd>
             </div>
             <div className="stats-row">
