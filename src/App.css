@@ -45,7 +45,7 @@
 
 .app {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr;
   gap: 32px;
   align-items: start;
   text-align: left;
@@ -61,11 +61,10 @@
   }
 }
 
-.map-panel {
+.stats-container{
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 16px;
-  min-width: 0;
 }
 
 .map-container{
@@ -77,12 +76,18 @@
   }
 }
 
+.map-panel {
+  gap: 16px;
+  min-width: 0;
+}
+
 .map {  
-  @media (max-width: 1600px and min-width: 480px) {
+  width: 100%;
+  height: auto;  
+
+  @media ((max-width: 1600px) and (min-width: 750px)) {
+    width: auto;
     height: 45vh;
-  }
-  @media (max-width: 480px){
-    width: 100%;
   }
 }
 
@@ -333,6 +338,10 @@
 .speed-value {
   font-family: var(--mono);
   color: var(--text-h);
+}
+
+.stats-panel{
+  width: 50%;
 }
 
 .stats-panel h1 {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
-import { ALGORITHMS, pathCost, type Step } from './search'
+import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -162,15 +162,26 @@ function nodeState(
 }
 
 type SVGMapParams = {
-  start: NodeId;
+  algoName: string, 
+  stepIdx: number, 
+  lastIdx: number, 
+  result: SearchResult, 
+  hoveredCity: NodeId | null, 
+  start: NodeId, 
   goal: NodeId,
-  step: Step,
-  isFinalFrame: boolean,
-  result: SearchResult,
-  hoveredCity: NodeId | null,
 };
 
-function SVGMap({meta, edgeViews, step, isFinalFrame, result, hoveredCity, start, goal}: SVGMapParams){
+function SVGMap({algoName, stepIdx, lastIdx, result, hoveredCity, start, goal}: SVGMapParams){
+  const step: Step = result.steps[Math.min(stepIdx, lastIdx)];
+  const isFinalFrame: boolean = stepIdx >= lastIdx;
+  const edgeViews: EdgeView[] = buildEdgeViews(
+    step,
+    result.parent,
+    start,
+    result.path,
+    isFinalFrame && result.found,
+  );
+  
   return(
     <svg
       className="map"
@@ -179,7 +190,7 @@ function SVGMap({meta, edgeViews, step, isFinalFrame, result, hoveredCity, start
       role="img"
       aria-labelledby="map-title"
       >
-      <title id="map-title">Romania road map — {meta.label} visualizer</title>
+      <title id="map-title">Romania road map — {algoName} visualizer</title>
       <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
 
       {edgeViews.map((edge) => (
@@ -230,6 +241,81 @@ function SVGMap({meta, edgeViews, step, isFinalFrame, result, hoveredCity, start
   );
 }
 
+type StatsCardParams = {
+  meta: AlgoMeta, 
+  footnotes: string, 
+  result: SearchResult, 
+  stepIdx: number, 
+  lastIdx: number, 
+  pathLabel: string,
+};
+function StatsCard({meta, footnotes, result, stepIdx, lastIdx, pathLabel}: StatsCardParams){
+  const step: Step = result.steps[Math.min(stepIdx, lastIdx)]; 
+  const isFinalFrame: boolean = stepIdx >= lastIdx;  
+  
+  return(
+    <Card className="stats-panel">
+      <CardContent>
+        <h1>{meta.label} Pathfinding</h1>
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Algorithm</dt>
+            <dd>{meta.label}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Time</dt>
+            <dd>{meta.time}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Space</dt>
+            <dd>{meta.space}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Optimal</dt>
+            <dd>{meta.optimal}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Complete</dt>
+            <dd>{meta.complete}</dd>
+          </div>
+        </dl>
+        <p className="footnotes">{footnotes ?? ''}</p>
+
+        <hr className="my-3 border-border" />
+
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Step</dt>
+            <dd>
+              {result.steps.length === 0 ? 0 : Math.min(stepIdx, lastIdx) + 1} / {result.steps.length}
+            </dd>
+          </div>
+          <div className="stats-row">
+            <dt>Current</dt>
+            <dd>{step?.current ?? '—'}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Visited</dt>
+            <dd>{step?.visited.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Frontier</dt>
+            <dd>{step?.frontier.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Generated</dt>
+            <dd>{result.generated}</dd>
+          </div>
+          <div className="stats-row path-row">
+            <dt>Path</dt>
+            <dd>{isFinalFrame ? pathLabel : '—'}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
 function App() {
   const [algo, setAlgo] = useState('bfs')
   const [algo2, setAlgo2] = useState('bfs')
@@ -248,35 +334,16 @@ function App() {
   const comparison = compareAlgorithms(start, goal)
   const lastIdx = result.steps.length - 1
   const lastIdx2 = result2.steps.length - 1;
-  const absoluteLastIdx = Math.max(lastIdx, lastIdx2);
-  const step: Step | undefined = result.steps[Math.min(stepIdx, lastIdx)]
-  const step2: Step | undefined = result2.steps[Math.min(stepIdx, lastIdx2)]
-  const isFinalFrame = stepIdx >= lastIdx
-  const isFinalFrame2 = stepIdx >= lastIdx2
-  const edgeViews = buildEdgeViews(
-    step,
-    result.parent,
-    start,
-    result.path,
-    isFinalFrame && result.found,
-  )
-  const edgeViews2 = buildEdgeViews(
-    step2,
-    result2.parent,
-    start,
-    result2.path,
-    isFinalFrame2 && result2.found,
-  )
+  const largerLastIdx = Math.max(lastIdx, lastIdx2);
 
   useEffect(() => {
-    if (!playing || stepIdx >= absoluteLastIdx) return
+    if (!playing || stepIdx >= largerLastIdx) return
     const id = setTimeout(() => {
-      console.log(stepIdx, absoluteLastIdx);
-      if (stepIdx + 1 >= absoluteLastIdx) setPlaying(false)
+      if (stepIdx + 1 >= largerLastIdx) setPlaying(false)
       setStepIdx(stepIdx + 1)
     }, delay)
     return () => clearTimeout(id)
-  }, [playing, stepIdx, delay, absoluteLastIdx])
+  }, [playing, stepIdx, delay, largerLastIdx])
 
   function handleAlgoChange(next: string) {
     setAlgo(next)
@@ -321,44 +388,45 @@ function App() {
 
   function handleStepForward() {
     setPlaying(false)
-    setStepIdx((i) => Math.min(absoluteLastIdx, i + 1))
+    setStepIdx((i) => Math.min(largerLastIdx, i + 1))
   }
 
   function handlePlayPause() {
-    if (stepIdx >= absoluteLastIdx) return
+    if (stepIdx >= largerLastIdx) return
     setPlaying(playing => !playing)
   }
 
-  const pathLabel = result.found
+  const pathLabel: string = result.found
     ? `${result.path.join(' → ')} (${result.path.length} cities)`
+    : '—'
+  const pathLabel2: string = result.found
+    ? `${result2.path.join(' → ')} (${result2.path.length} cities)`
     : '—'
 
   return (
     <>
     <main className="app">
       <section className="map-panel">
-    <div className="map-container">
-      <SVGMap
-        start={start}
-        goal={goal}
-        step={step}
-        isFinalFrame={isFinalFrame}
-        result={result}
-        hoveredCity={hoveredCity}
-        meta={meta}
-        edgeViews={edgeViews}
-      />
-      <SVGMap
-        start={start}
-        goal={goal}
-        step={step2}
-        isFinalFrame={isFinalFrame2}
-        result={result2}
-        hoveredCity={hoveredCity}
-        meta={meta2}
-        edgeViews={edgeViews2}
-      />   
-    </div>
+      <div className="map-container">
+        <SVGMap
+          algoName={meta.label}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx} 
+          result={result}
+          hoveredCity={hoveredCity}
+          start={start}
+          goal={goal}
+        />
+        <SVGMap
+          algoName={meta2.label}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx2} 
+          result={result2}
+          hoveredCity={hoveredCity}
+          start={start}
+          goal={goal}
+        /> 
+      </div>
 
         <ul className="legend" aria-label="Node state colors">
           <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
@@ -476,7 +544,7 @@ function App() {
               size="icon"
               aria-label={playing ? 'Pause' : 'Play'}
               onClick={handlePlayPause}
-              disabled={stepIdx >= absoluteLastIdx}
+              disabled={stepIdx >= largerLastIdx}
             >
               {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
             </Button>
@@ -485,7 +553,7 @@ function App() {
               size="icon"
               aria-label="Step forward"
               onClick={handleStepForward}
-              disabled={stepIdx >= absoluteLastIdx}
+              disabled={stepIdx >= largerLastIdx}
             >
               <ChevronRight aria-hidden="true" />
             </Button>
@@ -508,66 +576,25 @@ function App() {
           </div>
         </div>
       </section>
-
-      <Card className="stats-panel">
-        <CardContent>
-          <h1>{meta.label} Pathfinding</h1>
-          <dl className="stats">
-            <div className="stats-row">
-              <dt>Algorithm</dt>
-              <dd>{meta.label}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Time</dt>
-              <dd>{meta.time}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Space</dt>
-              <dd>{meta.space}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Optimal</dt>
-              <dd>{meta.optimal}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Complete</dt>
-              <dd>{meta.complete}</dd>
-            </div>
-          </dl>
-          <p className="footnotes">{ALGO_FOOTNOTES[algo] ?? ''}</p>
-
-          <hr className="my-3 border-border" />
-
-          <dl className="stats">
-            <div className="stats-row">
-              <dt>Step</dt>
-              <dd>
-                {result.steps.length === 0 ? 0 : Math.min(stepIdx, lastIdx) + 1} / {result.steps.length}
-              </dd>
-            </div>
-            <div className="stats-row">
-              <dt>Current</dt>
-              <dd>{step?.current ?? '—'}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Visited</dt>
-              <dd>{step?.visited.length ?? 0}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Frontier</dt>
-              <dd>{step?.frontier.length ?? 0}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Generated</dt>
-              <dd>{result.generated}</dd>
-            </div>
-            <div className="stats-row path-row">
-              <dt>Path</dt>
-              <dd>{isFinalFrame ? pathLabel : '—'}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+      
+      <div className="stats-container">
+        <StatsCard
+          meta={meta} 
+          footnotes={ALGO_FOOTNOTES[algo]}
+          result={result}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx}
+          pathLabel={pathLabel}
+        />
+        <StatsCard
+          meta={meta2} 
+          footnotes={ALGO_FOOTNOTES[algo2]}
+          result={result2}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx2}
+          pathLabel={pathLabel2}
+        /> 
+      </div>
     </main>
 
       <section className="compare-panel" aria-labelledby="compare-title">
