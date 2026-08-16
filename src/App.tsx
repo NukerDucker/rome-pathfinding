@@ -317,8 +317,8 @@ function StatsCard({meta, footnotes, result, stepIdx, lastIdx, pathLabel}: Stats
 }
 
 function App() {
-  const [algo, setAlgo] = useState('bfs')
-  const [algo2, setAlgo2] = useState('bfs')
+  const [algo, setAlgo] = useState('greedy')
+  const [algo2, setAlgo2] = useState('greedy')
   
   const [start, setStart] = useState<NodeId>('Arad')
   const [goal, setGoal] = useState<NodeId>('Bucharest')
