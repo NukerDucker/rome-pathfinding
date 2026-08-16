@@ -73,6 +73,27 @@ for a, b, d in edges:
     edge_dist[(a, b)] = edge_dist[(b, a)] = d
 
 
+# ============================================================================
+# Solve the vector-decomposition LP for one ordered city pair.
+#
+#   minimize  Σ αᵢ · kmᵢ
+#   subject to  Σ αᵢ · vecᵢ = chord_AB,   0 ≤ αᵢ ≤ 1
+#
+# The LP finds the cheapest mix of directed road vectors whose sum exactly
+# reproduces the start→goal chord.  Because the real road path is itself
+# one feasible mix (α = 1 on its edges), the optimum is a lower bound on
+# the true road distance — that is the admissibility guarantee A* needs.
+#
+# Example — Arad (773, 874) → Bucharest (2441, 1760):
+#   chord = (2441 − 773, 1760 − 874) = (1668, 886)
+#   the LP combines the 46 directed road vectors to reproduce (1668, 886)
+#   as cheaply as possible; HiGHS returns ≈ 388.2 km, which is ≤ the true
+#   418 km road (Arad → Sibiu → Rimnicu Vilcea → Pitesti → Bucharest).
+#
+# Returns the LP optimum in km.  Raises RuntimeError if the LP is
+# infeasible — every chord is decomposable on a connected map, so a
+# failure here means bad input data, not a legitimately unsolvable case.
+# ============================================================================
 def lp_value(a: str, b: str) -> float:
     ca, cb = coords[a], coords[b]
     res = linprog(
@@ -87,6 +108,23 @@ def lp_value(a: str, b: str) -> float:
     return float(res.fun)
 
 
+# ============================================================================
+# Final heuristic value for one pair, with the adjacency shortcut applied.
+#
+#   h(a, b) = 0                  if a == b
+#             exact road km     if a and b share a single road
+#             LP optimum        otherwise (see lp_value above)
+#
+# Examples:
+#   h_raw('Arad', 'Arad')        → 0.0      (same city — trivially zero)
+#   h_raw('Arad', 'Sibiu')       → 140.0    (direct road — exact km)
+#   h_raw('Arad', 'Bucharest')   → ≈388.2   (LP over all 46 vectors)
+#
+# Why the shortcut?  The LP for an adjacent pair can undercut the road
+# km (e.g. the LP gives ≈122.9 for Arad→Sibiu).  Returning the exact
+# road km instead is a strictly stronger — and still admissible —
+# heuristic, because a direct road is a real path of exactly that cost.
+# ============================================================================
 def h_raw(a: str, b: str) -> float:
     if a == b:
         return 0.0
@@ -114,6 +152,19 @@ for k in range(n):
 pairs = [(cities[i], cities[j]) for i in range(n) for j in range(i + 1, n)]
 
 
+# ============================================================================
+# Build the final table at a given decimal precision, keyed in BOTH
+# directions so the TypeScript lookup needs no direction logic.
+#
+# Example (dp=2):  h_raw('Arad', 'Bucharest') = 388.205326…
+#                  → rounded to 388.21, stored under both
+#                    ('Arad', 'Bucharest') and ('Bucharest', 'Arad')
+#
+# Rounding happens here, BEFORE the admissibility re-check below: a value
+# rounded UP could in principle creep above the true road distance, so
+# the caller regenerates at dp=4 if any violation appears (still compact,
+# and the guarantee holds for the exact numbers that ship in the table).
+# ============================================================================
 def rounded_table(dp: int):
     out = {}
     for a, b in pairs:
