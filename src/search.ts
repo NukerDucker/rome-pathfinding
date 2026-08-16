@@ -1,6 +1,4 @@
 import { ROMANIA, type NodeId } from './romania'
-import { bfs } from './bfs'
-import { dfs } from './dfs'
 import { greedy } from './greedy'
 import { astar } from './astar'
 
