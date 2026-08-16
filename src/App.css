@@ -102,24 +102,24 @@
 
 .edge-base {
   stroke: var(--map-road);
-  stroke-width: 1.5;
+  stroke-width: 8;
 }
 
 .edge-tree {
   stroke: var(--map-accent);
-  stroke-width: 4;
+  stroke-width: 15;
 }
 
 .edge-path {
   stroke: var(--state-path);
-  stroke-width: 4.5;
+  stroke-width: 22;
 }
 
 /* Distance pill straddling the midpoint of each road. */
 .edge-label rect {
   fill: var(--bg);
   stroke: var(--map-road);
-  stroke-width: 1;
+  stroke-width: 4;
   transition:
     fill 0.15s,
     stroke 0.15s;
@@ -127,7 +127,7 @@
 
 .edge-label text {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 42px;
   fill: var(--text-h);
   text-anchor: middle;
   pointer-events: none;
@@ -153,7 +153,7 @@
 
 .node circle {
   stroke: var(--map-road);
-  stroke-width: 1.2;
+  stroke-width: 6;
   transition:
     fill 0.15s,
     stroke 0.15s;
@@ -163,7 +163,7 @@
 .node text {
   fill: var(--text-h);
   font-family: var(--serif);
-  font-size: 13px;
+  font-size: 60px;
   text-anchor: middle;
   pointer-events: none;
 }
@@ -184,7 +184,7 @@
 .node-current circle {
   fill: var(--state-current);
   stroke: var(--node-current-ring);
-  stroke-width: 2;
+  stroke-width: 8;
 }
 
 .node-current text {
@@ -212,21 +212,21 @@
 .node-glow {
   fill: none;
   stroke: var(--map-accent);
-  stroke-width: 5;
+  stroke-width: 18;
   opacity: 0.55;
-  filter: blur(3px);
+  filter: blur(12px);
   animation: node-glow-pulse 1.1s ease-in-out infinite;
   pointer-events: none;
 }
 
 .node-hover circle:not(.node-glow):not(.marker-ring) {
   stroke: var(--map-accent);
-  stroke-width: 2.5;
+  stroke-width: 10;
 }
 
 .marker-ring {
   fill: none;
-  stroke-width: 2;
+  stroke-width: 8;
   pointer-events: none;
 }
 
@@ -241,11 +241,11 @@
 @keyframes node-glow-pulse {
   0%,
   100% {
-    r: 12.5;
+    r: 82;
     opacity: 0.55;
   }
   50% {
-    r: 15;
+    r: 98;
     opacity: 0.85;
   }
 }
