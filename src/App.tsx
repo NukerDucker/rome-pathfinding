@@ -24,10 +24,10 @@ type EdgeState = 'base' | 'tree' | 'path'
 type EdgePair = { a: NodeId; b: NodeId; km: number }
 type EdgeView = EdgePair & { state: EdgeState }
 
-// Map geometry (SVG user units, viewBox 0 0 600 450).
-const NODE_R = 11
-const LABEL_H = 13
-const LABEL_RX = 3.5
+// Map geometry (SVG user units, viewBox 600 300 2800 1900).
+const NODE_R = 50
+const LABEL_H = 65
+const LABEL_RX = 18
 // Later states paint over earlier ones, so a road on the solution path wins.
 const EDGE_ORDER: Record<EdgeState, number> = { base: 0, tree: 1, path: 2 }
 
@@ -135,7 +135,7 @@ function buildEdgeViews(
 
 // Pill width tracks digit count so 2- and 3-digit distances both sit snugly.
 function labelWidth(km: number): number {
-  return 12 + String(km).length * 5.5
+  return 60 + String(km).length * 27.5
 }
 
 // Random start/goal pair. Drawing the goal from the cities minus the chosen
@@ -185,13 +185,13 @@ function SVGMap({algoName, stepIdx, lastIdx, result, hoveredCity, start, goal}: 
   return(
     <svg
       className="map"
-      viewBox="0 0 600 450"
+      viewBox="600 300 2800 1900"
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-labelledby="map-title"
       >
       <title id="map-title">Romania road map — {algoName} visualizer</title>
-      <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
+      <rect className="map-bg" x={625} y={325} width={2750} height={1850} rx={80} />
 
       {edgeViews.map((edge) => (
         <line
@@ -228,8 +228,8 @@ function SVGMap({algoName, stepIdx, lastIdx, result, hoveredCity, start, goal}: 
         <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
           <title>{city}</title>
           {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
-          {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
-          {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
+          {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
+          {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
           <circle cx={coord.x} cy={coord.y} r={NODE_R} />
           <text x={coord.x} y={coord.y} dominantBaseline="central">
           {cityCode(city)}
@@ -317,8 +317,8 @@ function StatsCard({meta, footnotes, result, stepIdx, lastIdx, pathLabel}: Stats
 }
 
 function App() {
-  const [algo, setAlgo] = useState('bfs')
-  const [algo2, setAlgo2] = useState('bfs')
+  const [algo, setAlgo] = useState('greedy')
+  const [algo2, setAlgo2] = useState('greedy')
   
   const [start, setStart] = useState<NodeId>('Arad')
   const [goal, setGoal] = useState<NodeId>('Bucharest')

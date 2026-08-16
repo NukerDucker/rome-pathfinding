@@ -5,7 +5,6 @@ export type NodeId = string
 export type Edge = { to: NodeId; km: number }
 export type City = { x: number; y: number; edges: Edge[] }
 
-// Entered once per direction; buildRomania() mirrors each edge.
 type RawEdge = [NodeId, NodeId, number]
 
 const RAW_EDGES: RawEdge[] = [
@@ -34,31 +33,28 @@ const RAW_EDGES: RawEdge[] = [
   ['Iasi', 'Neamt', 87],
 ]
 
-// Schematic x,y coords for a 600x450 viewBox, textbook layout, spread to fill
-// the map panel edge-to-edge (22 units of gutter for the selection rings).
-// Roads are short in the Timisoara->Drobeta chain, so the extra spacing is what
-// keeps a selection ring from swallowing the distance pill on those segments.
+// Schematic x,y coords
 const COORDS: Record<NodeId, { x: number; y: number }> = {
-  Oradea: { x: 73, y: 28 },
-  Zerind: { x: 46, y: 77 },
-  Arad: { x: 28, y: 131 },
-  Timisoara: { x: 32, y: 235 },
-  Lugoj: { x: 108, y: 281 },
-  Mehadia: { x: 113, y: 330 },
-  Drobeta: { x: 114, y: 379 },
-  Craiova: { x: 212, y: 398 },
-  Sibiu: { x: 157, y: 180 },
-  'Rimnicu Vilcea': { x: 190, y: 242 },
-  Fagaras: { x: 279, y: 188 },
-  Pitesti: { x: 288, y: 295 },
-  Bucharest: { x: 380, y: 347 },
-  Giurgiu: { x: 352, y: 422 },
-  Urziceni: { x: 449, y: 313 },
-  Hirsova: { x: 537, y: 318 },
-  Eforie: { x: 572, y: 389 },
-  Vaslui: { x: 505, y: 195 },
-  Iasi: { x: 469, y: 114 },
-  Neamt: { x: 398, y: 73 },
+  Oradea: { x: 985, y: 446 },
+  Neamt: { x: 2471, y: 630 },
+  Zerind: { x: 865, y: 658 },
+  Iasi: { x: 2837, y: 796 },
+  Arad: { x: 773, y: 874 },
+  Sibiu: { x: 1401, y: 1058 },
+  Fagaras: { x: 1935, y: 1102 },
+  Vaslui: { x: 3029, y: 1128 },
+  Timisoara: { x: 789, y: 1314 },
+  'Rimnicu Vilcea': { x: 1539, y: 1314 },
+  Lugoj: { x: 1171, y: 1486 },
+  Pitesti: { x: 2011, y: 1546 },
+  Urziceni: { x: 2745, y: 1636 },
+  Hirsova: { x: 3159, y: 1636 },
+  Mehadia: { x: 1187, y: 1696 },
+  Bucharest: { x: 2441, y: 1760 },
+  Drobeta: { x: 1171, y: 1910 },
+  Eforie: { x: 3313, y: 1942 },
+  Craiova: { x: 1643, y: 1974 },
+  Giurgiu: { x: 2301, y: 2062 },
 }
 
 // Single-letter map glyph, drawn inside the node circle. Every city in the
@@ -86,8 +82,6 @@ function buildRomania(): Record<NodeId, City> {
 export const ROMANIA: Record<NodeId, City> = buildRomania()
 export const CITIES: NodeId[] = Object.keys(ROMANIA).sort()
 
-// Self-check: adjacency symmetric (A->B km === B->A km), every neighbor exists,
-// and every city glyph is unique (the map draws initials, not full names).
 function selfCheck(): void {
   const codes = new Map<string, NodeId>()
   for (const id of CITIES) {
