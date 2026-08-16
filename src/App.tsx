@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
-import { ALGORITHMS, pathCost, type Step } from './search'
+import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -161,8 +161,165 @@ function nodeState(
   return 'unvisited'
 }
 
+type SVGMapParams = {
+  algoName: string, 
+  stepIdx: number, 
+  lastIdx: number, 
+  result: SearchResult, 
+  hoveredCity: NodeId | null, 
+  start: NodeId, 
+  goal: NodeId,
+};
+
+function SVGMap({algoName, stepIdx, lastIdx, result, hoveredCity, start, goal}: SVGMapParams){
+  const step: Step = result.steps[Math.min(stepIdx, lastIdx)];
+  const isFinalFrame: boolean = stepIdx >= lastIdx;
+  const edgeViews: EdgeView[] = buildEdgeViews(
+    step,
+    result.parent,
+    start,
+    result.path,
+    isFinalFrame && result.found,
+  );
+  
+  return(
+    <svg
+      className="map"
+      viewBox="0 0 600 450"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-labelledby="map-title"
+      >
+      <title id="map-title">Romania road map — {algoName} visualizer</title>
+      <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
+
+      {edgeViews.map((edge) => (
+        <line
+        key={`road-${edge.a}-${edge.b}`}
+        className={`edge edge-${edge.state}`}
+        x1={ROMANIA[edge.a].x}
+        y1={ROMANIA[edge.a].y}
+        x2={ROMANIA[edge.b].x}
+        y2={ROMANIA[edge.b].y}
+        />
+      ))}
+
+      {edgeViews.map((edge) => {
+        const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
+        const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
+        const w = labelWidth(edge.km)
+        return (
+        <g key={`km-${edge.a}-${edge.b}`} className={`edge-label edge-label-${edge.state}`}>
+          <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
+          <text x={mx} y={my} dominantBaseline="central">
+          {edge.km}
+          </text>
+        </g>
+        )
+      })}
+
+      {CITIES.map((city) => {
+        const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
+        const coord = ROMANIA[city]
+        const isHovered = city === hoveredCity
+        const isStart = city === start && !isFinalFrame
+        const isGoal = city === goal && !isFinalFrame
+        return (
+        <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
+          <title>{city}</title>
+          {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
+          {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
+          {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
+          <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+          <text x={coord.x} y={coord.y} dominantBaseline="central">
+          {cityCode(city)}
+          </text>
+        </g>
+        )
+      })}
+    </svg>
+  );
+}
+
+type StatsCardParams = {
+  meta: AlgoMeta, 
+  footnotes: string, 
+  result: SearchResult, 
+  stepIdx: number, 
+  lastIdx: number, 
+  pathLabel: string,
+};
+function StatsCard({meta, footnotes, result, stepIdx, lastIdx, pathLabel}: StatsCardParams){
+  const step: Step = result.steps[Math.min(stepIdx, lastIdx)]; 
+  const isFinalFrame: boolean = stepIdx >= lastIdx;  
+  
+  return(
+    <Card className="stats-panel">
+      <CardContent>
+        <h1>{meta.label} Pathfinding</h1>
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Algorithm</dt>
+            <dd>{meta.label}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Time</dt>
+            <dd>{meta.time}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Space</dt>
+            <dd>{meta.space}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Optimal</dt>
+            <dd>{meta.optimal}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Complete</dt>
+            <dd>{meta.complete}</dd>
+          </div>
+        </dl>
+        <p className="footnotes">{footnotes ?? ''}</p>
+
+        <hr className="my-3 border-border" />
+
+        <dl className="stats">
+          <div className="stats-row">
+            <dt>Step</dt>
+            <dd>
+              {result.steps.length === 0 ? 0 : Math.min(stepIdx, lastIdx) + 1} / {result.steps.length}
+            </dd>
+          </div>
+          <div className="stats-row">
+            <dt>Current</dt>
+            <dd>{step?.current ?? '—'}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Visited</dt>
+            <dd>{step?.visited.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Frontier</dt>
+            <dd>{step?.frontier.length ?? 0}</dd>
+          </div>
+          <div className="stats-row">
+            <dt>Generated</dt>
+            <dd>{result.generated}</dd>
+          </div>
+          <div className="stats-row path-row">
+            <dt>Path</dt>
+            <dd>{isFinalFrame ? pathLabel : '—'}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
 function App() {
   const [algo, setAlgo] = useState('bfs')
+  const [algo2, setAlgo2] = useState('bfs')
+  
   const [start, setStart] = useState<NodeId>('Arad')
   const [goal, setGoal] = useState<NodeId>('Bucharest')
   const [stepIdx, setStepIdx] = useState(0)
@@ -171,31 +328,30 @@ function App() {
   const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
 
   const meta = ALGORITHMS[algo]
+  const meta2 = ALGORITHMS[algo2]
   const result = meta.run(start, goal)
+  const result2 = meta2.run(start, goal)
   const comparison = compareAlgorithms(start, goal)
   const lastIdx = result.steps.length - 1
-  const clampedIdx = Math.min(stepIdx, Math.max(lastIdx, 0))
-  const step: Step | undefined = result.steps[clampedIdx]
-  const isFinalFrame = clampedIdx === lastIdx
-  const edgeViews = buildEdgeViews(
-    step,
-    result.parent,
-    start,
-    result.path,
-    isFinalFrame && result.found,
-  )
+  const lastIdx2 = result2.steps.length - 1;
+  const largerLastIdx = Math.max(lastIdx, lastIdx2);
 
   useEffect(() => {
-    if (!playing || stepIdx >= lastIdx) return
+    if (!playing || stepIdx >= largerLastIdx) return
     const id = setTimeout(() => {
-      if (stepIdx + 1 >= lastIdx) setPlaying(false)
+      if (stepIdx + 1 >= largerLastIdx) setPlaying(false)
       setStepIdx(stepIdx + 1)
     }, delay)
     return () => clearTimeout(id)
-  }, [playing, stepIdx, delay, lastIdx])
+  }, [playing, stepIdx, delay, largerLastIdx])
 
   function handleAlgoChange(next: string) {
     setAlgo(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+  function handleAlgoChange2(next: string) {
+    setAlgo2(next)
     setStepIdx(0)
     setPlaying(false)
   }
@@ -232,77 +388,45 @@ function App() {
 
   function handleStepForward() {
     setPlaying(false)
-    setStepIdx((i) => Math.min(lastIdx, i + 1))
+    setStepIdx((i) => Math.min(largerLastIdx, i + 1))
   }
 
   function handlePlayPause() {
-    if (clampedIdx >= lastIdx) return
-    setPlaying((p) => !p)
+    if (stepIdx >= largerLastIdx) return
+    setPlaying(playing => !playing)
   }
 
-  const pathLabel = result.found
+  const pathLabel: string = result.found
     ? `${result.path.join(' → ')} (${result.path.length} cities)`
+    : '—'
+  const pathLabel2: string = result.found
+    ? `${result2.path.join(' → ')} (${result2.path.length} cities)`
     : '—'
 
   return (
     <>
     <main className="app">
       <section className="map-panel">
-        <svg
-          className="map"
-          viewBox="0 0 600 450"
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-labelledby="map-title"
-        >
-          <title id="map-title">Romania road map — {meta.label} visualizer</title>
-          <rect className="map-bg" x={6} y={6} width={588} height={438} rx={20} />
-
-          {edgeViews.map((edge) => (
-            <line
-              key={`road-${edge.a}-${edge.b}`}
-              className={`edge edge-${edge.state}`}
-              x1={ROMANIA[edge.a].x}
-              y1={ROMANIA[edge.a].y}
-              x2={ROMANIA[edge.b].x}
-              y2={ROMANIA[edge.b].y}
-            />
-          ))}
-
-          {edgeViews.map((edge) => {
-            const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
-            const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
-            const w = labelWidth(edge.km)
-            return (
-              <g key={`km-${edge.a}-${edge.b}`} className={`edge-label edge-label-${edge.state}`}>
-                <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
-                <text x={mx} y={my} dominantBaseline="central">
-                  {edge.km}
-                </text>
-              </g>
-            )
-          })}
-
-          {CITIES.map((city) => {
-            const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
-            const coord = ROMANIA[city]
-            const isHovered = city === hoveredCity
-            const isStart = city === start && !isFinalFrame
-            const isGoal = city === goal && !isFinalFrame
-            return (
-              <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
-                <title>{city}</title>
-                {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
-                {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={15} />}
-                {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={13} />}
-                <circle cx={coord.x} cy={coord.y} r={NODE_R} />
-                <text x={coord.x} y={coord.y} dominantBaseline="central">
-                  {cityCode(city)}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
+      <div className="map-container">
+        <SVGMap
+          algoName={meta.label}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx} 
+          result={result}
+          hoveredCity={hoveredCity}
+          start={start}
+          goal={goal}
+        />
+        <SVGMap
+          algoName={meta2.label}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx2} 
+          result={result2}
+          hoveredCity={hoveredCity}
+          start={start}
+          goal={goal}
+        /> 
+      </div>
 
         <ul className="legend" aria-label="Node state colors">
           <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
@@ -322,6 +446,21 @@ function App() {
           <div className="control">
             <span id="algo-label">Algorithm</span>
             <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+              <SelectTrigger className="w-36" aria-labelledby="algo-label">
+                <SelectValue>{(v) => ALGORITHMS[v as string]?.label ?? v}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ALGORITHMS).map(([key, algoMeta]) => (
+                  <SelectItem key={key} value={key}>
+                    {algoMeta.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="control">
+            <span id="algo-label">Algorithm</span>
+            <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
               <SelectTrigger className="w-36" aria-labelledby="algo-label">
                 <SelectValue>{(v) => ALGORITHMS[v as string]?.label ?? v}</SelectValue>
               </SelectTrigger>
@@ -394,10 +533,10 @@ function App() {
           </Button>
 
           <div className="transport">
-            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={clampedIdx === 0}>
+            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={stepIdx === 0}>
               <RotateCcw aria-hidden="true" />
             </Button>
-            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={clampedIdx === 0}>
+            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
               <ChevronLeft aria-hidden="true" />
             </Button>
             <Button
@@ -405,7 +544,7 @@ function App() {
               size="icon"
               aria-label={playing ? 'Pause' : 'Play'}
               onClick={handlePlayPause}
-              disabled={clampedIdx >= lastIdx}
+              disabled={stepIdx >= largerLastIdx}
             >
               {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
             </Button>
@@ -414,7 +553,7 @@ function App() {
               size="icon"
               aria-label="Step forward"
               onClick={handleStepForward}
-              disabled={clampedIdx >= lastIdx}
+              disabled={stepIdx >= largerLastIdx}
             >
               <ChevronRight aria-hidden="true" />
             </Button>
@@ -437,66 +576,25 @@ function App() {
           </div>
         </div>
       </section>
-
-      <Card className="stats-panel">
-        <CardContent>
-          <h1>{meta.label} Pathfinding</h1>
-          <dl className="stats">
-            <div className="stats-row">
-              <dt>Algorithm</dt>
-              <dd>{meta.label}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Time</dt>
-              <dd>{meta.time}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Space</dt>
-              <dd>{meta.space}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Optimal</dt>
-              <dd>{meta.optimal}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Complete</dt>
-              <dd>{meta.complete}</dd>
-            </div>
-          </dl>
-          <p className="footnotes">{ALGO_FOOTNOTES[algo] ?? ''}</p>
-
-          <hr className="my-3 border-border" />
-
-          <dl className="stats">
-            <div className="stats-row">
-              <dt>Step</dt>
-              <dd>
-                {result.steps.length === 0 ? 0 : clampedIdx + 1} / {result.steps.length}
-              </dd>
-            </div>
-            <div className="stats-row">
-              <dt>Current</dt>
-              <dd>{step?.current ?? '—'}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Visited</dt>
-              <dd>{step?.visited.length ?? 0}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Frontier</dt>
-              <dd>{step?.frontier.length ?? 0}</dd>
-            </div>
-            <div className="stats-row">
-              <dt>Generated</dt>
-              <dd>{result.generated}</dd>
-            </div>
-            <div className="stats-row path-row">
-              <dt>Path</dt>
-              <dd>{isFinalFrame ? pathLabel : '—'}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+      
+      <div className="stats-container">
+        <StatsCard
+          meta={meta} 
+          footnotes={ALGO_FOOTNOTES[algo]}
+          result={result}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx}
+          pathLabel={pathLabel}
+        />
+        <StatsCard
+          meta={meta2} 
+          footnotes={ALGO_FOOTNOTES[algo2]}
+          result={result2}
+          stepIdx={stepIdx}
+          lastIdx={lastIdx2}
+          pathLabel={pathLabel2}
+        /> 
+      </div>
     </main>
 
       <section className="compare-panel" aria-labelledby="compare-title">
