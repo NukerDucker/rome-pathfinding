@@ -1,4 +1,6 @@
 import { ROMANIA, type NodeId } from './romania'
+import { bfs } from './bfs'
+import { dfs } from './dfs'
 import { greedy } from './greedy'
 import { astar } from './astar'
 import { ucs } from './ucs'
@@ -51,6 +53,8 @@ export function pathCost(path: NodeId[]): number {
 }
 
 export const ALGORITHMS: Record<string, AlgoMeta> = {
+  bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes' },
+  dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(bm)', optimal: 'No', complete: 'No*' },
   greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*' },
   astar: { label: 'A*', run: astar, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
   ucs: { label: 'UCS', run: ucs, time: 'O(b^(1+floor(C*/e)))', space: 'O(b^(1+floor(C*/e)))', optimal: 'Yes', complete: 'Yes' },

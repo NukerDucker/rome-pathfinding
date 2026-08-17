@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
@@ -179,16 +179,17 @@ function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boole
 }
 
 type SVGMapParams = {
-  algoName: string
+  algoKey: string
   stepIdx: number
   lastIdx: number
   result: SearchResult
   hoveredCity: NodeId | null
   start: NodeId
   goal: NodeId
+  showArc: boolean
 }
 
-function SVGMap({ algoName, stepIdx, lastIdx, result, hoveredCity, start, goal }: SVGMapParams) {
+function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showArc }: SVGMapParams) {
   const step: Step = result.steps[Math.min(stepIdx, lastIdx)]
   const isFinalFrame: boolean = stepIdx >= lastIdx
   const edgeViews: EdgeView[] = buildEdgeViews(
@@ -201,7 +202,7 @@ function SVGMap({ algoName, stepIdx, lastIdx, result, hoveredCity, start, goal }
       viewBox="600 300 2800 1900"
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label={`Romania road map — ${algoName} visualizer`}
+      aria-label={`Romania road map — ${ALGORITHMS[algoKey]?.label ?? algoKey} visualizer`}
     >
       <rect className="map-bg" x={625} y={325} width={2750} height={1850} rx={80} />
 
@@ -214,7 +215,7 @@ function SVGMap({ algoName, stepIdx, lastIdx, result, hoveredCity, start, goal }
         />
       ))}
 
-      {(algoName === 'Greedy' || algoName === 'A*') && renderArcEdges(start, goal)}
+      {showArc && (algoKey === 'greedy' || algoKey === 'astar') && renderArcEdges(start, goal)}
 
       {edgeViews.map((edge) => {
         const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
@@ -314,12 +315,14 @@ function App() {
   const [playing, setPlaying] = useState(false)
   const [delay, setDelay] = useState(DEFAULT_DELAY)
   const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
+  const [showArc, setShowArc] = useState(false)
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
-  const result = meta.run(start, goal)
-  const result2 = meta2.run(start, goal)
-  const comparison = compareAlgorithms(start, goal)
+  // ponytail: memo gates the 1600+ graph searches on start/goal only, not every render
+  const result = useMemo(() => meta.run(start, goal), [meta, start, goal])
+  const result2 = useMemo(() => meta2.run(start, goal), [meta2, start, goal])
+  const comparison = useMemo(() => compareAlgorithms(start, goal), [start, goal])
   const lastIdx = result.steps.length - 1
   const lastIdx2 = result2.steps.length - 1
   const largerLastIdx = Math.max(lastIdx, lastIdx2)
@@ -350,7 +353,7 @@ function App() {
   function handleStepBack() { setPlaying(false); setStepIdx((i) => Math.max(0, i - 1)) }
   function handleStepForward() { setPlaying(false); setStepIdx((i) => Math.min(largerLastIdx, i + 1)) }
   function handlePlayPause() {
-    if (stepIdx >= largerLastIdx) return
+    if (stepIdx >= largerLastIdx) { setStepIdx(0); setPlaying(true); return }
     setPlaying((p) => !p)
   }
 
@@ -366,7 +369,7 @@ function App() {
     <>
       <header className="app-header">
         <div className="app-header-brand">
-          <span className="app-title">Romania Search Lab</span>
+          <h1 className="app-title">Romania Search Lab</h1>
           <span className="app-subtitle">Uninformed &amp; informed search · AIMA Romania map</span>
         </div>
         <div className="app-header-controls">
@@ -428,7 +431,7 @@ function App() {
               <span id="algo-label-a" className="control-label">Algorithm</span>
               <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
                 <SelectTrigger className="w-40" aria-labelledby="algo-label-a">
-                  <span>{ALGORITHMS[algo]?.label ?? algo}</span>
+                  <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(ALGORITHMS).map(([key, m]) => (
@@ -439,8 +442,8 @@ function App() {
               <span className="lane-complexity">{meta.time}</span>
             </div>
             <SVGMap
-              algoName={meta.label} stepIdx={stepIdx} lastIdx={lastIdx}
-              result={result} hoveredCity={hoveredCity} start={start} goal={goal}
+              algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
+              result={result} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
             />
             <StatsCard
               meta={meta} footnotes={ALGO_FOOTNOTES[algo]}
@@ -457,7 +460,7 @@ function App() {
               <span id="algo-label-b" className="control-label">Algorithm</span>
               <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
                 <SelectTrigger className="w-40" aria-labelledby="algo-label-b">
-                  <span>{ALGORITHMS[algo2]?.label ?? algo2}</span>
+                  <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(ALGORITHMS).map(([key, m]) => (
@@ -468,8 +471,8 @@ function App() {
               <span className="lane-complexity">{meta2.time}</span>
             </div>
             <SVGMap
-              algoName={meta2.label} stepIdx={stepIdx} lastIdx={lastIdx2}
-              result={result2} hoveredCity={hoveredCity} start={start} goal={goal}
+              algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
+              result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
             />
             <StatsCard
               meta={meta2} footnotes={ALGO_FOOTNOTES[algo2]}
@@ -488,6 +491,19 @@ function App() {
             <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
             <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
             <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+            <li>
+              <Button
+                variant={showArc ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowArc(v => !v)}
+                aria-pressed={showArc}
+                title="Toggle heuristic arc overlay (Greedy / A* only)"
+                className="arc-toggle-btn"
+              >
+                <span className="swatch swatch-arc" aria-hidden="true" />
+                Arc overlay
+              </Button>
+            </li>
           </ul>
 
           <div className="transport">
@@ -501,7 +517,7 @@ function App() {
               variant="outline" size="icon"
               aria-label={playing ? 'Pause' : 'Play'}
               onClick={handlePlayPause}
-              disabled={stepIdx >= largerLastIdx}
+              disabled={false}
             >
               {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
             </Button>
@@ -524,7 +540,6 @@ function App() {
             />
           </div>
         </div>
-      </main>
 
       <section className="compare-panel" aria-labelledby="compare-title">
         <Card>
@@ -572,6 +587,7 @@ function App() {
           </CardContent>
         </Card>
       </section>
+      </main>
     </>
   )
 }

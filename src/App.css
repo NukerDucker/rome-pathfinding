@@ -70,6 +70,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-h);
+  margin: 0;
+  line-height: 1.2;
 }
 
 .app-subtitle {
@@ -463,6 +465,15 @@
 .swatch-unvisited { background: var(--bg); }
 .swatch-start-ring { background: transparent; border-color: var(--marker-start); border-width: 2px; }
 .swatch-goal-ring { background: transparent; border-color: var(--marker-goal); border-width: 2px; }
+.swatch-arc { background: #f5c518; border-color: #f5c518; }
+
+/* Arc overlay toggle — shadcn Button, sits inline in legend */
+.arc-toggle-btn {
+  font-size: 11px;
+  gap: 5px;
+  height: auto;
+  padding: 2px 8px;
+}
 
 /* ── Transport controls ──────────────────────────────────────────────── */
 .transport {
