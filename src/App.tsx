@@ -17,6 +17,10 @@ import './App.css'
 const ALGO_FOOTNOTES: Record<string, string> = {
   bfs: '*Optimal if step costs are equal. *Complete if branching factor b is finite.',
   dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
+  greedy: '*Not optimal — ignores path cost so far. *Complete if branching factor b is finite (graph-search avoids cycles).',
+  astar: '*Optimal if the heuristic is admissible (elliptical-arc heuristic, verified admissible). *Complete if branching factor b is finite.',
+  ucs: 'Optimal and complete for non-negative step costs (graph-search, Dijkstra-equivalent).',
+  biucs: 'Optimal and complete for non-negative step costs — searches from both ends and meets in the middle.',
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
@@ -28,6 +32,44 @@ type EdgeView = EdgePair & { state: EdgeState }
 const NODE_R = 50
 const LABEL_H = 65
 const LABEL_RX = 18
+
+// Elliptical-arc heuristic overlay — illustrative, shown for greedy/astar.
+// Bulge params are chord-relative ratios; geometry uses ROMANIA coords directly.
+const ARC_BASE_BULGE = 0.02
+const ARC_BULGE_SCALE = 0.07
+const ARC_BULGE_CAP = 0.08
+
+function mapArcGeometry(start: NodeId, goal: NodeId) {
+  const ca = ROMANIA[start], cb = ROMANIA[goal]
+  const dx = cb.x - ca.x, dy = cb.y - ca.y
+  const chord = Math.hypot(dx, dy)
+  if (chord === 0) return null
+  const a = chord / 2, mx = ca.x + dx / 2, my = ca.y + dy / 2
+  const ux = dx / chord, uy = dy / chord
+  const bucharest = ROMANIA['Bucharest']
+  const vx = bucharest.x - mx, vy = bucharest.y - my
+  const dbuc = Math.hypot(vx, vy)
+  const bf = Math.min(ARC_BASE_BULGE + ARC_BULGE_SCALE * dbuc / chord, ARC_BULGE_CAP)
+  const b = chord * bf, wLen = dbuc || 1
+  return { mx, my, a, b, ux, uy, wx: vx / wLen, wy: vy / wLen }
+}
+
+function renderArcEdges(start: NodeId, goal: NodeId) {
+  const g = mapArcGeometry(start, goal)
+  if (!g) return null
+  const ca = ROMANIA[start], cb = ROMANIA[goal]
+  let pts = ''
+  const STEPS = 50
+  for (let i = 0; i <= STEPS; i++) {
+    const t = Math.PI * i / STEPS
+    const ct = Math.cos(t), st = Math.sin(t)
+    pts += (g.mx + g.a * ct * g.ux + g.b * st * g.wx) + ',' + (g.my + g.a * ct * g.uy + g.b * st * g.wy) + ' '
+  }
+  return [
+    <line key="arc-chord" className="edge-arc-chord" x1={ca.x} y1={ca.y} x2={cb.x} y2={cb.y} />,
+    <polyline key="arc-curve" className="edge-arc" points={pts.trim()} />,
+  ]
+}
 // Later states paint over earlier ones, so a road on the solution path wins.
 const EDGE_ORDER: Record<EdgeState, number> = { base: 0, tree: 1, path: 2 }
 
@@ -203,6 +245,8 @@ function SVGMap({algoName, stepIdx, lastIdx, result, hoveredCity, start, goal}: 
         y2={ROMANIA[edge.b].y}
         />
       ))}
+
+      {(algoName === 'Greedy' || algoName === 'A*') && renderArcEdges(start, goal)}
 
       {edgeViews.map((edge) => {
         const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
@@ -411,7 +455,7 @@ function App() {
         <SVGMap
           algoName={meta.label}
           stepIdx={stepIdx}
-          lastIdx={lastIdx} 
+          lastIdx={lastIdx}
           result={result}
           hoveredCity={hoveredCity}
           start={start}
@@ -420,12 +464,12 @@ function App() {
         <SVGMap
           algoName={meta2.label}
           stepIdx={stepIdx}
-          lastIdx={lastIdx2} 
+          lastIdx={lastIdx2}
           result={result2}
           hoveredCity={hoveredCity}
           start={start}
           goal={goal}
-        /> 
+        />
       </div>
 
         <ul className="legend" aria-label="Node state colors">

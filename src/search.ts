@@ -1,6 +1,8 @@
 import { ROMANIA, type NodeId } from './romania'
 import { greedy } from './greedy'
 import { astar } from './astar'
+import { ucs } from './ucs'
+import { biucs } from './biucs'
 
 export type Step = { current: NodeId; frontier: NodeId[]; visited: NodeId[] }
 
@@ -49,10 +51,10 @@ export function pathCost(path: NodeId[]): number {
 }
 
 export const ALGORITHMS: Record<string, AlgoMeta> = {
-  //bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes*' },
-  //dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(b·m)', optimal: 'No', complete: 'Yes*' },
   greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*' },
   astar: { label: 'A*', run: astar, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
+  ucs: { label: 'UCS', run: ucs, time: 'O(b^(1+floor(C*/e)))', space: 'O(b^(1+floor(C*/e)))', optimal: 'Yes', complete: 'Yes' },
+  biucs: { label: 'Bidirectional UCS', run: biucs, time: 'O(b^(1+C/2e))', space: 'O(b^(1+C/2e))', optimal: 'Yes', complete: 'Yes' },
 }
 
 // Self-check: known Arad -> Bucharest cost (140 + 99 + 211).

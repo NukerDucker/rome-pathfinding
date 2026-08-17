@@ -21,6 +21,7 @@ export function astar(start: NodeId, goal: NodeId): SearchResult {
   }
 
   const steps: Step[] = []
+  // Frontier entries: [f, g, node]
   const frontier: [number, number, NodeId][] = [[h(start, goal), 0, start]]
   const expanded: NodeId[] = []
   const bestG: Record<NodeId, number> = { [start]: 0 }
@@ -28,6 +29,7 @@ export function astar(start: NodeId, goal: NodeId): SearchResult {
   let found = false
 
   while (frontier.length > 0 && !found) {
+    // Extract min f-value (linear scan — fine for 20 nodes)
     let bestI = 0
     for (let i = 1; i < frontier.length; i++) {
       if (frontier[i][0] < frontier[bestI][0]) bestI = i

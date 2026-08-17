@@ -82,6 +82,8 @@ function buildRomania(): Record<NodeId, City> {
 export const ROMANIA: Record<NodeId, City> = buildRomania()
 export const CITIES: NodeId[] = Object.keys(ROMANIA).sort()
 
+// Self-check: adjacency symmetric (A->B km === B->A km), every neighbor exists,
+// and every city glyph is unique (the map draws initials, not full names).
 function selfCheck(): void {
   const codes = new Map<string, NodeId>()
   for (const id of CITIES) {
