@@ -1,6 +1,10 @@
+/* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
-  /* map's brand purple — kept separate so shadcn's --accent token can't clobber it */
-  --map-accent: #aa3bff;
+  --map-accent: #aa3bff;          /* Lane A accent + map current/tree state */
+  --lane-b: #0e7490;              /* Lane B accent — teal, distinct from all map states */
+  --surface: #faf9f5;             /* Lane card background */
+  --dock-bg: rgba(255,255,255,0.92);
+
   --state-frontier: #d97706;
   --state-current: var(--map-accent);
   --state-visited: #9ca3af;
@@ -8,24 +12,23 @@
   --marker-start: #16a34a;
   --marker-goal: #dc2626;
 
-  /* roads sit on --code-bg, so they need their own tone (--border is too faint there) */
   --map-road: #cfcdc4;
 
-  /* glyph/label ink drawn on top of a filled node — one per state so contrast
-     survives the fills flipping to pastels in dark mode */
   --ink-on-frontier: #241300;
   --ink-on-current: #fff;
   --ink-on-visited: #16151c;
   --ink-on-path: #fff;
 
-  /* Ring on the node being expanded. Stays light in both themes — it sits on a
-     saturated fill, where a dark ring reads as a hole punched in the node. */
   --node-current-ring: #fff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --map-accent: #c084fc;
+    --lane-b: #22d3ee;
+    --surface: #1b1c23;
+    --dock-bg: rgba(22,23,29,0.92);
+
     --state-frontier: #fbbf24;
     --state-visited: #6b7280;
     --state-path: #4ade80;
@@ -43,58 +46,163 @@
   }
 }
 
-.app {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  align-items: start;
-  text-align: left;
-  padding: 32px 24px;
-  box-sizing: border-box;
-  flex: 1 1 auto;
-  width: 100%;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-    padding: 20px 16px;
-    gap: 20px;
-  }
-}
-
-.stats-container{
+/* ── App header ────────────────────────────────────────────────────── */
+.app-header {
   display: flex;
-  flex-direction: row;
-  gap: 16px;
-}
-
-.map-container{
-  display: flex;
-  flex-direction: row;
   align-items: center;
-  @media (max-width: 1600px) {
-    flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 2px solid var(--map-accent);
+  flex-wrap: wrap;
+}
+
+.app-header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-title {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-h);
+}
+
+.app-subtitle {
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+
+.app-header-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Main layout ───────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Lanes grid ────────────────────────────────────────────────────── */
+.lanes {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: start;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.map-panel {
-  gap: 16px;
+/* VS chip between lanes */
+.lane-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  flex-shrink: 0;
+  margin-top: 40px; /* align with map area */
+
+  @media (max-width: 1100px) {
+    display: none;
+  }
+}
+
+/* ── Lane card ─────────────────────────────────────────────────────── */
+.lane {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   min-width: 0;
 }
 
+.lane-a { border-top: 3px solid var(--map-accent); }
+.lane-b { border-top: 3px solid var(--lane-b); }
+
+/* Lane header row */
+.lane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.lane-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  border: 1.5px solid currentColor;
+}
+
+.lane-badge-a {
+  color: var(--map-accent);
+  background: color-mix(in srgb, var(--map-accent) 12%, transparent);
+}
+
+.lane-badge-b {
+  color: var(--lane-b);
+  background: color-mix(in srgb, var(--lane-b) 12%, transparent);
+}
+
+.lane-complexity {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Map ────────────────────────────────────────────────────────────── */
 .map {
   width: 100%;
   height: auto;
-
-  @media ((max-width: 1600px) and (min-width: 750px)) {
-    width: auto;
-    height: 45vh;
-  }
+  display: block;
 }
 
 .map-bg {
   fill: var(--code-bg);
 }
 
+/* ── Edges ──────────────────────────────────────────────────────────── */
 .edge {
   stroke-linecap: round;
   transition: stroke 0.15s;
@@ -128,15 +236,12 @@
   stroke-dasharray: 15 25;
 }
 
-
 /* Distance pill straddling the midpoint of each road. */
 .edge-label rect {
   fill: var(--bg);
   stroke: var(--map-road);
   stroke-width: 4;
-  transition:
-    fill 0.15s,
-    stroke 0.15s;
+  transition: fill 0.15s, stroke 0.15s;
 }
 
 .edge-label text {
@@ -152,28 +257,22 @@
   stroke: var(--map-accent);
 }
 
-.edge-label-tree text {
-  fill: var(--ink-on-current);
-}
+.edge-label-tree text { fill: var(--ink-on-current); }
 
 .edge-label-path rect {
   fill: var(--state-path);
   stroke: var(--state-path);
 }
 
-.edge-label-path text {
-  fill: var(--ink-on-path);
-}
+.edge-label-path text { fill: var(--ink-on-path); }
 
+/* ── Nodes ──────────────────────────────────────────────────────────── */
 .node circle {
   stroke: var(--map-road);
   stroke-width: 6;
-  transition:
-    fill 0.15s,
-    stroke 0.15s;
+  transition: fill 0.15s, stroke 0.15s;
 }
 
-/* City initials sit inside the circle — see cityCode() in romania.ts. */
 .node text {
   fill: var(--text-h);
   font-family: var(--serif);
@@ -182,46 +281,32 @@
   pointer-events: none;
 }
 
-.node-unvisited circle {
-  fill: var(--bg);
-}
+.node-unvisited circle { fill: var(--bg); }
 
 .node-frontier circle {
   fill: var(--state-frontier);
   stroke: var(--state-frontier);
 }
-
-.node-frontier text {
-  fill: var(--ink-on-frontier);
-}
+.node-frontier text { fill: var(--ink-on-frontier); }
 
 .node-current circle {
   fill: var(--state-current);
   stroke: var(--node-current-ring);
   stroke-width: 8;
 }
-
-.node-current text {
-  fill: var(--ink-on-current);
-}
+.node-current text { fill: var(--ink-on-current); }
 
 .node-visited circle {
   fill: var(--state-visited);
   stroke: var(--state-visited);
 }
-
-.node-visited text {
-  fill: var(--ink-on-visited);
-}
+.node-visited text { fill: var(--ink-on-visited); }
 
 .node-path circle {
   fill: var(--state-path);
   stroke: var(--state-path);
 }
-
-.node-path text {
-  fill: var(--ink-on-path);
-}
+.node-path text { fill: var(--ink-on-path); }
 
 .node-glow {
   fill: none;
@@ -244,168 +329,193 @@
   pointer-events: none;
 }
 
-.node .marker-start {
-  stroke: var(--marker-start);
-}
-
-.node .marker-goal {
-  stroke: var(--marker-goal);
-}
+.node .marker-start { stroke: var(--marker-start); }
+.node .marker-goal { stroke: var(--marker-goal); }
 
 @keyframes node-glow-pulse {
-  0%,
-  100% {
-    r: 82;
-    opacity: 0.55;
-  }
-  50% {
-    r: 98;
-    opacity: 0.85;
-  }
+  0%, 100% { r: 82; opacity: 0.55; }
+  50% { r: 98; opacity: 0.85; }
 }
 
-.legend {
-  list-style: none;
+/* ── Stats strip (inside each lane) ─────────────────────────────────── */
+.stats-strip {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.stats-live {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  font-size: 12px;
-  color: var(--text);
-}
-
-.legend li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border);
-  flex: none;
-}
-
-.swatch-current {
-  background: var(--state-current);
-  border-color: var(--text-h);
-}
-.swatch-frontier {
-  background: var(--state-frontier);
-  border-color: var(--state-frontier);
-}
-.swatch-visited {
-  background: var(--state-visited);
-  border-color: var(--state-visited);
-}
-.swatch-path {
-  background: var(--state-path);
-  border-color: var(--state-path);
-}
-.swatch-unvisited {
-  background: var(--bg);
-}
-.swatch-start-ring {
-  background: transparent;
-  border-color: var(--marker-start);
-  border-width: 2px;
-}
-.swatch-goal-ring {
-  background: transparent;
-  border-color: var(--marker-goal);
-  border-width: 2px;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.control {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
-  color: var(--text);
-}
-
-.transport {
-  display: flex;
-  gap: 6px;
-}
-
-.speed {
-  min-width: 180px;
-}
-
-.speed-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-}
-
-.speed-value {
-  font-family: var(--mono);
-  color: var(--text-h);
-}
-
-.stats-panel{
-  width: 50%;
-}
-
-.stats-panel h1 {
-  font-size: 28px;
-  margin: 0 0 4px;
-}
-
-.stats {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .stats-row {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .stats-row dt {
   color: var(--text);
   font-weight: 500;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: center;
 }
 
 .stats-row dd {
   margin: 0;
   color: var(--text-h);
   font-family: var(--mono);
+  font-size: 13px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .path-row dd {
   max-width: 220px;
   word-break: break-word;
+  text-align: right;
 }
+
+.stats-theory {
+  margin-top: 8px;
+}
+
+.stats-theory summary {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.stats-theory summary:hover { color: var(--text-h); }
+
+.stats-theory-body { margin-top: 8px; }
 
 .footnotes {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text);
-  margin: 4px 0 0;
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
+/* ── Control dock ────────────────────────────────────────────────────── */
+.control-dock {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: var(--dock-bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+
+  @media (max-width: 768px) {
+    grid-template-columns: auto 1fr;
+    padding: 8px 12px;
+  }
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 11px;
+  color: var(--text);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex: none;
+}
+
+.swatch-current { background: var(--state-current); border-color: var(--text-h); }
+.swatch-frontier { background: var(--state-frontier); border-color: var(--state-frontier); }
+.swatch-visited { background: var(--state-visited); border-color: var(--state-visited); }
+.swatch-path { background: var(--state-path); border-color: var(--state-path); }
+.swatch-unvisited { background: var(--bg); }
+.swatch-start-ring { background: transparent; border-color: var(--marker-start); border-width: 2px; }
+.swatch-goal-ring { background: transparent; border-color: var(--marker-goal); border-width: 2px; }
+
+/* ── Transport controls ──────────────────────────────────────────────── */
+.transport {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* ── Speed slider ────────────────────────────────────────────────────── */
+.speed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+  justify-self: end;
+}
+
+.speed-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.speed-value {
+  font-family: var(--mono);
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Control label (Start/Goal/Algorithm) ────────────────────────────── */
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+/* ── Comparison table ────────────────────────────────────────────────── */
 .compare-panel {
   padding: 0 24px 32px;
   box-sizing: border-box;
   width: 100%;
 
-  @media (max-width: 1024px) {
+  @media (max-width: 768px) {
     padding: 0 16px 20px;
   }
 }
@@ -421,7 +531,7 @@
 .compare {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .compare th,
@@ -433,8 +543,12 @@
 }
 
 .compare thead th {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text);
-  font-weight: 500;
   border-bottom: 2px solid var(--border);
 }
 
@@ -444,17 +558,26 @@
   color: var(--text-h);
 }
 
+.compare tbody th[scope='row'] {
+  vertical-align: middle;
+}
+
 .compare td {
   font-family: var(--mono);
   color: var(--text-h);
+  font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .node circle {
-    transition: none;
-  }
+/* Lane-highlighted rows in comparison table */
+.row-lane-a { border-left: 3px solid var(--map-accent); }
+.row-lane-b { border-left: 3px solid var(--lane-b); }
+.row-lane-ab {
+  border-left: 3px solid var(--map-accent);
+  background: color-mix(in srgb, var(--map-accent) 4%, transparent);
+}
 
-  .node-glow {
-    animation: none;
-  }
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .node circle { transition: none; }
+  .node-glow { animation: none; }
 }
