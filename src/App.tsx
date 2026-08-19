@@ -215,7 +215,7 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         />
       ))}
 
-      {showArc && (algoKey === 'greedy' || algoKey === 'astar') && renderArcEdges(start, goal)}
+      {showArc && (algoKey === 'greedy' || algoKey === 'astar' || algoKey === 'astaralt') && renderArcEdges(start, goal)}
 
       {edgeViews.map((edge) => {
         const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2

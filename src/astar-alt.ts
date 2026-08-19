@@ -1,11 +1,11 @@
 import { ROMANIA, type NodeId } from './romania'
 import { reconstructPath, type SearchResult, type Step } from './search'
-import { hLP as h } from './heuristic'
+import { h } from './heuristic'
 
 // A* search: f(n) = g(n) + h(n), h from the precomputed LP vector-decomposition
 // heuristic (admissible, so A* is optimal). Frontier is a plain array scanned
 // for the minimum f — small graph, keeps the code readable.
-export function astar(start: NodeId, goal: NodeId): SearchResult {
+export function astarAlt(start: NodeId, goal: NodeId): SearchResult {
   const parent: Record<NodeId, NodeId | null> = {}
 
   if (!(start in ROMANIA) || !(goal in ROMANIA)) {
@@ -72,7 +72,7 @@ export function astar(start: NodeId, goal: NodeId): SearchResult {
 
 // Self-check: Arad -> Bucharest is found (418 km via Sibiu-Rimnicu-Pitesti).
 function selfCheck(): void {
-  const r = astar('Arad', 'Bucharest')
+  const r = astarAlt('Arad', 'Bucharest')
   if (!r.found || r.path[0] !== 'Arad' || r.path[r.path.length - 1] !== 'Bucharest') {
     throw new Error('astar.ts self-check: Arad -> Bucharest not found')
   }
