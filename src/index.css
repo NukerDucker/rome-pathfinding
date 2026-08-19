@@ -2,28 +2,26 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-@import '@fontsource/cinzel/400.css';
-@import '@fontsource/cinzel/700.css';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --text: #5C4E38;
-  --text-h: #2E2418;
-  --bg: #F6F0DF;
-  --border: #C9B88F;
-  --code-bg: #EDE4CC;
-  --accent: #E5D8BE;
-  --accent-bg: rgba(162, 59, 42, 0.10);
-  --accent-border: rgba(162, 59, 42, 0.5);
-  --social-bg: rgba(237, 228, 204, 0.5);
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: oklch(0.922 0 0);
+  --code-bg: #f4f3ec;
+  --accent: oklch(0.97 0 0);
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
-    rgba(62, 45, 20, 0.18) 0 10px 15px -3px, rgba(62, 45, 20, 0.08) 0 4px 6px -2px;
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans:    'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  --heading: 'Cinzel', Optima, 'Palatino Linotype', Palatino, 'Times New Roman', serif;
-  --mono:    ui-monospace, Consolas, monospace;
-  --serif:   'Cinzel', Optima, 'Palatino Linotype', Georgia, serif;
+  --sans: 'Geist Variable', system-ui, sans-serif;
+  --heading: 'Geist Variable', system-ui, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+  --serif: Georgia, 'Times New Roman', serif;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -39,37 +37,37 @@
     font-size: 16px;
   }
 
-  --background: #EDE4CC;
+  --background: oklch(1 0 0);
 
-  --foreground: #2E2418;
+  --foreground: oklch(0.145 0 0);
 
-  --card: #F1E9D4;
+  --card: oklch(1 0 0);
 
-  --card-foreground: #2E2418;
+  --card-foreground: oklch(0.145 0 0);
 
-  --popover: #F1E9D4;
+  --popover: oklch(1 0 0);
 
-  --popover-foreground: #2E2418;
+  --popover-foreground: oklch(0.145 0 0);
 
-  --primary: #A23B2A;
+  --primary: oklch(0.205 0 0);
 
-  --primary-foreground: #F6F0DF;
+  --primary-foreground: oklch(0.985 0 0);
 
-  --secondary: #E5D8BE;
+  --secondary: oklch(0.97 0 0);
 
-  --secondary-foreground: #2E2418;
+  --secondary-foreground: oklch(0.205 0 0);
 
-  --muted: #E5D8BE;
+  --muted: oklch(0.97 0 0);
 
-  --muted-foreground: #7A6A52;
+  --muted-foreground: oklch(0.556 0 0);
 
-  --accent-foreground: #2E2418;
+  --accent-foreground: oklch(0.205 0 0);
 
   --destructive: oklch(0.577 0.245 27.325);
 
-  --input: #C9B88F;
+  --input: oklch(0.922 0 0);
 
-  --ring: #A23B2A;
+  --ring: oklch(0.708 0 0);
 
   --chart-1: oklch(0.87 0 0);
 
@@ -102,36 +100,36 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #B7A98A;
-    --text-h: #E8DBBB;
-    --bg: #1C1610;
-    --border: #3E3426;
-    --code-bg: #262019;
-    --accent: #2B231A;
-    --accent-bg: rgba(211, 169, 79, 0.12);
-    --accent-border: rgba(211, 169, 79, 0.5);
-    --social-bg: rgba(43, 35, 26, 0.5);
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
-      rgba(0, 0, 0, 0.5) 0 10px 15px -3px, rgba(0, 0, 0, 0.3) 0 4px 6px -2px;
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
     /* shadcn dark tokens keyed to system preference (app themes via prefers-color-scheme, not a .dark class) */
-    --background: #1C1610;
-    --foreground: #E8DBBB;
-    --card: #262019;
-    --card-foreground: #E8DBBB;
-    --popover: #2B231A;
-    --popover-foreground: #E8DBBB;
-    --primary: #D4694F;
-    --primary-foreground: #1C1610;
-    --secondary: #2B231A;
-    --secondary-foreground: #E8DBBB;
-    --muted: #2B231A;
-    --muted-foreground: #8A7A62;
-    --accent: #2B231A;
-    --accent-foreground: #E8DBBB;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
-    --input: #3E3426;
-    --ring: #D3A94F;
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
   }
 
   #social .button-icon {
