@@ -20,6 +20,13 @@
   --ink-on-path: #fff;
 
   --node-current-ring: #fff;
+
+  /* spacing scale — use for gap/padding/margin only, not SVG coordinates */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,8 +58,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-6);
   border-bottom: 2px solid var(--map-accent);
   flex-wrap: wrap;
 }
@@ -66,7 +73,7 @@
 .app-title {
   font-family: var(--mono);
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-h);
@@ -82,8 +89,8 @@
 
 .app-header-controls {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  align-items: center;
+  gap: var(--sp-3);
   flex-wrap: wrap;
 }
 
@@ -100,8 +107,8 @@
 .lanes {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
-  padding: 16px 24px;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
   width: 100%;
   box-sizing: border-box;
   align-items: start;
@@ -124,12 +131,11 @@
   border: 1px solid var(--border);
   font-family: var(--mono);
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text);
   flex-shrink: 0;
-  margin-top: 40px; /* align with map area */
 
   @media (max-width: 1100px) {
     display: none;
@@ -153,8 +159,8 @@
 .lane-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--sp-2);
+  padding: 10px var(--sp-3);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
@@ -367,7 +373,7 @@
 
 /* ── Stats strip (inside each lane) ─────────────────────────────────── */
 .stats-strip {
-  padding: 12px;
+  padding: var(--sp-3);
   border-top: 1px solid var(--border);
 }
 
@@ -375,13 +381,13 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sp-1);
 }
 
 .stats-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--sp-3);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -412,7 +418,7 @@
 }
 
 .stats-theory {
-  margin-top: 8px;
+  margin-top: var(--sp-2);
 }
 
 .stats-theory summary {
@@ -423,12 +429,12 @@
   color: var(--text);
   cursor: pointer;
   user-select: none;
-  padding: 4px 0;
+  padding: var(--sp-1) 0;
 }
 
 .stats-theory summary:hover { color: var(--text-h); }
 
-.stats-theory-body { margin-top: 8px; }
+.stats-theory-body { margin-top: var(--sp-2); }
 
 .footnotes {
   font-size: 11px;
@@ -437,13 +443,12 @@
   line-height: 1.5;
 }
 
-/* ── Control dock ────────────────────────────────────────────────────── */
-/* ── Toolbar (replaces control-dock) ─────────────────────────────────── */
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 0;
-  padding: 0 16px;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4);
   background: var(--dock-bg);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -459,7 +464,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 6px 14px;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -485,7 +490,7 @@
   height: 36px;
   background: var(--border);
   flex-shrink: 0;
-  margin: 0 2px;
+  margin: 0;
 }
 
 .toolbar-spacer {
@@ -503,7 +508,7 @@
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: var(--sp-1) 10px;
   font-size: 11px;
   color: var(--text);
 
@@ -535,14 +540,6 @@
 .swatch-goal-ring { background: transparent; border-color: var(--marker-goal); border-width: 2px; }
 .swatch-arc { background: #f5c518; border-color: #f5c518; }
 
-/* Arc overlay toggle — shadcn Button, sits inline in legend */
-.arc-toggle-btn {
-  font-size: 11px;
-  gap: 5px;
-  height: auto;
-  padding: 2px 8px;
-}
-
 /* ── Transport controls ──────────────────────────────────────────────── */
 .transport {
   display: flex;
@@ -554,7 +551,7 @@
 .speed {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sp-1);
   min-width: 160px;
   justify-self: end;
 }
@@ -576,13 +573,13 @@
 .control {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sp-1);
 }
 
 .control-label {
   font-family: var(--mono);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text);
@@ -590,17 +587,21 @@
 
 /* ── Comparison table ────────────────────────────────────────────────── */
 .compare-panel {
-  padding: 0 24px 32px;
+  padding: 0 var(--sp-6) 32px;
   box-sizing: border-box;
   width: 100%;
 
   @media (max-width: 768px) {
-    padding: 0 16px 20px;
+    padding: 0 var(--sp-4) 20px;
   }
 }
 
 .compare-panel h2 {
-  margin: 0 0 12px;
+  margin: 0 0 var(--sp-3);
+}
+
+.compare-panel .footnotes {
+  margin-bottom: var(--sp-3);
 }
 
 .compare-scroll {
@@ -615,7 +616,7 @@
 
 .compare th,
 .compare td {
-  padding: 8px 12px;
+  padding: var(--sp-2) var(--sp-3);
   text-align: right;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -624,7 +625,7 @@
 .compare thead th {
   font-family: var(--mono);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text);

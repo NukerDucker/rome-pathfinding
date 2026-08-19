@@ -231,6 +231,8 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
   return (
     <svg
       className="map"
+      width="2800"
+      height="1900"
       viewBox="600 300 2800 1900"
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -654,13 +656,12 @@ function App() {
               >
                 🌡 Heatmap
               </Button>
-              {showHeatmap && (
-                <span className="heatmap-legend" aria-label="Heatmap scale">
-                  <span className="heatmap-legend-label">Near</span>
-                  <span className="heatmap-legend-bar" aria-hidden="true" />
-                  <span className="heatmap-legend-label">Far</span>
-                </span>
-              )}
+              <span className="heatmap-legend" aria-label="Heatmap scale"
+                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </span>
               <Button
                 variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
                 onClick={handlePickLandmarkToggle} aria-pressed={pickLandmarkMode}
@@ -764,7 +765,7 @@ function App() {
         <Card>
           <CardContent>
             <h2 id="lm-compare-title">Landmark count effect — nodes generated — {start} → {goal}</h2>
-            <p className="footnotes" style={{ marginBottom: '0.75rem' }}>
+            <p className="footnotes">
               Nodes generated per algorithm at 2 / 4 / 8 landmarks. Uninformed algos are unaffected (same value all columns). Fewer = tighter heuristic.
             </p>
             <div className="compare-scroll">
