@@ -333,6 +333,32 @@
 
 .node .marker-start { stroke: var(--marker-start); }
 .node .marker-goal { stroke: var(--marker-goal); }
+.node .marker-landmark { stroke: #f0b429; stroke-dasharray: 12 6; }
+
+.node-clickable { cursor: pointer; }
+
+/* Heatmap legend in control dock */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.heatmap-legend-label {
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.heatmap-legend-bar {
+  display: inline-block;
+  width: 80px;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, hsl(0,85%,55%), hsl(60,85%,55%), hsl(120,85%,55%), hsl(180,85%,55%), hsl(240,85%,55%));
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
 
 @keyframes node-glow-pulse {
   0%, 100% { r: 82; opacity: 0.55; }

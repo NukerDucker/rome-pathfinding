@@ -273,9 +273,9 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
               <circle
                 key={`heat-${city}`}
                 cx={coord.x} cy={coord.y}
-                r={NODE_R + 55}
+                r={NODE_R + 14}
                 fill={`hsl(${hue}, 85%, 55%)`}
-                opacity={0.55}
+                opacity={0.75}
               />
             )
           })}
@@ -650,6 +650,13 @@ function App() {
                 🌡 Heatmap
               </Button>
             </li>
+            {showHeatmap && (
+              <li className="heatmap-legend" aria-label="Heatmap legend">
+                <span className="heatmap-legend-label">Near goal</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </li>
+            )}
             <li>
               <Button
                 variant={pickLandmarkMode ? 'default' : 'outline'}
