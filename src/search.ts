@@ -4,6 +4,7 @@ import { dfs } from './dfs'
 import { greedy } from './greedy'
 import { astar } from './astar'
 import { astarAlt } from './astar-alt'
+import { astarAltOnly } from './astar-alt-only'
 import { biastar } from './biastar'
 import { ucs } from './ucs'
 import { biucs } from './biucs'
@@ -60,6 +61,7 @@ export const ALGORITHMS: Record<string, AlgoMeta> = {
   greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*' },
   astar: { label: 'A* (LP)', run: astar, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
   astaralt: { label: 'A* (LP+ALT)', run: astarAlt, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
+  astaraltonly: { label: 'A* (ALT only)', run: astarAltOnly, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
   biastar: { label: 'Bidir. A* (LP+ALT)', run: biastar, time: 'O(b^(d/2))', space: 'O(b^(d/2))', optimal: 'Yes', complete: 'Yes' },
   ucs: { label: 'UCS', run: ucs, time: 'O(b^(1+floor(C*/e)))', space: 'O(b^(1+floor(C*/e)))', optimal: 'Yes', complete: 'Yes' },
   biucs: { label: 'Bidirectional UCS', run: biucs, time: 'O(b^(1+C/2e))', space: 'O(b^(1+C/2e))', optimal: 'Yes', complete: 'Yes' },

@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
+import {
+  setALTPreset, getALTPreset,
+  setCustomLandmarks, saveALTState, restoreALTState,
+  hALTOnly,
+  type LandmarkPreset,
+} from './heuristic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -19,6 +25,7 @@ const ALGO_FOOTNOTES: Record<string, string> = {
   dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
   greedy: '*Not optimal — ignores path cost so far. *Complete if branching factor b is finite (graph-search avoids cycles).',
   astar: '*Optimal if the heuristic is admissible (LP vector-decomposition heuristic, verified admissible). *Complete if branching factor b is finite.',
+  astaraltonly: '*Optimal — ALT heuristic admissible by triangle inequality. *Complete if branching factor b is finite. Uses active landmark preset only — no LP component.',
   ucs: 'Optimal and complete for non-negative step costs (graph-search, Dijkstra-equivalent).',
   biucs: 'Optimal and complete for non-negative step costs — searches from both ends and meets in the middle.',
 }
@@ -106,6 +113,27 @@ function compareAlgorithms(start: NodeId, goal: NodeId): CompareRow[] {
   })
 }
 
+type LmAlgoRow = { key: string; label: string; lm2: number; lm4: number; lm8: number }
+
+function landmarkComparison(start: NodeId, goal: NodeId): LmAlgoRow[] {
+  // Collect generated counts for every algo at each landmark preset
+  const saved = saveALTState()
+  const counts: Record<string, { lm2: number; lm4: number; lm8: number }> = {}
+  for (const key of Object.keys(ALGORITHMS)) counts[key] = { lm2: 0, lm4: 0, lm8: 0 }
+
+  for (const preset of ['lm2', 'lm4', 'lm8'] as const) {
+    setALTPreset(preset)
+    for (const [key, meta] of Object.entries(ALGORITHMS)) {
+      counts[key][preset] = meta.run(start, goal).generated
+    }
+  }
+  restoreALTState(saved)
+
+  return Object.entries(ALGORITHMS).map(([key, meta]) => ({
+    key, label: meta.label, ...counts[key],
+  }))
+}
+
 const BASE_EDGES: EdgePair[] = buildBaseEdges()
 
 function buildBaseEdges(): EdgePair[] {
@@ -187,9 +215,13 @@ type SVGMapParams = {
   start: NodeId
   goal: NodeId
   showArc: boolean
+  heatmapValues?: Record<NodeId, number>
+  customLandmarks?: NodeId[]
+  onCityClick?: (city: NodeId) => void
+  pickLandmarkMode?: boolean
 }
 
-function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showArc }: SVGMapParams) {
+function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showArc, heatmapValues, customLandmarks, onCityClick, pickLandmarkMode }: SVGMapParams) {
   const step: Step = result.steps[Math.min(stepIdx, lastIdx)]
   const isFinalFrame: boolean = stepIdx >= lastIdx
   const edgeViews: EdgeView[] = buildEdgeViews(
@@ -235,12 +267,24 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         const isHovered = city === hoveredCity
         const isStart = city === start && !isFinalFrame
         const isGoal = city === goal && !isFinalFrame
+        const isCustomLandmark = customLandmarks?.includes(city) ?? false
+        const heatNorm = heatmapValues?.[city]
+        // hue: 0=red(goal,low h) → 240=blue(far,high h)
+        const heatColor = heatNorm !== undefined
+          ? `hsl(${Math.round(heatNorm * 240)}, 80%, 50%)`
+          : undefined
         return (
-          <g key={city} className={`node node-${state}${isHovered ? ' node-hover' : ''}`}>
-            <title>{city}</title>
+          <g
+            key={city}
+            className={`node node-${state}${isHovered ? ' node-hover' : ''}${pickLandmarkMode ? ' node-clickable' : ''}`}
+            onClick={() => onCityClick?.(city)}
+          >
+            <title>{city}{isCustomLandmark ? ' ★ landmark' : ''}</title>
+            {heatColor && <circle className="node-heatmap" cx={coord.x} cy={coord.y} r={NODE_R + 30} fill={heatColor} opacity={0.45} />}
             {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
             {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
             {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
+            {isCustomLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
             <circle cx={coord.x} cy={coord.y} r={NODE_R} />
             <text x={coord.x} y={coord.y} dominantBaseline="central">{cityCode(city)}</text>
           </g>
@@ -316,13 +360,34 @@ function App() {
   const [delay, setDelay] = useState(DEFAULT_DELAY)
   const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
   const [showArc, setShowArc] = useState(false)
+  const [landmarkPreset, setLandmarkPreset] = useState<LandmarkPreset>(getALTPreset())
+  const [customLandmarks, setCustomLandmarksState] = useState<NodeId[]>([])
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [pickLandmarkMode, setPickLandmarkMode] = useState(false)
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
-  // ponytail: memo gates the 1600+ graph searches on start/goal only, not every render
-  const result = useMemo(() => meta.run(start, goal), [meta, start, goal])
-  const result2 = useMemo(() => meta2.run(start, goal), [meta2, start, goal])
-  const comparison = useMemo(() => compareAlgorithms(start, goal), [start, goal])
+  // ponytail: landmarkPreset in deps so memos recompute after setALTPreset side-effect
+  const result = useMemo(() => meta.run(start, goal), [meta, start, goal, landmarkPreset])
+  const result2 = useMemo(() => meta2.run(start, goal), [meta2, start, goal, landmarkPreset])
+  const comparison = useMemo(() => compareAlgorithms(start, goal), [start, goal, landmarkPreset])
+  // ponytail: runs all 3 presets then restores full ALT state — side-effect safe, 3× A* on 20 nodes
+  const lmRows = useMemo(() => landmarkComparison(start, goal), [start, goal])
+
+  // h-value heatmap: normalized hALTOnly(n, goal) across all cities. Static per goal+preset.
+  const heatmapValues = useMemo<Record<NodeId, number> | undefined>(() => {
+    if (!showHeatmap) return undefined
+    const vals: Record<NodeId, number> = {}
+    let max = 0
+    for (const city of CITIES) {
+      vals[city] = hALTOnly(city, goal)
+      if (vals[city] > max) max = vals[city]
+    }
+    if (max === 0) return undefined
+    for (const city of CITIES) vals[city] /= max
+    return vals
+  }, [showHeatmap, goal, landmarkPreset, customLandmarks])
+
   const lastIdx = result.steps.length - 1
   const lastIdx2 = result2.steps.length - 1
   const largerLastIdx = Math.max(lastIdx, lastIdx2)
@@ -340,6 +405,43 @@ function App() {
   function handleAlgoChange2(next: string) { setAlgo2(next); setStepIdx(0); setPlaying(false) }
   function handleStartChange(next: NodeId) { setStart(next); setStepIdx(0); setPlaying(false) }
   function handleGoalChange(next: NodeId) { setGoal(next); setStepIdx(0); setPlaying(false) }
+  function handleLandmarkChange(next: LandmarkPreset) {
+    if (next !== 'custom') {
+      setALTPreset(next)
+      setCustomLandmarks([])
+      setCustomLandmarksState([])
+    }
+    setLandmarkPreset(next)
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handleCityClick(city: NodeId) {
+    if (!pickLandmarkMode) return
+    const next = customLandmarks.includes(city)
+      ? customLandmarks.filter((c) => c !== city)
+      : [...customLandmarks, city]
+    setCustomLandmarksState(next)
+    setCustomLandmarks(next) // updates global _customALTFn
+    setLandmarkPreset(next.length > 0 ? 'custom' : 'lm8')
+    setStepIdx(0)
+    setPlaying(false)
+  }
+
+  function handlePickLandmarkToggle() {
+    if (pickLandmarkMode) {
+      // exiting pick mode — clear custom landmarks, revert to lm8
+      setPickLandmarkMode(false)
+      setCustomLandmarksState([])
+      setCustomLandmarks([])
+      if (landmarkPreset === 'custom') {
+        setLandmarkPreset('lm8')
+        setALTPreset('lm8')
+      }
+    } else {
+      setPickLandmarkMode(true)
+    }
+  }
 
   function handleRandomize() {
     const next = randomPair()
@@ -411,6 +513,20 @@ function App() {
               </SelectContent>
             </Select>
           </div>
+          <div className="control">
+            <span id="landmark-label" className="control-label">Landmarks</span>
+            <Select value={landmarkPreset} onValueChange={(v) => v && handleLandmarkChange(v as LandmarkPreset)}>
+              <SelectTrigger className="w-28" aria-labelledby="landmark-label"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lm2">2 landmarks</SelectItem>
+                <SelectItem value="lm4">4 landmarks</SelectItem>
+                <SelectItem value="lm8">8 landmarks</SelectItem>
+                {landmarkPreset === 'custom' && (
+                  <SelectItem value="custom">Custom ({customLandmarks.length})</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="outline" size="icon"
             aria-label="Randomize start and goal cities"
@@ -444,6 +560,8 @@ function App() {
             <SVGMap
               algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
               result={result} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
+              heatmapValues={heatmapValues} customLandmarks={customLandmarks}
+              onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
             />
             <StatsCard
               meta={meta} footnotes={ALGO_FOOTNOTES[algo]}
@@ -473,6 +591,8 @@ function App() {
             <SVGMap
               algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
               result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
+              heatmapValues={heatmapValues} customLandmarks={customLandmarks}
+              onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
             />
             <StatsCard
               meta={meta2} footnotes={ALGO_FOOTNOTES[algo2]}
@@ -502,6 +622,28 @@ function App() {
               >
                 <span className="swatch swatch-arc" aria-hidden="true" />
                 Arc overlay
+              </Button>
+            </li>
+            <li>
+              <Button
+                variant={showHeatmap ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowHeatmap(v => !v)}
+                aria-pressed={showHeatmap}
+                title="Show h-value heatmap — red=near goal, blue=far"
+              >
+                🌡 Heatmap
+              </Button>
+            </li>
+            <li>
+              <Button
+                variant={pickLandmarkMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={handlePickLandmarkToggle}
+                aria-pressed={pickLandmarkMode}
+                title="Click cities to set custom landmarks for ALT heuristic"
+              >
+                ★ {pickLandmarkMode ? `Landmarks (${customLandmarks.length})` : 'Pick landmarks'}
               </Button>
             </li>
           </ul>
@@ -584,6 +726,49 @@ function App() {
             <p className="footnotes">
               Time = mean of {BENCH_ITERS} runs. Memory = peak frontier size (space proxy). Path cost = Σ road km (lower = better quality).
             </p>
+          </CardContent>
+        </Card>
+      </section>
+      <section className="compare-panel" aria-labelledby="lm-compare-title">
+        <Card>
+          <CardContent>
+            <h2 id="lm-compare-title">Landmark count effect — nodes generated — {start} → {goal}</h2>
+            <p className="footnotes" style={{ marginBottom: '0.75rem' }}>
+              Nodes generated per algorithm at 2 / 4 / 8 landmarks. Uninformed algos are unaffected (same value all columns). Fewer = tighter heuristic.
+            </p>
+            <div className="compare-scroll">
+              <table className="compare">
+                <thead>
+                  <tr>
+                    <th scope="col">Algorithm</th>
+                    <th scope="col">2 landmarks</th>
+                    <th scope="col">4 landmarks</th>
+                    <th scope="col">8 landmarks ★</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lmRows.map((row) => {
+                    const isA = row.key === algo
+                    const isB = row.key === algo2
+                    const rowClass = isA && isB ? 'row-lane-ab' : isA ? 'row-lane-a' : isB ? 'row-lane-b' : ''
+                    const affected = row.lm2 !== row.lm8 || row.lm4 !== row.lm8
+                    return (
+                      <tr key={row.key} className={rowClass}>
+                        <th scope="row">
+                          {isA && <span className="lane-badge lane-badge-a">A</span>}
+                          {isB && !isA && <span className="lane-badge lane-badge-b">B</span>}
+                          {isA && isB && <span className="lane-badge lane-badge-b">B</span>}
+                          {' '}{row.label}
+                        </th>
+                        <td style={{ opacity: affected ? 1 : 0.4 }}>{row.lm2}</td>
+                        <td style={{ opacity: affected ? 1 : 0.4 }}>{row.lm4}</td>
+                        <td style={{ opacity: affected ? 1 : 0.4, fontWeight: affected ? 600 : undefined }}>{row.lm8}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </section>

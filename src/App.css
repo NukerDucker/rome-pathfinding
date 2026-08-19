@@ -1,48 +1,59 @@
 /* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
-  --map-accent: #aa3bff;          /* Lane A accent + map current/tree state */
-  --lane-b: #0e7490;              /* Lane B accent — teal, distinct from all map states */
-  --surface: #faf9f5;             /* Lane card background */
-  --dock-bg: rgba(255,255,255,0.92);
+  --map-accent: #A23B2A;          /* Lane A accent + map current/tree state — Pompeii red */
+  --lane-b: #2B5B8F;              /* Lane B accent — lapis lazuli */
+  --surface: #F1E9D4;             /* Lane card background — bone parchment */
+  --dock-bg: rgba(246,240,223,0.96);
 
-  --state-frontier: #d97706;
+  --state-frontier: #B8912F;     /* gold leaf */
   --state-current: var(--map-accent);
-  --state-visited: #9ca3af;
-  --state-path: #16a34a;
-  --marker-start: #16a34a;
-  --marker-goal: #dc2626;
+  --state-visited: #A99F8A;      /* faded sepia ink */
+  --state-path: #3F6B58;         /* verdigris — darkened for 4.5:1 ink contrast */
+  --marker-start: #3F6B58;
+  --marker-goal: #8F2F23;        /* deep crimson */
 
-  --map-road: #cfcdc4;
+  --map-road: #A89070;           /* worn bronze road — darker for 1.7px rendered width */
 
-  --ink-on-frontier: #241300;
-  --ink-on-current: #fff;
-  --ink-on-visited: #16151c;
-  --ink-on-path: #fff;
+  --ink-on-frontier: #241A05;
+  --ink-on-current: #F6F0DF;
+  --ink-on-visited: #2E2418;
+  --ink-on-path: #F0EDE4;
 
-  --node-current-ring: #fff;
+  --node-current-ring: #E8C878;  /* gold laurel ring */
+
+  /* new tokens */
+  --arc-gold: #B8912F;
+  --dock-border: #8A7148;
+  --node-stroke-frontier: #6E5312;   /* decoupled stroke for contrast vs papyrus */
+  --node-stroke-unvisited: #8A7148;  /* gives unvisited pins visible bronze edge */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --map-accent: #c084fc;
-    --lane-b: #22d3ee;
-    --surface: #1b1c23;
-    --dock-bg: rgba(22,23,29,0.92);
+    --map-accent: #D4694F;         /* ember red */
+    --lane-b: #7FA8D9;             /* aegean lapis */
+    --surface: #2B231A;
+    --dock-bg: rgba(28,22,16,0.96);
 
-    --state-frontier: #fbbf24;
-    --state-visited: #6b7280;
-    --state-path: #4ade80;
-    --marker-start: #4ade80;
-    --marker-goal: #f87171;
+    --state-frontier: #D3A94F;     /* antique gold */
+    --state-visited: #6B6152;
+    --state-path: #74AE92;         /* patina verdigris */
+    --marker-start: #74AE92;
+    --marker-goal: #E07B62;
 
-    --map-road: #3c3f4b;
+    --map-road: #4E4128;
 
-    --ink-on-frontier: #241300;
-    --ink-on-current: #22083a;
-    --ink-on-visited: #f3f4f6;
-    --ink-on-path: #052e16;
+    --ink-on-frontier: #241A05;
+    --ink-on-current: #2A0F08;
+    --ink-on-visited: #E8DBBB;
+    --ink-on-path: #10231B;
 
-    --node-current-ring: #f3f4f6;
+    --node-current-ring: #E8C878;  /* gold laurel ring — same both themes */
+
+    --arc-gold: #D3A94F;
+    --dock-border: #4E4128;
+    --node-stroke-frontier: #8A6018;
+    --node-stroke-unvisited: #4E4128;
   }
 }
 
@@ -53,8 +64,21 @@
   justify-content: space-between;
   gap: 16px;
   padding: 12px 24px;
-  border-bottom: 2px solid var(--map-accent);
+  border-bottom: 2px solid var(--dock-border);
   flex-wrap: wrap;
+  position: relative;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -5px;
+  height: 3px;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='3'><path d='M0 3h3V0h3v3h3V0h3v3h3V0h3v3h3V0h3v3' stroke='%238A7148' stroke-width='1' fill='none'/></svg>");
+  background-repeat: repeat-x;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .app-header-brand {
@@ -64,10 +88,10 @@
 }
 
 .app-title {
-  font-family: var(--mono);
+  font-family: var(--heading);
   font-size: 15px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-h);
   margin: 0;
@@ -111,23 +135,22 @@
   }
 }
 
-/* VS chip between lanes */
+/* Bronze medallion divider between lanes */
 .lane-vs {
   display: flex;
   align-items: center;
   justify-content: center;
   align-self: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text);
+  background: radial-gradient(circle at 35% 30%, #E8C878, var(--state-frontier));
+  border: 2px solid var(--dock-border);
+  box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px var(--dock-border);
+  font-family: var(--heading);
+  font-size: 16px;
+  font-weight: 400;
+  color: #2E2418;
   flex-shrink: 0;
   margin-top: 40px; /* align with map area */
 
@@ -136,28 +159,32 @@
   }
 }
 
-/* ── Lane card ─────────────────────────────────────────────────────── */
+/* ── Lane card — parchment scroll ─────────────────────────────────── */
 .lane {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: radial-gradient(120% 100% at 50% 0%, var(--surface) 60%, color-mix(in srgb, var(--dock-bg) 20%, var(--surface)));
+  border: 1px solid var(--dock-border);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 4px var(--surface), inset 0 0 0 5px color-mix(in srgb, var(--dock-border) 55%, transparent), var(--shadow);
   min-width: 0;
 }
 
-.lane-a { border-top: 3px solid var(--map-accent); }
-.lane-b { border-top: 3px solid var(--lane-b); }
+.lane-a { border-top: 5px solid var(--map-accent); }
+.lane-b { border-top: 5px solid var(--lane-b); }
 
-/* Lane header row */
+/* Lane header row — campaign banner */
 .lane-header {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--dock-border);
   flex-wrap: wrap;
 }
+
+.lane-a .lane-header { background: color-mix(in srgb, var(--map-accent) 6%, transparent); }
+.lane-b .lane-header { background: color-mix(in srgb, var(--lane-b) 6%, transparent); }
 
 .lane-badge {
   display: inline-flex;
@@ -165,13 +192,14 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 3px;
-  font-family: var(--mono);
+  border-radius: 50%;
+  font-family: var(--heading);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   flex-shrink: 0;
   border: 1.5px solid currentColor;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent);
 }
 
 .lane-badge-a {
@@ -213,6 +241,8 @@
 .edge-base {
   stroke: var(--map-road);
   stroke-width: 8;
+  stroke-dasharray: 26 18;
+  stroke-linecap: butt; /* butt required — round caps at w=8 fill gaps and defeat the dasharray */
 }
 
 .edge-tree {
@@ -228,12 +258,12 @@
 /* Elliptical-arc heuristic overlay (illustrative — greedy/astar only). */
 .edge-arc {
   fill: none;
-  stroke: #f5c518;
+  stroke: var(--arc-gold);
   stroke-width: 12;
 }
 
 .edge-arc-chord {
-  stroke: #f5c51844;
+  stroke: color-mix(in srgb, var(--arc-gold) 27%, transparent);
   stroke-width: 7;
   stroke-dasharray: 15 25;
 }
@@ -283,11 +313,15 @@
   pointer-events: none;
 }
 
-.node-unvisited circle { fill: var(--bg); }
+.node-unvisited circle {
+  fill: var(--bg);
+  stroke: var(--node-stroke-unvisited);
+  stroke-width: 3;
+}
 
 .node-frontier circle {
   fill: var(--state-frontier);
-  stroke: var(--state-frontier);
+  stroke: var(--node-stroke-frontier); /* decoupled — darker for contrast vs papyrus bg */
 }
 .node-frontier text { fill: var(--ink-on-frontier); }
 
@@ -333,6 +367,10 @@
 
 .node .marker-start { stroke: var(--marker-start); }
 .node .marker-goal { stroke: var(--marker-goal); }
+.node .marker-landmark { stroke: #f0b429; stroke-dasharray: 12 6; }
+
+.node-clickable { cursor: pointer; }
+.node-heatmap { pointer-events: none; }
 
 @keyframes node-glow-pulse {
   0%, 100% { r: 82; opacity: 0.55; }
