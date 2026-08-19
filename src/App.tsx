@@ -261,6 +261,27 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         )
       })}
 
+      {/* Heatmap layer — separate from .node groups so .node-state circle CSS rules don't override fill */}
+      {heatmapValues && (
+        <g className="heatmap-layer" style={{ pointerEvents: 'none' }}>
+          {CITIES.map((city) => {
+            const norm = heatmapValues[city]
+            if (norm === undefined) return null
+            const coord = ROMANIA[city]
+            const hue = Math.round(norm * 240)
+            return (
+              <circle
+                key={`heat-${city}`}
+                cx={coord.x} cy={coord.y}
+                r={NODE_R + 55}
+                fill={`hsl(${hue}, 85%, 55%)`}
+                opacity={0.55}
+              />
+            )
+          })}
+        </g>
+      )}
+
       {CITIES.map((city) => {
         const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
         const coord = ROMANIA[city]
@@ -268,11 +289,6 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         const isStart = city === start && !isFinalFrame
         const isGoal = city === goal && !isFinalFrame
         const isCustomLandmark = customLandmarks?.includes(city) ?? false
-        const heatNorm = heatmapValues?.[city]
-        // hue: 0=red(goal,low h) → 240=blue(far,high h)
-        const heatColor = heatNorm !== undefined
-          ? `hsl(${Math.round(heatNorm * 240)}, 80%, 50%)`
-          : undefined
         return (
           <g
             key={city}
@@ -280,7 +296,6 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
             onClick={() => onCityClick?.(city)}
           >
             <title>{city}{isCustomLandmark ? ' ★ landmark' : ''}</title>
-            {heatColor && <circle className="node-heatmap" cx={coord.x} cy={coord.y} r={NODE_R + 30} fill={heatColor} opacity={0.45} />}
             {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
             {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
             {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
