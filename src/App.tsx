@@ -616,93 +616,102 @@ function App() {
           </section>
         </div>
 
-        {/* Control dock — sticky bottom */}
-        <div className="control-dock">
-          <ul className="legend" aria-label="Node state colors">
-            <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-            <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-            <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-            <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-            <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-            <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-            <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-            <li>
+        {/* Toolbar — sticky bottom */}
+        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
+
+          {/* Group 1: Node state legend */}
+          <div className="toolbar-group" aria-label="Node state legend">
+            <span className="toolbar-group-label">Legend</span>
+            <ul className="legend" aria-label="Node state colors">
+              <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+              <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+              <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+              <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+              <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+              <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+              <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+            </ul>
+          </div>
+
+          <div className="toolbar-divider" aria-hidden="true" />
+
+          {/* Group 2: Overlays */}
+          <div className="toolbar-group" aria-label="Map overlays">
+            <span className="toolbar-group-label">Overlays</span>
+            <div className="toolbar-row">
               <Button
-                variant={showArc ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setShowArc(v => !v)}
-                aria-pressed={showArc}
-                title="Toggle heuristic arc overlay (Greedy / A* only)"
-                className="arc-toggle-btn"
+                variant={showArc ? 'default' : 'outline'} size="sm"
+                onClick={() => setShowArc(v => !v)} aria-pressed={showArc}
+                title="Heuristic arc overlay (Greedy / A* only)"
               >
                 <span className="swatch swatch-arc" aria-hidden="true" />
-                Arc overlay
+                Arc
               </Button>
-            </li>
-            <li>
               <Button
-                variant={showHeatmap ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setShowHeatmap(v => !v)}
-                aria-pressed={showHeatmap}
-                title="Show h-value heatmap — red=near goal, blue=far"
+                variant={showHeatmap ? 'default' : 'outline'} size="sm"
+                onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
+                title="h-value heatmap — red=near goal, blue=far"
               >
                 🌡 Heatmap
               </Button>
-            </li>
-            {showHeatmap && (
-              <li className="heatmap-legend" aria-label="Heatmap legend">
-                <span className="heatmap-legend-label">Near goal</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </li>
-            )}
-            <li>
+              {showHeatmap && (
+                <span className="heatmap-legend" aria-label="Heatmap scale">
+                  <span className="heatmap-legend-label">Near</span>
+                  <span className="heatmap-legend-bar" aria-hidden="true" />
+                  <span className="heatmap-legend-label">Far</span>
+                </span>
+              )}
               <Button
-                variant={pickLandmarkMode ? 'default' : 'outline'}
-                size="sm"
-                onClick={handlePickLandmarkToggle}
-                aria-pressed={pickLandmarkMode}
-                title="Click cities to set custom landmarks for ALT heuristic"
+                variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
+                onClick={handlePickLandmarkToggle} aria-pressed={pickLandmarkMode}
+                title="Click cities to set custom ALT landmarks"
               >
-                ★ {pickLandmarkMode ? `Landmarks (${customLandmarks.length})` : 'Pick landmarks'}
+                ★ {pickLandmarkMode ? `Landmarks (${customLandmarks.length})` : 'Landmarks'}
               </Button>
-            </li>
-          </ul>
-
-          <div className="transport">
-            <Button variant="outline" size="icon" aria-label="Reset to start" onClick={handleReset} disabled={stepIdx === 0}>
-              <RotateCcw aria-hidden="true" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
-              <ChevronLeft aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline" size="icon"
-              aria-label={playing ? 'Pause' : 'Play'}
-              onClick={handlePlayPause}
-              disabled={false}
-            >
-              {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
-              <ChevronRight aria-hidden="true" />
-            </Button>
+            </div>
           </div>
 
-          <div className="control speed">
-            <span className="speed-labels">
-              <span>Slow</span>
-              <span className="speed-value">{delay}ms</span>
-              <span>Fast</span>
-            </span>
-            <Slider
-              min={MIN_DELAY} max={MAX_DELAY} step={50}
-              value={MAX_DELAY - delay}
-              onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
-              aria-label="Animation speed, slow to fast"
-            />
+          <div className="toolbar-spacer" aria-hidden="true" />
+
+          {/* Group 3: Playback */}
+          <div className="toolbar-group" aria-label="Playback">
+            <span className="toolbar-group-label">Playback</span>
+            <div className="transport">
+              <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
+                <RotateCcw aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
+                <ChevronLeft aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
+                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              </Button>
+              <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
+                <ChevronRight aria-hidden="true" />
+              </Button>
+            </div>
           </div>
+
+          <div className="toolbar-divider" aria-hidden="true" />
+
+          {/* Group 4: Speed */}
+          <div className="toolbar-group toolbar-group-speed" aria-label="Speed">
+            <span className="toolbar-group-label">Speed</span>
+            <div className="speed">
+              <span className="speed-labels">
+                <span>Slow</span>
+                <span className="speed-value">{delay}ms</span>
+                <span>Fast</span>
+              </span>
+              <Slider
+                min={MIN_DELAY} max={MAX_DELAY} step={50}
+                value={MAX_DELAY - delay}
+                onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
+                aria-label="Animation speed"
+              />
+            </div>
+          </div>
+
         </div>
 
       <section className="compare-panel" aria-labelledby="compare-title">
