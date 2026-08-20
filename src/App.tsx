@@ -574,12 +574,20 @@ function App() {
               </Select>
               <span className="lane-complexity">{meta.time}</span>
             </div>
-            <SVGMap
-              algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
-              result={result} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
-              heatmapValues={heatmapValues} customLandmarks={customLandmarks}
-              onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
-            />
+            <div className="map-wrap">
+              <SVGMap
+                algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
+                result={result} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
+                heatmapValues={heatmapValues} customLandmarks={customLandmarks}
+                onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
+              />
+              <span className="heatmap-legend" aria-label="Heatmap scale"
+                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </span>
+            </div>
             <StatsCard
               meta={meta} footnotes={ALGO_FOOTNOTES[algo]}
               result={result} stepIdx={stepIdx} lastIdx={lastIdx} pathLabel={pathLabel}
@@ -605,12 +613,14 @@ function App() {
               </Select>
               <span className="lane-complexity">{meta2.time}</span>
             </div>
-            <SVGMap
-              algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
-              result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
-              heatmapValues={heatmapValues} customLandmarks={customLandmarks}
-              onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
-            />
+            <div className="map-wrap">
+              <SVGMap
+                algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
+                result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
+                heatmapValues={heatmapValues} customLandmarks={customLandmarks}
+                onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
+              />
+            </div>
             <StatsCard
               meta={meta2} footnotes={ALGO_FOOTNOTES[algo2]}
               result={result2} stepIdx={stepIdx} lastIdx={lastIdx2} pathLabel={pathLabel2}
@@ -656,12 +666,6 @@ function App() {
               >
                 🌡 Heatmap
               </Button>
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
               <Button
                 variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
                 onClick={handlePickLandmarkToggle} aria-pressed={pickLandmarkMode}

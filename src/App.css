@@ -200,6 +200,10 @@
 }
 
 /* ── Map ────────────────────────────────────────────────────────────── */
+.map-wrap {
+  position: relative;
+}
+
 .map {
   width: 100%;
   height: auto;
@@ -343,11 +347,20 @@
 
 .node-clickable { cursor: pointer; }
 
-/* Heatmap legend in control dock */
+/* Heatmap legend — overlay on Lane A map, bottom-left */
 .heatmap-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  pointer-events: none;
 }
 
 .heatmap-legend-label {
