@@ -350,8 +350,8 @@
 /* Heatmap legend — overlay on Lane A map, bottom-left */
 .heatmap-legend {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
+  top: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -465,7 +465,7 @@
   background: var(--dock-bg);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  min-height: 52px;
+  min-height: 64px;
   flex-wrap: wrap;
   position: sticky;
   bottom: 0;
@@ -476,8 +476,8 @@
 .toolbar-group {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 6px 0;
+  gap: var(--sp-1);
+  padding: var(--sp-2) 0;
   flex-shrink: 0;
 }
 
@@ -494,7 +494,7 @@
 .toolbar-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-2);
   flex-wrap: wrap;
 }
 

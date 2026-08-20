@@ -620,6 +620,12 @@ function App() {
                 heatmapValues={heatmapValues} customLandmarks={customLandmarks}
                 onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
               />
+              <span className="heatmap-legend" aria-label="Heatmap scale"
+                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </span>
             </div>
             <StatsCard
               meta={meta2} footnotes={ALGO_FOOTNOTES[algo2]}
@@ -671,7 +677,7 @@ function App() {
                 onClick={handlePickLandmarkToggle} aria-pressed={pickLandmarkMode}
                 title="Click cities to set custom ALT landmarks"
               >
-                ★ {pickLandmarkMode ? `Landmarks (${customLandmarks.length})` : 'Landmarks'}
+                ★ Landmarks ({customLandmarks.length})
               </Button>
             </div>
           </div>
