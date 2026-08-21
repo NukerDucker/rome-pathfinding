@@ -1,83 +1,147 @@
-# Heuristic Search Extension Guide
+# Heuristic Search — Implementation Guide
 
-For whoever is adding greedy best-first search or A* to this visualizer.
+**Status (2026-08-21):** Heuristic fully implemented. All algorithms wired. App live.
 
-## CONSTRAINTS — READ BEFORE WRITING ANY CODE
+---
 
-These come straight from the assignment (see `[[project-rome-heuristic]]` in the course notes). They are not optional style preferences — a heuristic that violates them gets the assignment marked wrong.
+## CONSTRAINTS — READ BEFORE TOUCHING HEURISTIC CODE
 
-- **Only data from the assignment PDF, page 2.** Whatever table/figure is on that page is the only legal source for heuristic values.
-- **Straight-line distance (SLD) is banned.** Not just "don't use SLD as `h()`" — you may not use it as an *input* to derive some other heuristic either (e.g. no "SLD divided by average speed").
-- **No GPS / real-world coordinates / external distance APIs.** The `x`/`y` fields in `src/romania.ts` are schematic SVG layout coordinates for drawing the map, not real geography — don't reverse-engineer distances from them.
-- **The heuristic must be custom** — something you derive yourself from the PDF page-2 data (pixel coordinates/angles read off a diagram are fine, actual geographic distance is not).
+From the assignment PDF. Violations → wrong mark.
 
-If you're not sure whether a value counts as "derived from SLD," don't use it.
+- **Only data from PDF page 2.** No other source.
+- **SLD is banned** — including as an input to derive anything else (no "SLD ÷ speed", no "SLD × factor").
+- **No GPS / real-world coords / external APIs.** `x`/`y` in `src/romania.ts` are SVG layout coords for drawing — not geography.
+- **Must be a custom heuristic** — something you derive yourself from PDF data.
 
-## The contract
+---
 
-Every algorithm implements the same function shape, defined in `src/search.ts`:
+## The SearchResult contract
+
+Every algorithm returns the same shape (`src/search.ts`):
 
 ```ts
-export type SearchFn = (start: NodeId, goal: NodeId) => SearchResult
-
 export type SearchResult = {
-  steps: Step[]                          // one frame per expansion, drives the animation
-  parent: Record<NodeId, NodeId | null>  // search tree, drives renderTreeEdges() in App.tsx
-  path: NodeId[]                         // [] if unreachable, drives renderPathEdges() + path stat
+  steps: Step[]                          // one frame per expansion → animation
+  parent: Record<NodeId, NodeId | null>  // search tree → renderTreeEdges()
+  path: NodeId[]                         // [] if unreachable → path stat + overlay
   found: boolean
-  generated: number                      // total nodes ever discovered, shown as the "Generated" stat
+  generated: number                      // nodes ever discovered → "Generated" stat
 }
 ```
 
-`App.tsx` doesn't know or care which algorithm produced a `SearchResult` — it just renders `steps`, `parent`, and `path`. So as long as your function returns this shape, it plugs into the existing UI, stepper, and play/pause controls with zero changes there.
+`App.tsx` renders `steps`, `parent`, `path` — it doesn't care which algorithm produced them.
 
-Look at `src/bfs.ts` or `src/dfs.ts` for a full worked example — the overall structure (guard clauses, `discovered` set, per-iteration `steps.push(...)`, synthetic final step, `reconstructPath`) is the same for every algorithm; only the frontier data structure and pop order change.
+Reference implementations: `src/bfs.ts`, `src/dfs.ts`.
 
-## Where the heuristic goes
+---
 
-`src/greedy.ts` is a **runnable stub** already wired up structurally — it compiles and its `selfCheck()` passes today. The only thing missing is a real heuristic.
-
-The frontier in `greedy.ts` is a plain array re-sorted by `h(n)` before each pop:
+## Heuristic: Combined LP+ALT (`src/heuristic.ts`)
 
 ```ts
-frontier.sort((a, b) => h(a, goal) - h(b, goal))
-const current = frontier.shift() as NodeId
+h(node, goal) = max(hLP(node, goal), hALT(node, goal))
 ```
 
-That's greedy best-first search: always expand whichever frontier node has the lowest `h(n)`. For A*, change the sort key to `g(n) + h(n)`, where `g(n)` is path cost so far — accumulate it from `edge.km` in `romania.ts` as you push nodes onto the frontier (BFS/DFS don't need this, they're unweighted).
+Max of admissible heuristics → admissible and tighter than either alone.
 
-**The one function to write** lives in `src/heuristic.ts`:
+### LP — Vector-Decomposition (`src/heuristic_table.ts`)
 
-```ts
-export function h(node: NodeId, goal: NodeId): number
+Offline LP: `h(a,b) = min Σ αᵢ·kmᵢ` s.t. `Σ αᵢ·vecᵢ = chord_AB`, `0 ≤ αᵢ ≤ 1`
+
+Solved with scipy/HiGHS using pixel coords + road km from PDF. No SLD, no GPS.
+
+- Mean h/road: **0.729**
+- Admissible: 190/190 pairs ✅
+
+Values live in `HEURISTIC_TABLE` — a `Record<NodeId, Record<NodeId, number>>` lookup. `h()` reads it directly.
+
+### ALT — Landmarks + Triangle Inequality (`src/alt.ts`)
+
+```
+h(n, goal) = max_L |d(L, n) − d(L, goal)|
 ```
 
-It currently returns `0` for everything — a valid but useless heuristic (this is why `greedy.ts` still finds a path today: `h=0` just makes it behave like an arbitrary-order search, per Constraints above it must NOT stay this way for the final submission).
+Admissible by triangle inequality — no empirical verification needed.
 
-## Where heuristic data lives
+Dijkstra precomputed at module load (8 × 20 nodes, negligible cost). Three presets:
 
-Put your per-city values in `src/heuristic.ts`, not in `romania.ts`. `romania.ts` is deliberately SLD-free (see the comment at the top of that file) — don't add distance data to it. A `Record<NodeId, number>` table keyed by city name, populated from the PDF page-2 data, is the expected shape; `h()` can just look values up in it.
+| Preset | Landmarks |
+|--------|-----------|
+| lm2 | Eforie, Oradea |
+| lm4 | + Neamt, Giurgiu |
+| lm8 | + Timisoara, Vaslui, Drobeta, Hirsova |
 
-## Wiring it into the app
+Select with `setALTPreset()` in `heuristic.ts`. `makeHALTArbitrary()` supports click-to-landmark UI.
 
-Once `h()` is real, `greedy.ts` needs no further changes — just add one line to the registry in `src/search.ts`:
+#### Degree-1 backdoor landmarks (exact h for specific goals)
 
-```ts
-export const ALGORITHMS: Record<string, AlgoMeta> = {
-  bfs: { ... },
-  dfs: { ... },
-  greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*' },
-}
-```
+When landmark L is degree-1 and goal = L's only neighbor: `|d(L,n) − d(L,goal)| = d(goal,n)` — exact true distance.
 
-(You'll need `import { greedy } from './greedy'` at the top of `search.ts`.) That's it — `App.tsx` reads `ALGORITHMS` via `Object.entries(...)` to build the dropdown and stats panel, so a new entry there is the entire UI wiring.
+| Landmark | Backdoor goal | In preset |
+|----------|---------------|-----------|
+| Giurgiu → Bucharest | exact h for goal=Bucharest | lm4+ |
+| Eforie → Hirsova | exact h for goal=Hirsova | lm2+ |
+| Neamt → Iasi | exact h for goal=Iasi | lm4+ |
 
-For A*, copy `greedy.ts` to `astar.ts`, change the sort key as described above, and add a second registry line the same way.
+**Demo tip:** to show Eforie backdoor, use goal=Hirsova (not goal=Eforie).
 
-## Verify
+Why `generated` often doesn't change between presets: even perfect h still discovers neighbors of each expanded node. Count only drops when weaker h causes extra expansions — rarely visible on 20 nodes.
+
+### Combined performance
+
+| Heuristic | Mean h/road (380 directed pairs) |
+|-----------|----------------------------------|
+| LP only | 0.729 |
+| ALT lm8 | 0.985 |
+| LP+ALT combined | **0.986** |
+
+LP buys +0.001 over ALT alone. **Q&A answer for "why keep LP":** LP is an independent bound from vector decomposition — different data and method from triangle-inequality landmarks. `max(hLP, hALT)` means admissibility never rests solely on landmark choice.
+
+---
+
+## Algorithms registry (`src/search.ts`)
+
+All algorithms wired in `ALGORITHMS`:
+
+| Key | File | Uses h |
+|-----|------|--------|
+| bfs | bfs.ts | — |
+| dfs | dfs.ts | — |
+| ucs | ucs.ts | — |
+| biucs | biucs.ts | — |
+| greedy | greedy.ts | h() |
+| astar | astar.ts | hLP only |
+| astaralt | astar-alt.ts | max(hLP, hALT) |
+| astaraltonly | astar-alt-only.ts | hALT (active preset) |
+| biastar | biastar.ts | max(hLP, hALT) |
+
+**Bidirectional A\*:** Pohl 1971 stopping — terminate when `minF_fwd + minF_bwd ≥ μ`. On 20 nodes slower than unidirectional (overhead > savings); O(b^(d/2)) advantage appears at millions of nodes.
+
+---
+
+## Self-checks (run at module load)
+
+| File | What it checks |
+|------|---------------|
+| `heuristic.ts` | hLP(Arad,Bucharest) ≈ 388; combined h ≤ 418 |
+| `astar.ts` | Arad→Bucharest = 418 |
+| `biastar.ts` | Arad→Bucharest = 418; trivial same-city case |
+| `search.ts` | pathCost(Arad→Sibiu→Fagaras→Bucharest) = 450 |
+
+Run manually:
 
 ```bash
 bun x tsc -b
-bun run src/greedy.ts   # or your new file — selfCheck() throws on failure
-bun dev                 # pick your algorithm from the dropdown, confirm it animates and lands on the goal
+bun run src/heuristic.ts
+bun run src/astar.ts
+bun run src/biastar.ts
 ```
+
+---
+
+## Adding a new algorithm
+
+1. Copy `src/bfs.ts` → new file. Same structure: guard clauses, `discovered` set, per-iteration `steps.push(...)`, synthetic final step, `reconstructPath`. Change only frontier data structure + pop order.
+2. Add one line to `ALGORITHMS` in `src/search.ts`.
+3. Import at top of `search.ts`.
+
+That's it — `App.tsx` reads `ALGORITHMS` via `Object.entries(...)` to build the dropdown and stats panel.
