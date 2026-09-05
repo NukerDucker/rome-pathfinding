@@ -57,41 +57,165 @@
 .app-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-6);
   border-bottom: 2px solid var(--map-accent);
-  flex-wrap: wrap;
-}
-
-.app-header-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .app-title {
-  font-family: var(--mono);
-  font-size: 15px;
+  font-family: var(--heading);
+  font-size: 21px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--text-h);
   margin: 0;
-  line-height: 1.2;
-}
-
-.app-subtitle {
-  font-size: 12px;
-  color: var(--text);
-  letter-spacing: 0.03em;
-}
-
-.app-header-controls {
+  line-height: 1;
+  text-align: center;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  justify-content: center;
+  gap: 0.55em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--map-accent) 6%, transparent), transparent 70%);
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    height: 44px;
+    gap: 0.4em;
+  }
+}
+
+.app-title-sep {
+  color: var(--map-accent);
+}
+
+.app-title-sub {
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--text);
+}
+
+/* ── Query bar (From … To … with A vs B) ──────────────────────────── */
+.query-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-6);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.query-word {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Standalone words in the bar share the selects' 32px track and center
+   their text inside it, so all baselines/centers line up with the title. */
+.query-bar > .query-word {
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.query-algo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px 10px 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.query-algo-a { border-color: color-mix(in srgb, var(--map-accent) 40%, var(--border)); }
+.query-algo-b { border-color: color-mix(in srgb, var(--lane-b) 40%, var(--border)); }
+
+.query-lm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.query-word-lm {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.query-lm-custom {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #d9a406;
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: 1px solid color-mix(in srgb, #d9a406 45%, transparent);
+  border-radius: 6px;
+  padding: 2px 8px;
+  line-height: 1.4;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.query-lm-custom:hover {
+  background: color-mix(in srgb, #d9a406 18%, transparent);
+}
+
+/* Opt-in landmark overlay toggle (algorithms that don't need landmarks) */
+.lm-toggle {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  line-height: 1.4;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.lm-toggle:hover {
+  opacity: 1;
+  border-color: color-mix(in srgb, #d9a406 55%, var(--border));
+}
+
+.query-lm-off {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.query-lm-off:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
 }
 
 /* ── Main layout ───────────────────────────────────────────────────── */
@@ -190,12 +314,10 @@
   background: color-mix(in srgb, var(--lane-b) 12%, transparent);
 }
 
-.lane-complexity {
-  margin-left: auto;
+.lane-algo-name {
   font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--text-h);
   white-space: nowrap;
 }
 
@@ -384,79 +506,7 @@
   50% { r: 98; opacity: 0.85; }
 }
 
-/* ── Stats strip (inside each lane) ─────────────────────────────────── */
-.stats-strip {
-  padding: var(--sp-3);
-  border-top: 1px solid var(--border);
-}
-
-.stats-live {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.stats-row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.stats-row dt {
-  color: var(--text);
-  font-weight: 500;
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  align-self: center;
-}
-
-.stats-row dd {
-  margin: 0;
-  color: var(--text-h);
-  font-family: var(--mono);
-  font-size: 13px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.path-row dd {
-  max-width: 220px;
-  word-break: break-word;
-  text-align: right;
-}
-
-.stats-theory {
-  margin-top: var(--sp-2);
-}
-
-.stats-theory summary {
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text);
-  cursor: pointer;
-  user-select: none;
-  padding: var(--sp-1) 0;
-}
-
-.stats-theory summary:hover { color: var(--text-h); }
-
-.stats-theory-body { margin-top: var(--sp-2); }
-
-.footnotes {
-  font-size: 11px;
-  color: var(--text);
-  margin: 6px 0 0;
-  line-height: 1.5;
-}
-
-/* ── Toolbar ─────────────────────────────────────────────────────────── */
+/* ── Comparison table ────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
   align-items: center;
@@ -582,35 +632,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Control label (Start/Goal/Algorithm) ────────────────────────────── */
-.control {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.control-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text);
-}
-
 /* ── Comparison table ────────────────────────────────────────────────── */
 .compare-panel {
-  padding: 0 var(--sp-6) 32px;
+  padding: var(--sp-4) var(--sp-6) 32px;
   box-sizing: border-box;
   width: 100%;
 
   @media (max-width: 768px) {
-    padding: 0 var(--sp-4) 20px;
+    padding: var(--sp-3) var(--sp-4) 20px;
   }
 }
 
 .compare-panel h2 {
   margin: 0 0 var(--sp-3);
+}
+
+.footnotes {
+  font-size: 11px;
+  color: var(--text);
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
 .compare-panel .footnotes {
@@ -643,6 +684,7 @@
   letter-spacing: 0.06em;
   color: var(--text);
   border-bottom: 2px solid var(--border);
+  vertical-align: bottom;
 }
 
 .compare tbody th[scope='row'],
@@ -661,12 +703,89 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* KaTeX output inside the complexity cells — keep it from ballooning relative to
+   the 13px mono cell text and inherit the cell's color. */
+.compare td .tex {
+  display: inline-block;
+}
+
+.compare .katex {
+  font-size: 1.02em;
+}
+
 /* Lane-highlighted rows in comparison table */
 .row-lane-a { border-left: 3px solid var(--map-accent); }
 .row-lane-b { border-left: 3px solid var(--lane-b); }
 .row-lane-ab {
   border-left: 3px solid var(--map-accent);
   background: color-mix(in srgb, var(--map-accent) 4%, transparent);
+}
+
+/* Better-value highlighting: the winning cell wears its lane's accent */
+.better-a { color: var(--map-accent); font-weight: 600; }
+.better-b { color: var(--lane-b); font-weight: 600; }
+
+/* Fixed column widths: table never reflows while live step values change */
+.compare-fixed {
+  table-layout: fixed;
+}
+
+.compare-fixed th,
+.compare-fixed td {
+  overflow-wrap: anywhere;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.compare-fixed thead th {
+  white-space: normal;
+}
+
+/* Header cells carrying a literal unit symbol (µ) must not be uppercased,
+   otherwise the micro sign becomes a capital Greek Mu (Μ). */
+.compare-fixed thead th.th-unit {
+  text-transform: none;
+  letter-spacing: 0.03em;
+}
+
+.compare-fixed td {
+  white-space: normal;
+}
+
+/* Taller body rows (the A/B algorithm rows) */
+.compare-fixed tbody th,
+.compare-fixed tbody td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+/* Cell content is vertically centered with a modest minimum height; rows grow to
+   fit content so nothing clips. Height is driven only by static content, so it
+   stays stable while step values change. */
+.compare-fixed .run-cell {
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Keeps the lane badge (A/B) and the algorithm name on the same line */
+.compare-fixed .run-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.compare-fixed .run-label-text {
+  min-width: 0;
+}
+
+/* Wrap-around column (long paths etc.) inside the otherwise nowrap table */
+.compare .col-wrap {
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ── Reduced motion ──────────────────────────────────────────────────── */
