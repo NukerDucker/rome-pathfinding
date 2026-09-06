@@ -29,28 +29,27 @@
   --sp-6: 24px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --map-accent: #c084fc;
-    --lane-b: #22d3ee;
-    --surface: #1b1c23;
-    --dock-bg: rgba(22,23,29,0.92);
+:root.dark {
+  --map-accent: #c084fc;
+  --lane-b: #22d3ee;
+  --surface: #1b1c23;
+  --dock-bg: rgba(22,23,29,0.92);
 
-    --state-frontier: #fbbf24;
-    --state-visited: #6b7280;
-    --state-path: #4ade80;
-    --marker-start: #4ade80;
-    --marker-goal: #f87171;
+  --state-frontier: #fbbf24;
+  --state-visited: #6b7280;
+  --state-path: #4ade80;
+  --marker-start: #4ade80;
+  --marker-goal: #f87171;
 
-    --map-road: #3c3f4b;
+  --map-road: #3c3f4b;
 
-    --ink-on-frontier: #241300;
-    --ink-on-current: #22083a;
-    --ink-on-visited: #f3f4f6;
-    --ink-on-path: #052e16;
+  --ink-on-frontier: #241300;
+  --ink-on-current: #22083a;
+  --ink-on-visited: #f3f4f6;
+  --ink-on-path: #052e16;
 
-    --node-current-ring: #f3f4f6;
-  }
+  --node-current-ring: #f3f4f6;
+  color-scheme: dark;
 }
 
 /* ── App header ────────────────────────────────────────────────────── */
@@ -64,6 +63,7 @@
 }
 
 .app-title {
+  position: relative;
   font-family: var(--heading);
   font-size: 21px;
   font-weight: 600;
@@ -87,6 +87,33 @@
     height: 44px;
     gap: 0.4em;
   }
+}
+
+/* Light/dark theme toggle, top-right of the masthead */
+.theme-toggle {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.theme-toggle:hover {
+  background: color-mix(in srgb, var(--text-h) 8%, transparent);
+}
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .app-title-sep {
@@ -788,8 +815,247 @@
   word-break: break-word;
 }
 
+/* Single-line cells (e.g. step counters like “10 / 12”) */
+.compare .col-nowrap {
+  white-space: nowrap;
+}
+
 /* ── Reduced motion ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .node circle { transition: none; }
   .node-glow { animation: none; }
+}
+
+/* ── Responsive layout ──────────────────────────────────────────────── */
+/* Breakpoint ladder
+     phone  : <  640px   single column, compact controls
+     tablet : 640–1100px stacked maps + tall (transposed) table
+     desktop: ≥ 1100px   side-by-side maps + wide table          */
+
+/* The wide/tall comparison-table swap is driven by React (only one table is
+   rendered), so the rules below just style the transposed table and adapt the
+   page chrome to narrower layouts. */
+
+.compare-tall { table-layout: auto; width: 100%; }
+.compare-tall th,
+.compare-tall td { vertical-align: top; }
+.compare-tall th { white-space: normal; }
+.compare-tall td { white-space: normal; overflow-wrap: anywhere; }
+
+/* Metric label column — keep tidy, but allow wrap if a label is long */
+.compare-tall thead .tall-metric-col,
+.compare-tall tbody th[scope='row'] {
+  text-align: left;
+  white-space: normal;
+  font-weight: 600;
+}
+
+/* Algorithm headers (A / B columns) — badge + name, allow the name to wrap so
+   a long algorithm never forces the column (or the page) to overflow. */
+.compare-tall thead th { text-align: left; }
+.compare-tall thead .tall-head {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+.compare-tall thead .tall-head .lane-badge { margin-right: 6px; }
+.compare-tall thead .tall-head-a { color: var(--map-accent); }
+.compare-tall thead .tall-head-b { color: var(--lane-b); }
+.compare-tall thead .tall-head-label { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+@media (max-width: 1100px) {
+  /* Show the legend on tablets/mobile (it was hidden below 768px) */
+  .legend { display: flex; }
+}
+
+@media (max-width: 640px) {
+  /* Full-bleed page on phones. Use overflow clip (not hidden) so it stops
+     horizontal scroll without breaking the sticky bottom toolbar. */
+  html, body { overflow-x: clip; }
+  #root { width: 100%; border-inline: none; }
+
+  /* Title: break across two centered lines instead of clipping (e.g. iPhone SE) */
+  .app-title {
+    height: auto;
+    min-height: 0;
+    flex-wrap: wrap;
+    gap: 0;
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+  .app-title > span:first-child { flex-basis: 100%; }
+  .app-title-sep { display: none; }
+  .app-title-sub { flex-basis: 100%; letter-spacing: 0.2em; }
+
+  /* Query bar: stack the three clusters (route / with-A / vs-B), each ~80% wide */
+  .query-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .query-route,
+  .query-lane {
+    width: 80%;
+    max-width: 420px;
+    flex: 0 0 auto;
+  }
+
+  /* Toolbar: drop chrome separators, let groups stack */
+  .toolbar {
+    gap: var(--sp-2);
+    padding: var(--sp-2);
+    min-height: auto;
+  }
+  .toolbar-divider,
+  .toolbar-spacer { display: none; }
+  .toolbar-group { flex: 1 1 auto; }
+  .toolbar-group-speed { min-width: 0; }
+  .toolbar-group-speed .speed { min-width: 0; }
+  .toolbar-group-speed .speed-labels { flex-wrap: wrap; }
+
+  /* Compact legend chips — 4 columns × 2 rows (fits the 7 items) */
+  .legend {
+    font-size: 10px;
+    gap: var(--sp-1) 8px;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    justify-content: center;
+  }
+
+  /* Lane header names shouldn't overflow */
+  .lane-header { min-width: 0; }
+  .lane-algo-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Scale math down so UCS/Bidirectional equations fit a value column */
+  .compare .katex { font-size: 0.8em; }
+
+  /* Compare panel heading: “Algorithm comparison” / route on separate lines */
+  .compare-title { flex-direction: column; gap: 2px; }
+}
+
+/* ── Query-bar refinements ──────────────────────────────────────────── */
+/* “with”/“vs” live inside their algorithm groups so they never split away */
+.query-algo .query-lane-word { height: auto; }
+
+/* Keep select values on one line and truncate instead of wrapping */
+.query-bar .city-trigger,
+.query-bar .algo-trigger {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Compare heading: label + route, both centered */
+.compare-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  text-align: center;
+}
+.compare-title .ct-route {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 0.92em;
+}
+
+/* ── Theme transition (applied only while the toggle is animating) ─────── */
+html.theme-anim,
+html.theme-anim body,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease,
+    border-color 0.4s ease,
+    fill 0.4s ease,
+    stroke 0.4s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-anim,
+  html.theme-anim body,
+  html.theme-anim *,
+  html.theme-anim *::before,
+  html.theme-anim *::after {
+    transition: none !important;
+  }
+}
+
+/* ── Query bar: preposition + algorithm group stick together, word outside box ── */
+.query-lane {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.query-lane .query-word {
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+.query-algo { min-width: 0; }
+
+/* Let the select values truncate (ellipsis) so a long algorithm fits its box */
+.query-bar [data-slot="select-trigger"] { overflow: hidden; }
+.query-bar [data-slot="select-value"] { min-width: 0; }
+.query-bar .algo-trigger { width: min(176px, 40vw); }
+
+/* Route row (From … To … dice) stays on one line; city selects shrink + ellipsis */
+.query-route {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.query-route .query-word {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.query-route .city-trigger {
+  flex: 1 1 60px;
+  min-width: 0;
+  width: auto;
+}
+.query-route > [data-slot="select-trigger"] { flex: 1 1 60px; min-width: 0; width: auto; }
+
+@media (max-width: 640px) {
+  .query-word-lm { display: none; }
+  .query-bar .algo-trigger { width: min(150px, 44vw); }
+}
+
+/* ── Wide table: header single-line, sticky first column, horizontal scroll ── */
+/* The wide table uses fixed pixel column widths and is as wide as its content;
+   .compare-scroll scrolls it horizontally instead of squeezing/clipping cells. */
+.table-wide {
+  width: max-content;
+  min-width: max-content;
+}
+.table-wide thead th {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+.table-wide thead th:first-child,
+.table-wide tbody tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--card);
+}
+.table-wide thead th:first-child { z-index: 3; }
+.table-wide tbody tr > :first-child { box-shadow: inset -1px 0 0 var(--border); }
+
+/* The comparison table may now overflow horizontally; let it scroll */
+.compare-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }

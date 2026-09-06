@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
@@ -142,29 +142,30 @@ function LandmarkPicker(props: LandmarkPickerProps) {
 const ALGO_OPTIONS: [string, (typeof ALGORITHMS)[string]][] = Object.entries(ALGORITHMS)
   .sort(([, a], [, b]) => a.label.localeCompare(b.label))
 
-// Column weights (relative) → rendered as % of the table width so the table
-// always fits its container without horizontal scrolling. Table-layout is fixed,
-// so widths never reflow while live step values change.
-const ALGO_COL_WEIGHT = 15
-const DEFAULT_COL_WEIGHT = 4
-const COL_WEIGHT: Record<string, number> = {
-  Step: 5,
-  Current: 5,
-  Visited: 4,
-  Frontier: 4,
-  Generated: 4,
-  Path: 8,
-  'Time (µs)': 4,
-  'Peak memory': 4,
-  'Cost (km)': 5,
-  Hops: 3,
-  'T(n)': 11,
-  'S(n)': 11,
-  Optimal: 4,
-  Complete: 4,
-  'landmarks 2': 5,
-  4: 2,
-  8: 2,
+// Fixed pixel widths for the wide comparison table's columns. Columns keep a
+// constant size (so they never reflow while live step values change); the table
+// is allowed to be wider than the viewport and scrolls horizontally instead of
+// clipping or shrinking cells.
+const ALGO_COL_PX = 190
+const DEFAULT_COL_PX = 90
+const COL_PX: Record<string, number> = {
+  Step: 96,
+  Current: 100,
+  Visited: 90,
+  Frontier: 90,
+  Generated: 110,
+  Path: 260,
+  'Time (µs)': 120,
+  'Peak memory': 130,
+  'Cost (km)': 120,
+  Hops: 70,
+  'T(n)': 200,
+  'S(n)': 200,
+  Optimal: 90,
+  Complete: 90,
+  'landmarks 2': 120,
+  4: 56,
+  8: 56,
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
@@ -477,7 +478,58 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
   )
 }
 
+// Subscribe a component to a CSS media query. Used to pick the comparison-table
+// orientation (wide on desktop, transposed on narrow screens).
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const onChange = () => setMatches(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [query])
+  return matches
+}
+
+// Sun/Moon theme toggle. Applies a `.dark` class on <html> and matches the
+// native color scheme so the app's CSS variables (now keyed to `.dark`) switch.
+function ThemeToggle() {
+  const [dark, setDark] = useState(() => {
+    const prefersDark =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const initial = document.documentElement.classList.contains('dark') || prefersDark
+    document.documentElement.classList.toggle('dark', initial)
+    document.documentElement.style.colorScheme = initial ? 'dark' : 'light'
+    return initial
+  })
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+  }, [dark])
+  return (
+    <button
+      type="button"
+      className="theme-toggle"
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Light theme' : 'Dark theme'}
+      onClick={() => {
+        // Animate the theme change, then drop the class so normal transitions resume.
+        document.documentElement.classList.add('theme-anim')
+        window.setTimeout(() => document.documentElement.classList.remove('theme-anim'), 450)
+        setDark((d) => !d)
+      }}
+    >
+      {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+    </button>
+  )
+}
+
 function App() {
+  // Swap the comparison table's orientation below 1100px (render only one table).
+  const isCompact = useMediaQuery('(max-width: 1100px)')
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -724,9 +776,19 @@ function App() {
     },
   ]
 
-  // Turn the weight map into % of the table width (weights sum to 100%).
-  const colWeightTotal = ALGO_COL_WEIGHT + cols.reduce((s, c) => s + (COL_WEIGHT[c.label] ?? DEFAULT_COL_WEIGHT), 0)
-  const pctOf = (w: number) => `${(w / colWeightTotal) * 100}%`
+  // Full row labels (badge name + landmark suffix) reused by both table orientations.
+  const rowLabelA = `${meta.label}${laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}`
+  const rowLabelB = `${meta2.label}${laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}`
+
+  // Cell classes for the comparison tables. Numeric-ish Step cells stay on one
+  // line (they can reach two digits, e.g. “10 / 12”) instead of wrapping.
+  const cellCls = (
+    label: string,
+    wrap: boolean | undefined,
+    better: 'a' | 'b' | undefined,
+    side: 'a' | 'b',
+  ) =>
+    `${wrap ? 'col-wrap' : ''}${better === side ? (side === 'a' ? ' better-a' : ' better-b') : ''}${label === 'Step' ? ' col-nowrap' : ''}`
 
   return (
     <>
@@ -734,15 +796,17 @@ function App() {
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
+      <ThemeToggle />
     </h1>
       <div className="query-bar" role="toolbar" aria-label="Search configuration">
+        <div className="query-route">
         <span className="query-word">From</span>
         <Select
           value={start}
           onValueChange={(v) => v && handleStartChange(v as NodeId)}
           onOpenChange={(open) => !open && setHoveredCity(null)}
         >
-          <SelectTrigger className="w-36" aria-label="Start city"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
           <SelectContent>
             {CITIES.map((city) => (
               <SelectItem
@@ -760,7 +824,7 @@ function App() {
           onValueChange={(v) => v && handleGoalChange(v as NodeId)}
           onOpenChange={(open) => !open && setHoveredCity(null)}
         >
-          <SelectTrigger className="w-36" aria-label="Goal city"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
           <SelectContent>
             {CITIES.map((city) => (
               <SelectItem
@@ -772,11 +836,22 @@ function App() {
           </SelectContent>
         </Select>
 
-        <span className="query-word">with</span>
-        <div className="query-algo query-algo-a">
+        <Button
+          variant="outline" size="icon"
+          aria-label="Randomize start and goal cities"
+          title="Randomize"
+          onClick={handleRandomize}
+        >
+          <Dices aria-hidden="true" />
+        </Button>
+        </div>
+
+        <div className="query-lane">
+          <span className="query-word">with</span>
+          <div className="query-algo query-algo-a">
           <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
           <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
-            <SelectTrigger className="w-44" aria-label="Algorithm for lane A">
+            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane A">
               <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -795,13 +870,15 @@ function App() {
             customCount={customA.length}
             onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
           />
+          </div>
         </div>
 
-        <span className="query-word">vs</span>
-        <div className="query-algo query-algo-b">
+        <div className="query-lane">
+          <span className="query-word">vs</span>
+          <div className="query-algo query-algo-b">
           <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
           <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
-            <SelectTrigger className="w-44" aria-label="Algorithm for lane B">
+            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane B">
               <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -820,16 +897,8 @@ function App() {
             customCount={customB.length}
             onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
           />
+          </div>
         </div>
-
-        <Button
-          variant="outline" size="icon"
-          aria-label="Randomize start and goal cities"
-          title="Randomize"
-          onClick={handleRandomize}
-        >
-          <Dices aria-hidden="true" />
-        </Button>
       </div>
 
       <main className="app">
@@ -987,14 +1056,18 @@ function App() {
         <section className="compare-panel" aria-labelledby="compare-title">
           <Card>
             <CardContent>
-              <h2 id="compare-title">Algorithm comparison — {start} → {goal}</h2>
+              <h2 id="compare-title" className="compare-title">
+                <span>Algorithm comparison</span>
+                <span className="ct-route">{start} → {goal}</span>
+              </h2>
               <div className="compare-scroll">
-                <table className="compare compare-fixed">
+                {!isCompact ? (
+                <table className="compare compare-fixed table-wide">
                   <thead>
                     <tr>
-                      <th scope="col" style={{ width: pctOf(ALGO_COL_WEIGHT) }}>Algorithm</th>
+                      <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
                       {cols.map((c) => (
-                        <th key={c.label} scope="col" style={{ width: pctOf(COL_WEIGHT[c.label] ?? DEFAULT_COL_WEIGHT) }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                        <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1004,12 +1077,12 @@ function App() {
                         <div className="run-cell">
                           <span className="run-label">
                             <span className="lane-badge lane-badge-a">A</span>
-                            <span className="run-label-text">{meta.label}{laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}</span>
+                            <span className="run-label-text">{rowLabelA}</span>
                           </span>
                         </div>
                       </th>
                       {cols.map((c) => (
-                        <td key={c.label} className={`${c.wrap ? 'col-wrap' : ''}${c.better === 'a' ? ' better-a' : ''}`}>
+                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
                           <div className="run-cell">{c.a}</div>
                         </td>
                       ))}
@@ -1019,18 +1092,44 @@ function App() {
                         <div className="run-cell">
                           <span className="run-label">
                             <span className="lane-badge lane-badge-b">B</span>
-                            <span className="run-label-text">{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
+                            <span className="run-label-text">{rowLabelB}</span>
                           </span>
                         </div>
                       </th>
                       {cols.map((c) => (
-                        <td key={c.label} className={`${c.wrap ? 'col-wrap' : ''}${c.better === 'b' ? ' better-b' : ''}`}>
+                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
                           <div className="run-cell">{c.b}</div>
                         </td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
+                ) : (
+                <table className="compare compare-tall">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="tall-metric-col">Metric</th>
+                      <th scope="col" className="tall-head tall-head-a">
+                        <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+                        <span className="tall-head-label">{rowLabelA}</span>
+                      </th>
+                      <th scope="col" className="tall-head tall-head-b">
+                        <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+                        <span className="tall-head-label">{rowLabelB}</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cols.map((c) => (
+                      <tr key={c.label}>
+                        <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                        <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
+                        <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                )}
               </div>
               <p className="footnotes">
                 {
