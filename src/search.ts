@@ -28,6 +28,8 @@ export type AlgoMeta = {
   space: string
   optimal: string
   complete: string
+  // true when the algorithm's heuristic is driven by the active ALT landmark preset
+  usesLandmarks?: boolean
 }
 
 // Walk parent chain from goal back to start, reverse into start->goal order.
@@ -55,16 +57,17 @@ export function pathCost(path: NodeId[]): number {
   return cost
 }
 
+// time/space hold KaTeX LaTeX, typeset directly in the comparison table.
 export const ALGORITHMS: Record<string, AlgoMeta> = {
   bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes' },
   dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(bm)', optimal: 'No', complete: 'No*' },
-  greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*' },
+  greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*', usesLandmarks: true },
   astar: { label: 'A* (LP)', run: astar, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
-  astaralt: { label: 'A* (LP+ALT)', run: astarAlt, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
-  astaraltonly: { label: 'A* (ALT only)', run: astarAltOnly, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
-  biastar: { label: 'Bidir. A* (LP+ALT)', run: biastar, time: 'O(b^(d/2))', space: 'O(b^(d/2))', optimal: 'Yes', complete: 'Yes' },
-  ucs: { label: 'UCS', run: ucs, time: 'O(b^(1+floor(C*/e)))', space: 'O(b^(1+floor(C*/e)))', optimal: 'Yes', complete: 'Yes' },
-  biucs: { label: 'Bidirectional UCS', run: biucs, time: 'O(b^(1+C/2e))', space: 'O(b^(1+C/2e))', optimal: 'Yes', complete: 'Yes' },
+  astaralt: { label: 'A* (LP+ALT)', run: astarAlt, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes', usesLandmarks: true },
+  astaraltonly: { label: 'A* (ALT only)', run: astarAltOnly, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes', usesLandmarks: true },
+  biastar: { label: 'Bidir. A* (LP+ALT)', run: biastar, time: 'O(b^{d/2})', space: 'O(b^{d/2})', optimal: 'Yes', complete: 'Yes', usesLandmarks: true },
+  ucs: { label: 'UCS', run: ucs, time: 'O(b^{1+\\lfloor C^* / \\varepsilon \\rfloor})', space: 'O(b^{1+\\lfloor C^* / \\varepsilon \\rfloor})', optimal: 'Yes', complete: 'Yes' },
+  biucs: { label: 'Bidirectional UCS', run: biucs, time: 'O(b^{1 + C / 2 \\varepsilon})', space: 'O(b^{1 + C / 2 \\varepsilon})', optimal: 'Yes', complete: 'Yes' },
 }
 
 // Self-check: known Arad -> Bucharest cost (140 + 99 + 211).

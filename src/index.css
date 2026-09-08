@@ -98,9 +98,8 @@
   --sidebar-ring: oklch(0.708 0 0)
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
+:root.dark {
+  --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
     --border: #2e303a;
@@ -130,11 +129,11 @@
     --destructive: oklch(0.704 0.191 22.216);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
-  }
+    color-scheme: dark;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+.dark #social .button-icon {
+  filter: invert(1) brightness(2);
 }
 
 #root {

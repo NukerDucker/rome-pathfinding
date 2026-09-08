@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Dices, Pause, Play, RotateCcw } from 'lucide-react'
+import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
+import { ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
-  setALTPreset, getALTPreset,
+  setALTPreset,
   setCustomLandmarks, saveALTState, restoreALTState,
-  hALTOnly,
+  altHWith,
   type LandmarkPreset,
 } from './heuristic'
+import { LANDMARK_PRESETS } from './alt'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -21,13 +24,148 @@ import {
 import './App.css'
 
 const ALGO_FOOTNOTES: Record<string, string> = {
-  bfs: '*Optimal if step costs are equal. *Complete if branching factor b is finite.',
-  dfs: '*Complete if branching factor b is finite (graph-search via visited set avoids cycles).',
-  greedy: '*Not optimal — ignores path cost so far. *Complete if branching factor b is finite (graph-search avoids cycles).',
-  astar: '*Optimal if the heuristic is admissible (LP vector-decomposition heuristic, verified admissible). *Complete if branching factor b is finite.',
-  astaraltonly: '*Optimal — ALT heuristic admissible by triangle inequality. *Complete if branching factor b is finite. Uses active landmark preset only — no LP component.',
-  ucs: 'Optimal and complete for non-negative step costs (graph-search, Dijkstra-equivalent).',
-  biucs: 'Optimal and complete for non-negative step costs — searches from both ends and meets in the middle.',
+  bfs: 'Yes* = only when step costs are equal.',
+  dfs: 'No* = only if the branching factor b is finite (visited set stops cycles).',
+  greedy: 'Not optimal; complete only if b is finite.',
+  astar: 'Optimal while the LP heuristic is admissible; complete if b is finite.',
+  astaraltonly: 'Optimal (admissible ALT heuristic); complete if b is finite.',
+  ucs: 'Optimal & complete for non-negative costs.',
+  biucs: 'Optimal & complete for non-negative costs — bidirectional.',
+}
+
+// Which ALT landmark-count presets a lane can select. Independent per lane.
+type LandmarkCount = 'lm2' | 'lm4' | 'lm8'
+const LM_OPTIONS: { value: LandmarkCount; label: string }[] = [
+  { value: 'lm2', label: '2' },
+  { value: 'lm4', label: '4' },
+  { value: 'lm8', label: '8' },
+]
+const LM_SHORT: Record<LandmarkCount, string> = { lm2: '2', lm4: '4', lm8: '8' }
+
+// Resolve the landmark cities a lane should draw on its map. Drawn when the
+// algorithm uses landmarks (its heuristic is driven by them) OR when the user
+// explicitly opted in to the overlay for a non-landmark algorithm. Either way
+// the drawn set is the lane's custom picks if present, else the preset.
+function laneLandmarkCities(
+  usesLandmarks: boolean | undefined,
+  overlay: boolean,
+  count: LandmarkCount,
+  custom: NodeId[],
+): readonly NodeId[] | undefined {
+  if (!usesLandmarks && !overlay) return undefined
+  return custom.length > 0 ? custom : LANDMARK_PRESETS[count]
+}
+
+// Typeset a LaTeX expression inline (span element). The time/space complexity
+// strings in search.ts are already LaTeX, so they are passed straight through.
+function Tex({ children, className }: { children: string; className?: string }) {
+  const html = useMemo(
+    () => katex.renderToString(children, { throwOnError: false, displayMode: false }),
+    [children],
+  )
+  return <span className={`tex${className ? ` ${className}` : ''}`} dangerouslySetInnerHTML={{ __html: html }} />
+}
+
+// Row-name suffix describing which landmark config a lane runs with.
+function laneLmSuffix(
+  usesLandmarks: boolean | undefined,
+  count: LandmarkCount,
+  custom: NodeId[],
+): string {
+  if (!usesLandmarks) return ''
+  return custom.length > 0 ? ` · Custom (${custom.length})` : ` · ${LM_SHORT[count]} Landmark`
+}
+
+type LandmarkPickerProps = {
+  lane: string
+  usesLandmarks: boolean | undefined
+  overlay: boolean
+  setOverlay: (v: boolean) => void
+  count: LandmarkCount
+  onCount: (v: LandmarkCount) => void
+  customCount: number
+  onClearCustom: () => void
+}
+
+// Per-lane landmark controls in the query bar. Landmark algorithms always show
+// their active set (preset count or a click-picked custom set). Non-landmark
+// algorithms get an opt-in overlay toggle so the user can display landmarks for
+// context without changing the algorithm's own behavior.
+function LandmarkPicker(props: LandmarkPickerProps) {
+  const { lane, usesLandmarks, overlay, setOverlay, count, onCount, customCount, onClearCustom } = props
+  const active = usesLandmarks || overlay
+  if (!active) {
+    return (
+      <button
+        className="lm-toggle"
+        title={`Show landmark overlay for ${lane} (visual only — algorithm unchanged)`}
+        onClick={() => setOverlay(true)}
+      >✦ Landmarks</button>
+    )
+  }
+  return (
+    <div className="query-lm">
+      {customCount > 0 ? (
+        <button
+          className="query-lm-custom"
+          title={`Custom landmarks active (${customCount}). Click to clear and return to the preset.`}
+          onClick={onClearCustom}
+        >★ Custom ({customCount})</button>
+      ) : (
+        <>
+          <Select value={count} onValueChange={(v) => v && onCount(v as LandmarkCount)}>
+            <SelectTrigger className="w-16" aria-label={`Landmark count for ${lane}`}>
+              <SelectValue>{LM_SHORT[count]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {LM_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="query-word query-word-lm">Landmark</span>
+        </>
+      )}
+      {!usesLandmarks && (
+        <button
+          className="query-lm-off"
+          aria-label={`Hide landmark overlay for ${lane}`}
+          title="Hide landmark overlay"
+          onClick={() => setOverlay(false)}
+        >✕</button>
+      )}
+    </div>
+  )
+}
+
+// Algorithm options in alphabetical order (by display label) for the selects.
+const ALGO_OPTIONS: [string, (typeof ALGORITHMS)[string]][] = Object.entries(ALGORITHMS)
+  .sort(([, a], [, b]) => a.label.localeCompare(b.label))
+
+// Fixed pixel widths for the wide comparison table's columns. Columns keep a
+// constant size (so they never reflow while live step values change); the table
+// is allowed to be wider than the viewport and scrolls horizontally instead of
+// clipping or shrinking cells.
+const ALGO_COL_PX = 190
+const DEFAULT_COL_PX = 90
+const COL_PX: Record<string, number> = {
+  Step: 96,
+  Current: 100,
+  Visited: 90,
+  Frontier: 90,
+  Generated: 110,
+  Path: 260,
+  'Time (µs)': 120,
+  'Peak memory': 130,
+  'Cost (km)': 120,
+  Hops: 70,
+  'T(n)': 200,
+  'S(n)': 200,
+  Optimal: 90,
+  Complete: 90,
+  'landmarks 2': 120,
+  4: 56,
+  8: 56,
 }
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
@@ -96,15 +234,35 @@ type CompareRow = {
   found: boolean
 }
 
-function compareAlgorithms(start: NodeId, goal: NodeId): CompareRow[] {
-  return Object.entries(ALGORITHMS).map(([key, meta]) => {
+// Point the module-level ALT heuristic at a specific preset/custom set, run the
+// search, then restore whatever ALT state was active before — keeps the two
+// lanes (and the benchmark tables) independent despite the shared module state.
+function withAltConfig<T>(preset: LandmarkPreset, custom: NodeId[], fn: () => T): T {
+  const saved = saveALTState()
+  if (preset === 'custom') {
+    if (custom.length > 0) setCustomLandmarks(custom)
+    else setALTPreset('lm8')
+  } else {
+    setALTPreset(preset)
+  }
+  try {
+    return fn()
+  } finally {
+    restoreALTState(saved)
+  }
+}
+
+// Benchmark a single algorithm under an explicit preset — mean wall time over
+// BENCH_ITERS runs, plus peak frontier as a space proxy.
+function benchmarkOne(meta: AlgoMeta, start: NodeId, goal: NodeId, cfg: LandmarkPreset, custom: NodeId[]): CompareRow {
+  return withAltConfig(cfg, custom, () => {
     const res = meta.run(start, goal)
     const t0 = performance.now()
     for (let i = 0; i < BENCH_ITERS; i++) meta.run(start, goal)
     const ms = (performance.now() - t0) / BENCH_ITERS
     const peakFrontier = res.steps.reduce((max, s) => Math.max(max, s.frontier.length), 0)
     return {
-      key, label: meta.label, ms, peakFrontier,
+      key: '', label: meta.label, ms, peakFrontier,
       generated: res.generated,
       cost: res.found ? pathCost(res.path) : NaN,
       hops: res.found ? res.path.length - 1 : 0,
@@ -113,25 +271,21 @@ function compareAlgorithms(start: NodeId, goal: NodeId): CompareRow[] {
   })
 }
 
-type LmAlgoRow = { key: string; label: string; lm2: number; lm4: number; lm8: number }
-
-function landmarkComparison(start: NodeId, goal: NodeId): LmAlgoRow[] {
-  // Collect generated counts for every algo at each landmark preset
+// Nodes generated by one algorithm under each of the three landmark presets.
+// Returns null for algorithms that do not use landmarks at all.
+function landmarkEffect(meta: AlgoMeta, start: NodeId, goal: NodeId): { lm2: number; lm4: number; lm8: number } | null {
+  if (!meta.usesLandmarks) return null
   const saved = saveALTState()
-  const counts: Record<string, { lm2: number; lm4: number; lm8: number }> = {}
-  for (const key of Object.keys(ALGORITHMS)) counts[key] = { lm2: 0, lm4: 0, lm8: 0 }
-
-  for (const preset of ['lm2', 'lm4', 'lm8'] as const) {
-    setALTPreset(preset)
-    for (const [key, meta] of Object.entries(ALGORITHMS)) {
-      counts[key][preset] = meta.run(start, goal).generated
+  try {
+    const out = {} as { lm2: number; lm4: number; lm8: number }
+    for (const preset of ['lm2', 'lm4', 'lm8'] as const) {
+      setALTPreset(preset)
+      out[preset] = meta.run(start, goal).generated
     }
+    return out
+  } finally {
+    restoreALTState(saved)
   }
-  restoreALTState(saved)
-
-  return Object.entries(ALGORITHMS).map(([key, meta]) => ({
-    key, label: meta.label, ...counts[key],
-  }))
 }
 
 const BASE_EDGES: EdgePair[] = buildBaseEdges()
@@ -206,6 +360,19 @@ function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boole
   return 'unvisited'
 }
 
+// Pure normalized h-values for a given preset/custom set (no module globals).
+function heatmapFor(goal: NodeId, preset: LandmarkPreset, custom: NodeId[]): Record<NodeId, number> | undefined {
+  const vals: Record<NodeId, number> = {}
+  let max = 0
+  for (const city of CITIES) {
+    vals[city] = altHWith(city, goal, preset, custom)
+    if (vals[city] > max) max = vals[city]
+  }
+  if (max === 0) return undefined
+  for (const city of CITIES) vals[city] /= max
+  return vals
+}
+
 type SVGMapParams = {
   algoKey: string
   stepIdx: number
@@ -214,14 +381,14 @@ type SVGMapParams = {
   hoveredCity: NodeId | null
   start: NodeId
   goal: NodeId
-  showArc: boolean
+  showLine: boolean
   heatmapValues?: Record<NodeId, number>
-  customLandmarks?: NodeId[]
+  landmarks?: readonly NodeId[]
   onCityClick?: (city: NodeId) => void
   pickLandmarkMode?: boolean
 }
 
-function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showArc, heatmapValues, customLandmarks, onCityClick, pickLandmarkMode }: SVGMapParams) {
+function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showLine, heatmapValues, landmarks, onCityClick, pickLandmarkMode }: SVGMapParams) {
   const step: Step = result.steps[Math.min(stepIdx, lastIdx)]
   const isFinalFrame: boolean = stepIdx >= lastIdx
   const edgeViews: EdgeView[] = buildEdgeViews(
@@ -249,7 +416,7 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         />
       ))}
 
-      {showArc && (algoKey === 'greedy' || algoKey === 'astar' || algoKey === 'astaralt' || algoKey === 'biastar') && renderArcEdges(start, goal)}
+      {showLine && renderArcEdges(start, goal)}
 
       {edgeViews.map((edge) => {
         const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
@@ -290,18 +457,18 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         const isHovered = city === hoveredCity
         const isStart = city === start && !isFinalFrame
         const isGoal = city === goal && !isFinalFrame
-        const isCustomLandmark = customLandmarks?.includes(city) ?? false
+        const isLandmark = landmarks?.includes(city) ?? false
         return (
           <g
             key={city}
             className={`node node-${state}${isHovered ? ' node-hover' : ''}${pickLandmarkMode ? ' node-clickable' : ''}`}
             onClick={() => onCityClick?.(city)}
           >
-            <title>{city}{isCustomLandmark ? ' ★ landmark' : ''}</title>
+            <title>{city}{isLandmark ? ' ★ landmark' : ''}</title>
             {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
             {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
             {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
-            {isCustomLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
+            {isLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
             <circle cx={coord.x} cy={coord.y} r={NODE_R} />
             <text x={coord.x} y={coord.y} dominantBaseline="central">{cityCode(city)}</text>
           </g>
@@ -311,64 +478,60 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
   )
 }
 
-type StatsCardParams = {
-  meta: AlgoMeta
-  footnotes: string
-  result: SearchResult
-  stepIdx: number
-  lastIdx: number
-  pathLabel: string
+// Subscribe a component to a CSS media query. Used to pick the comparison-table
+// orientation (wide on desktop, transposed on narrow screens).
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const onChange = () => setMatches(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [query])
+  return matches
 }
 
-function StatsCard({ meta, footnotes, result, stepIdx, lastIdx, pathLabel }: StatsCardParams) {
-  const step: Step = result.steps[Math.min(stepIdx, lastIdx)]
-  const isFinalFrame: boolean = stepIdx >= lastIdx
-
+// Sun/Moon theme toggle. Applies a `.dark` class on <html> and matches the
+// native color scheme so the app's CSS variables (now keyed to `.dark`) switch.
+function ThemeToggle() {
+  const [dark, setDark] = useState(() => {
+    const prefersDark =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const initial = document.documentElement.classList.contains('dark') || prefersDark
+    document.documentElement.classList.toggle('dark', initial)
+    document.documentElement.style.colorScheme = initial ? 'dark' : 'light'
+    return initial
+  })
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+  }, [dark])
   return (
-    <div className="stats-strip">
-      <dl className="stats-live">
-        <div className="stats-row">
-          <dt>Step</dt>
-          <dd>{result.steps.length === 0 ? 0 : Math.min(stepIdx, lastIdx) + 1} / {result.steps.length}</dd>
-        </div>
-        <div className="stats-row">
-          <dt>Current</dt>
-          <dd>{step?.current ?? '—'}</dd>
-        </div>
-        <div className="stats-row">
-          <dt>Visited</dt>
-          <dd>{step?.visited.length ?? 0}</dd>
-        </div>
-        <div className="stats-row">
-          <dt>Frontier</dt>
-          <dd>{step?.frontier.length ?? 0}</dd>
-        </div>
-        <div className="stats-row">
-          <dt>Generated</dt>
-          <dd>{result.generated}</dd>
-        </div>
-        <div className="stats-row path-row">
-          <dt>Path</dt>
-          <dd>{isFinalFrame ? pathLabel : '—'}</dd>
-        </div>
-      </dl>
-      <details className="stats-theory">
-        <summary>Complexity &amp; properties</summary>
-        <dl className="stats-live stats-theory-body">
-          <div className="stats-row"><dt>Time</dt><dd>{meta.time}</dd></div>
-          <div className="stats-row"><dt>Space</dt><dd>{meta.space}</dd></div>
-          <div className="stats-row"><dt>Optimal</dt><dd>{meta.optimal}</dd></div>
-          <div className="stats-row"><dt>Complete</dt><dd>{meta.complete}</dd></div>
-        </dl>
-        <p className="footnotes">{footnotes ?? ''}</p>
-      </details>
-    </div>
+    <button
+      type="button"
+      className="theme-toggle"
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Light theme' : 'Dark theme'}
+      onClick={() => {
+        // Animate the theme change, then drop the class so normal transitions resume.
+        document.documentElement.classList.add('theme-anim')
+        window.setTimeout(() => document.documentElement.classList.remove('theme-anim'), 450)
+        setDark((d) => !d)
+      }}
+    >
+      {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+    </button>
   )
 }
 
 function App() {
-  const [algo, setAlgo] = useState('greedy')
-  const [algo2, setAlgo2] = useState('astar')
+  // Swap the comparison table's orientation below 1100px (render only one table).
+  const isCompact = useMediaQuery('(max-width: 1100px)')
+  const [algo, setAlgo] = useState('ucs')
+  const [algo2, setAlgo2] = useState('astaralt')
 
   const [start, setStart] = useState<NodeId>('Arad')
   const [goal, setGoal] = useState<NodeId>('Bucharest')
@@ -376,34 +539,57 @@ function App() {
   const [playing, setPlaying] = useState(false)
   const [delay, setDelay] = useState(DEFAULT_DELAY)
   const [hoveredCity, setHoveredCity] = useState<NodeId | null>(null)
-  const [showArc, setShowArc] = useState(false)
-  const [landmarkPreset, setLandmarkPreset] = useState<LandmarkPreset>(getALTPreset())
-  const [customLandmarks, setCustomLandmarksState] = useState<NodeId[]>([])
+  const [showLine, setShowLine] = useState(false)
+  const [landmarkA, setLandmarkA] = useState<LandmarkCount>('lm8')
+  const [landmarkB, setLandmarkB] = useState<LandmarkCount>('lm8')
+  const [customA, setCustomA] = useState<NodeId[]>([])
+  const [customB, setCustomB] = useState<NodeId[]>([])
+  const [lmOverlayA, setLmOverlayA] = useState(false)
+  const [lmOverlayB, setLmOverlayB] = useState(false)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [pickLandmarkMode, setPickLandmarkMode] = useState(false)
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
-  // ponytail: landmarkPreset in deps so memos recompute after setALTPreset side-effect
-  const result = useMemo(() => meta.run(start, goal), [meta, start, goal, landmarkPreset])
-  const result2 = useMemo(() => meta2.run(start, goal), [meta2, start, goal, landmarkPreset])
-  const comparison = useMemo(() => compareAlgorithms(start, goal), [start, goal, landmarkPreset])
-  // ponytail: runs all 3 presets then restores full ALT state — side-effect safe, 3× A* on 20 nodes
-  const lmRows = useMemo(() => landmarkComparison(start, goal), [start, goal])
 
-  // h-value heatmap: normalized hALTOnly(n, goal) across all cities. Static per goal+preset.
-  const heatmapValues = useMemo<Record<NodeId, number> | undefined>(() => {
-    if (!showHeatmap) return undefined
-    const vals: Record<NodeId, number> = {}
-    let max = 0
-    for (const city of CITIES) {
-      vals[city] = hALTOnly(city, goal)
-      if (vals[city] > max) max = vals[city]
-    }
-    if (max === 0) return undefined
-    for (const city of CITIES) vals[city] /= max
-    return vals
-  }, [showHeatmap, goal, landmarkPreset, customLandmarks])
+  // Each lane has an independent landmark config: preset count (2/4/8) unless the
+  // user click-picked a custom set for that lane, which overrides the preset.
+  const customActiveA = customA.length > 0
+  const customActiveB = customB.length > 0
+  const cfgA: LandmarkPreset = customActiveA ? 'custom' : landmarkA
+  const cfgB: LandmarkPreset = customActiveB ? 'custom' : landmarkB
+
+  // Each lane's run sets & restores the module ALT state around its own search,
+  // so lanes can hold different landmark presets without cross-talk.
+  const result = useMemo(
+    () => withAltConfig(cfgA, customA, () => meta.run(start, goal)),
+    [meta, start, goal, cfgA, customA],
+  )
+  const result2 = useMemo(
+    () => withAltConfig(cfgB, customB, () => meta2.run(start, goal)),
+    [meta2, start, goal, cfgB, customB],
+  )
+  // Benchmark + landmark-effect numbers for the two selected algorithms only.
+  const benchA = useMemo(
+    () => benchmarkOne(meta, start, goal, cfgA, customA),
+    [meta, start, goal, cfgA, customA],
+  )
+  const benchB = useMemo(
+    () => benchmarkOne(meta2, start, goal, cfgB, customB),
+    [meta2, start, goal, cfgB, customB],
+  )
+  const lmEffectA = useMemo(() => landmarkEffect(meta, start, goal), [meta, start, goal])
+  const lmEffectB = useMemo(() => landmarkEffect(meta2, start, goal), [meta2, start, goal])
+
+  // h-value heatmap per lane (pure; each lane reflects its own landmark preset).
+  const heatA = useMemo(
+    () => (showHeatmap ? heatmapFor(goal, cfgA, customA) : undefined),
+    [showHeatmap, goal, cfgA, customA],
+  )
+  const heatB = useMemo(
+    () => (showHeatmap ? heatmapFor(goal, cfgB, customB) : undefined),
+    [showHeatmap, goal, cfgB, customB],
+  )
 
   const lastIdx = result.steps.length - 1
   const lastIdx2 = result2.steps.length - 1
@@ -422,42 +608,25 @@ function App() {
   function handleAlgoChange2(next: string) { setAlgo2(next); setStepIdx(0); setPlaying(false) }
   function handleStartChange(next: NodeId) { setStart(next); setStepIdx(0); setPlaying(false) }
   function handleGoalChange(next: NodeId) { setGoal(next); setStepIdx(0); setPlaying(false) }
-  function handleLandmarkChange(next: LandmarkPreset) {
-    if (next !== 'custom') {
-      setALTPreset(next)
-      setCustomLandmarks([])
-      setCustomLandmarksState([])
-    }
-    setLandmarkPreset(next)
+  function handleLandmarkAChange(next: LandmarkCount) { setLandmarkA(next); setStepIdx(0); setPlaying(false) }
+  function handleLandmarkBChange(next: LandmarkCount) { setLandmarkB(next); setStepIdx(0); setPlaying(false) }
+
+  // Toggle a city in a specific lane's custom landmark set (edits that lane only).
+  function toggleCustom(setCustom: Dispatch<SetStateAction<NodeId[]>>, city: NodeId) {
+    setCustom((prev) => (prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city]))
     setStepIdx(0)
     setPlaying(false)
   }
 
-  function handleCityClick(city: NodeId) {
+  const onCityClickA = (city: NodeId) => {
     if (!pickLandmarkMode) return
-    const next = customLandmarks.includes(city)
-      ? customLandmarks.filter((c) => c !== city)
-      : [...customLandmarks, city]
-    setCustomLandmarksState(next)
-    setCustomLandmarks(next) // updates global _customALTFn
-    setLandmarkPreset(next.length > 0 ? 'custom' : 'lm8')
-    setStepIdx(0)
-    setPlaying(false)
+    if (!meta.usesLandmarks) setLmOverlayA(true) // picking a non-landmark lane should reveal the overlay
+    toggleCustom(setCustomA, city)
   }
-
-  function handlePickLandmarkToggle() {
-    if (pickLandmarkMode) {
-      // exiting pick mode — clear custom landmarks, revert to lm8
-      setPickLandmarkMode(false)
-      setCustomLandmarksState([])
-      setCustomLandmarks([])
-      if (landmarkPreset === 'custom') {
-        setLandmarkPreset('lm8')
-        setALTPreset('lm8')
-      }
-    } else {
-      setPickLandmarkMode(true)
-    }
+  const onCityClickB = (city: NodeId) => {
+    if (!pickLandmarkMode) return
+    if (!meta2.usesLandmarks) setLmOverlayB(true)
+    toggleCustom(setCustomB, city)
   }
 
   function handleRandomize() {
@@ -476,84 +645,261 @@ function App() {
     setPlaying((p) => !p)
   }
 
-  // Fix: pathLabel2 uses result2.found (was incorrectly using result.found)
   const pathLabel = result.found
-    ? `${result.path.join(' → ')} (${result.path.length} cities)`
+    ? `${result.path.map(cityCode).join(' → ')}`
     : '—'
   const pathLabel2 = result2.found
-    ? `${result2.path.join(' → ')} (${result2.path.length} cities)`
+    ? `${result2.path.map(cityCode).join(' → ')}`
     : '—'
+
+  const stepA: Step | undefined = result.steps[Math.min(stepIdx, lastIdx)]
+  const stepB: Step | undefined = result2.steps[Math.min(stepIdx, lastIdx2)]
+  const finalA: boolean = stepIdx >= lastIdx
+  const finalB: boolean = stepIdx >= lastIdx2
+
+  // Combined table — one row per selected algorithm (A and B), one column per
+  // metric. Live step-dependent metrics are rated only once both runs are done.
+  const atEnd = finalA && finalB
+  const finalVisitedA = atEnd ? (result.steps[lastIdx]?.visited.length ?? 0) : NaN
+  const finalVisitedB = atEnd ? (result2.steps[lastIdx2]?.visited.length ?? 0) : NaN
+  const finalFrontierA = atEnd ? (result.steps[lastIdx]?.frontier.length ?? 0) : NaN
+  const finalFrontierB = atEnd ? (result2.steps[lastIdx2]?.frontier.length ?? 0) : NaN
+  const costA = result.found ? pathCost(result.path) : NaN
+  const costB = result2.found ? pathCost(result2.path) : NaN
+
+  // Which value is objectively better?
+  const betterLower = (va: number, vb: number): 'a' | 'b' | undefined =>
+    Number.isNaN(va) || Number.isNaN(vb) ? undefined : va < vb ? 'a' : vb < va ? 'b' : undefined
+  const betterYes = (sa: string, sb: string): 'a' | 'b' | undefined => {
+    const aYes = sa.startsWith('Yes'), bYes = sb.startsWith('Yes')
+    if (aYes && !bYes) return 'a'
+    if (bYes && !aYes) return 'b'
+    return undefined
+  }
+  const betterPath = (): 'a' | 'b' | undefined => {
+    if (result.found && !result2.found) return 'a'
+    if (!result.found && result2.found) return 'b'
+    if (result.found && result2.found && !Number.isNaN(costA) && !Number.isNaN(costB)) {
+      if (costA < costB) return 'a'
+      if (costB < costA) return 'b'
+    }
+    return undefined
+  }
+
+  type Col = { label: string; a: ReactNode; b: ReactNode; better?: 'a' | 'b'; wrap?: boolean }
+  // Mean time over BENCH_ITERS runs, shown in microseconds.
+  const fmtUs = (ms: number) => `${(ms * 1000).toFixed(1)}`
+  // Right-aligned mono cells: pad single-digit step totals so “/ 5” lines up
+  // under “/ 12” in the other lane instead of shifting the slash per row.
+  const stepText = (len: number, idx: number) => {
+    if (len === 0) return '0 / 0'
+    const cur = Math.min(stepIdx, idx) + 1
+    const total = len < 10 ? ` ${len}` : String(len)
+    return `${cur} / ${total}`
+  }
+  const benchCost = (r: CompareRow) => (r.found ? String(r.cost) : '—')
+  const lmValue = (e: { lm2: number; lm4: number; lm8: number } | null, key: 'lm2' | 'lm4' | 'lm8') =>
+    e ? String(e[key]) : '—'
+
+  const cols: Col[] = [
+    {
+      label: 'Step',
+      a: stepText(result.steps.length, lastIdx),
+      b: stepText(result2.steps.length, lastIdx2),
+    },
+    { label: 'Current', a: stepA?.current ?? '—', b: stepB?.current ?? '—' },
+    {
+      label: 'Visited',
+      a: String(stepA?.visited.length ?? 0),
+      b: String(stepB?.visited.length ?? 0),
+      better: atEnd ? betterLower(finalVisitedA, finalVisitedB) : undefined,
+    },
+    {
+      label: 'Frontier',
+      a: String(stepA?.frontier.length ?? 0),
+      b: String(stepB?.frontier.length ?? 0),
+      better: atEnd ? betterLower(finalFrontierA, finalFrontierB) : undefined,
+    },
+    {
+      label: 'Generated',
+      a: String(result.generated),
+      b: String(result2.generated),
+      better: betterLower(result.generated, result2.generated),
+    },
+    {
+      label: 'Path',
+      a: finalA ? pathLabel : '—',
+      b: finalB ? pathLabel2 : '—',
+      better: atEnd ? betterPath() : undefined,
+      wrap: true,
+    },
+    { label: 'Time (µs)', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
+    {
+      label: 'Peak memory',
+      a: String(benchA.peakFrontier),
+      b: String(benchB.peakFrontier),
+      better: betterLower(benchA.peakFrontier, benchB.peakFrontier),
+    },
+    {
+      label: 'Cost (km)',
+      a: benchCost(benchA),
+      b: benchCost(benchB),
+      better: betterLower(benchA.found ? benchA.cost : NaN, benchB.found ? benchB.cost : NaN),
+    },
+    {
+      label: 'Hops',
+      a: benchA.found ? String(benchA.hops) : '—',
+      b: benchB.found ? String(benchB.hops) : '—',
+      better: betterLower(benchA.found ? benchA.hops : NaN, benchB.found ? benchB.hops : NaN),
+    },
+    { label: 'T(n)', a: <Tex>{meta.time}</Tex>, b: <Tex>{meta2.time}</Tex> },
+    { label: 'S(n)', a: <Tex>{meta.space}</Tex>, b: <Tex>{meta2.space}</Tex> },
+    { label: 'Optimal', a: meta.optimal, b: meta2.optimal, better: betterYes(meta.optimal, meta2.optimal) },
+    { label: 'Complete', a: meta.complete, b: meta2.complete, better: betterYes(meta.complete, meta2.complete) },
+    {
+      label: 'landmarks 2',
+      a: lmValue(lmEffectA, 'lm2'),
+      b: lmValue(lmEffectB, 'lm2'),
+      better: lmEffectA && lmEffectB ? betterLower(lmEffectA.lm2, lmEffectB.lm2) : undefined,
+    },
+    {
+      label: '4',
+      a: lmValue(lmEffectA, 'lm4'),
+      b: lmValue(lmEffectB, 'lm4'),
+      better: lmEffectA && lmEffectB ? betterLower(lmEffectA.lm4, lmEffectB.lm4) : undefined,
+    },
+    {
+      label: '8',
+      a: lmValue(lmEffectA, 'lm8'),
+      b: lmValue(lmEffectB, 'lm8'),
+      better: lmEffectA && lmEffectB ? betterLower(lmEffectA.lm8, lmEffectB.lm8) : undefined,
+    },
+  ]
+
+  // Full row labels (badge name + landmark suffix) reused by both table orientations.
+  const rowLabelA = `${meta.label}${laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}`
+  const rowLabelB = `${meta2.label}${laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}`
+
+  // Cell classes for the comparison tables. Numeric-ish Step cells stay on one
+  // line (they can reach two digits, e.g. “10 / 12”) instead of wrapping.
+  const cellCls = (
+    label: string,
+    wrap: boolean | undefined,
+    better: 'a' | 'b' | undefined,
+    side: 'a' | 'b',
+  ) =>
+    `${wrap ? 'col-wrap' : ''}${better === side ? (side === 'a' ? ' better-a' : ' better-b') : ''}${label === 'Step' ? ' col-nowrap' : ''}`
 
   return (
     <>
-      <header className="app-header">
-        <div className="app-header-brand">
-          <h1 className="app-title">Romania Search Lab</h1>
-          <span className="app-subtitle">Uninformed &amp; informed search · AIMA Romania map</span>
+    <h1 className="app-title">
+      <span>Uninformed &amp; Informed search</span>
+      <span className="app-title-sep" aria-hidden="true">·</span>
+      <span className="app-title-sub">Romania map</span>
+      <ThemeToggle />
+    </h1>
+      <div className="query-bar" role="toolbar" aria-label="Search configuration">
+        <div className="query-route">
+        <span className="query-word">From</span>
+        <Select
+          value={start}
+          onValueChange={(v) => v && handleStartChange(v as NodeId)}
+          onOpenChange={(open) => !open && setHoveredCity(null)}
+        >
+          <SelectTrigger className="w-36 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {CITIES.map((city) => (
+              <SelectItem
+                key={city} value={city}
+                onMouseEnter={() => setHoveredCity(city)}
+                onMouseLeave={() => setHoveredCity(null)}
+              >{city}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <span className="query-word">To</span>
+        <Select
+          value={goal}
+          onValueChange={(v) => v && handleGoalChange(v as NodeId)}
+          onOpenChange={(open) => !open && setHoveredCity(null)}
+        >
+          <SelectTrigger className="w-36 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {CITIES.map((city) => (
+              <SelectItem
+                key={city} value={city}
+                onMouseEnter={() => setHoveredCity(city)}
+                onMouseLeave={() => setHoveredCity(null)}
+              >{city}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant="outline" size="icon"
+          aria-label="Randomize start and goal cities"
+          title="Randomize"
+          onClick={handleRandomize}
+        >
+          <Dices aria-hidden="true" />
+        </Button>
         </div>
-        <div className="app-header-controls">
-          <div className="control">
-            <span id="start-label" className="control-label">Start</span>
-            <Select
-              value={start}
-              onValueChange={(v) => v && handleStartChange(v as NodeId)}
-              onOpenChange={(open) => !open && setHoveredCity(null)}
-            >
-              <SelectTrigger className="w-36" aria-labelledby="start-label"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CITIES.map((city) => (
-                  <SelectItem
-                    key={city} value={city}
-                    onMouseEnter={() => setHoveredCity(city)}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  >{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+        <div className="query-lane">
+          <span className="query-word">with</span>
+          <div className="query-algo query-algo-a">
+          <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+          <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane A">
+              <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {ALGO_OPTIONS.map(([key, m]) => (
+                <SelectItem key={key} value={key}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <LandmarkPicker
+            lane="A"
+            usesLandmarks={meta.usesLandmarks}
+            overlay={lmOverlayA}
+            setOverlay={setLmOverlayA}
+            count={landmarkA}
+            onCount={handleLandmarkAChange}
+            customCount={customA.length}
+            onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
+          />
           </div>
-          <div className="control">
-            <span id="goal-label" className="control-label">Goal</span>
-            <Select
-              value={goal}
-              onValueChange={(v) => v && handleGoalChange(v as NodeId)}
-              onOpenChange={(open) => !open && setHoveredCity(null)}
-            >
-              <SelectTrigger className="w-36" aria-labelledby="goal-label"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CITIES.map((city) => (
-                  <SelectItem
-                    key={city} value={city}
-                    onMouseEnter={() => setHoveredCity(city)}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  >{city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="control">
-            <span id="landmark-label" className="control-label">Landmarks</span>
-            <Select value={landmarkPreset} onValueChange={(v) => v && handleLandmarkChange(v as LandmarkPreset)}>
-              <SelectTrigger className="w-28" aria-labelledby="landmark-label"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lm2">2 landmarks</SelectItem>
-                <SelectItem value="lm4">4 landmarks</SelectItem>
-                <SelectItem value="lm8">8 landmarks</SelectItem>
-                {landmarkPreset === 'custom' && (
-                  <SelectItem value="custom">Custom ({customLandmarks.length})</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="outline" size="icon"
-            aria-label="Randomize start and goal cities"
-            title="Randomize"
-            onClick={handleRandomize}
-          >
-            <Dices aria-hidden="true" />
-          </Button>
         </div>
-      </header>
+
+        <div className="query-lane">
+          <span className="query-word">vs</span>
+          <div className="query-algo query-algo-b">
+          <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+          <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
+            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane B">
+              <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {ALGO_OPTIONS.map(([key, m]) => (
+                <SelectItem key={key} value={key}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <LandmarkPicker
+            lane="B"
+            usesLandmarks={meta2.usesLandmarks}
+            overlay={lmOverlayB}
+            setOverlay={setLmOverlayB}
+            count={landmarkB}
+            onCount={handleLandmarkBChange}
+            customCount={customB.length}
+            onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
+          />
+          </div>
+        </div>
+      </div>
 
       <main className="app">
         <div className="lanes">
@@ -561,25 +907,15 @@ function App() {
           <section className="lane lane-a" aria-label="Lane A">
             <div className="lane-header">
               <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-              <span id="algo-label-a" className="control-label">Algorithm</span>
-              <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
-                <SelectTrigger className="w-40" aria-labelledby="algo-label-a">
-                  <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ALGORITHMS).map(([key, m]) => (
-                    <SelectItem key={key} value={key}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="lane-complexity">{meta.time}</span>
+              <span className="lane-algo-name">{meta.label}</span>
             </div>
             <div className="map-wrap">
               <SVGMap
                 algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
-                result={result} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
-                heatmapValues={heatmapValues} customLandmarks={customLandmarks}
-                onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
+                result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                heatmapValues={heatA}
+                landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
+                onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
               />
               <span className="heatmap-legend" aria-label="Heatmap scale"
                 style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
@@ -588,10 +924,6 @@ function App() {
                 <span className="heatmap-legend-label">Far</span>
               </span>
             </div>
-            <StatsCard
-              meta={meta} footnotes={ALGO_FOOTNOTES[algo]}
-              result={result} stepIdx={stepIdx} lastIdx={lastIdx} pathLabel={pathLabel}
-            />
           </section>
 
           <div className="lane-vs" aria-hidden="true">vs</div>
@@ -600,25 +932,15 @@ function App() {
           <section className="lane lane-b" aria-label="Lane B">
             <div className="lane-header">
               <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-              <span id="algo-label-b" className="control-label">Algorithm</span>
-              <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
-                <SelectTrigger className="w-40" aria-labelledby="algo-label-b">
-                  <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ALGORITHMS).map(([key, m]) => (
-                    <SelectItem key={key} value={key}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="lane-complexity">{meta2.time}</span>
+              <span className="lane-algo-name">{meta2.label}</span>
             </div>
             <div className="map-wrap">
               <SVGMap
                 algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
-                result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showArc={showArc}
-                heatmapValues={heatmapValues} customLandmarks={customLandmarks}
-                onCityClick={handleCityClick} pickLandmarkMode={pickLandmarkMode}
+                result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                heatmapValues={heatB}
+                landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
+                onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
               />
               <span className="heatmap-legend" aria-label="Heatmap scale"
                 style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
@@ -627,10 +949,6 @@ function App() {
                 <span className="heatmap-legend-label">Far</span>
               </span>
             </div>
-            <StatsCard
-              meta={meta2} footnotes={ALGO_FOOTNOTES[algo2]}
-              result={result2} stepIdx={stepIdx} lastIdx={lastIdx2} pathLabel={pathLabel2}
-            />
           </section>
         </div>
 
@@ -658,12 +976,12 @@ function App() {
             <span className="toolbar-group-label">Overlays</span>
             <div className="toolbar-row">
               <Button
-                variant={showArc ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowArc(v => !v)} aria-pressed={showArc}
-                title="Heuristic arc overlay (Greedy / A* only)"
+                variant={showLine ? 'default' : 'outline'} size="sm"
+                onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
+                title="Show straight line from origin to destination"
               >
                 <span className="swatch swatch-arc" aria-hidden="true" />
-                Arc
+                Straight Line
               </Button>
               <Button
                 variant={showHeatmap ? 'default' : 'outline'} size="sm"
@@ -672,12 +990,21 @@ function App() {
               >
                 🌡 Heatmap
               </Button>
+            </div>
+          </div>
+
+          <div className="toolbar-divider" aria-hidden="true" />
+
+          {/* Tool: landmark picker */}
+          <div className="toolbar-group" aria-label="Tools">
+            <span className="toolbar-group-label">Tool</span>
+            <div className="toolbar-row">
               <Button
                 variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
-                onClick={handlePickLandmarkToggle} aria-pressed={pickLandmarkMode}
-                title="Click cities to set custom ALT landmarks"
+                onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
+                title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
               >
-                ★ Landmarks ({customLandmarks.length})
+                ★ Landmarks ({customA.length + customB.length})
               </Button>
             </div>
           </div>
@@ -725,95 +1052,98 @@ function App() {
 
         </div>
 
-      <section className="compare-panel" aria-labelledby="compare-title">
-        <Card>
-          <CardContent>
-            <h2 id="compare-title">Algorithm comparison — {start} → {goal}</h2>
-            <div className="compare-scroll">
-              <table className="compare">
-                <thead>
-                  <tr>
-                    <th scope="col">Algorithm</th>
-                    <th scope="col">Time (ms)</th>
-                    <th scope="col">Memory (peak frontier)</th>
-                    <th scope="col">Generated</th>
-                    <th scope="col">Path cost (km)</th>
-                    <th scope="col">Hops</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparison.map((row) => {
-                    const isA = row.key === algo
-                    const isB = row.key === algo2
-                    const rowClass = isA && isB ? 'row-lane-ab' : isA ? 'row-lane-a' : isB ? 'row-lane-b' : ''
-                    return (
-                      <tr key={row.key} className={rowClass}>
-                        <th scope="row">
-                          {isA && <span className="lane-badge lane-badge-a">A</span>}
-                          {isB && !isA && <span className="lane-badge lane-badge-b">B</span>}
-                          {isA && isB && <span className="lane-badge lane-badge-b">B</span>}
-                          {' '}{row.label}
-                        </th>
-                        <td>{row.ms.toFixed(3)}</td>
-                        <td>{row.peakFrontier}</td>
-                        <td>{row.generated}</td>
-                        <td>{row.found ? row.cost : '—'}</td>
-                        <td>{row.found ? row.hops : '—'}</td>
+        {/* Single combined table — only the two selected algorithms (A and B) */}
+        <section className="compare-panel" aria-labelledby="compare-title">
+          <Card>
+            <CardContent>
+              <h2 id="compare-title" className="compare-title">
+                <span>Algorithm comparison</span>
+                <span className="ct-route">{start} → {goal}</span>
+              </h2>
+              <div className="compare-scroll">
+                {!isCompact ? (
+                <table className="compare compare-fixed table-wide">
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
+                      {cols.map((c) => (
+                        <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="row-lane-a">
+                      <th scope="row">
+                        <div className="run-cell">
+                          <span className="run-label">
+                            <span className="lane-badge lane-badge-a">A</span>
+                            <span className="run-label-text">{rowLabelA}</span>
+                          </span>
+                        </div>
+                      </th>
+                      {cols.map((c) => (
+                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
+                          <div className="run-cell">{c.a}</div>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="row-lane-b">
+                      <th scope="row">
+                        <div className="run-cell">
+                          <span className="run-label">
+                            <span className="lane-badge lane-badge-b">B</span>
+                            <span className="run-label-text">{rowLabelB}</span>
+                          </span>
+                        </div>
+                      </th>
+                      {cols.map((c) => (
+                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
+                          <div className="run-cell">{c.b}</div>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+                ) : (
+                <table className="compare compare-tall">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="tall-metric-col">Metric</th>
+                      <th scope="col" className="tall-head tall-head-a">
+                        <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+                        <span className="tall-head-label">{rowLabelA}</span>
+                      </th>
+                      <th scope="col" className="tall-head tall-head-b">
+                        <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+                        <span className="tall-head-label">{rowLabelB}</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cols.map((c) => (
+                      <tr key={c.label}>
+                        <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                        <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
+                        <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="footnotes">
-              Time = mean of {BENCH_ITERS} runs. Memory = peak frontier size (space proxy). Path cost = Σ road km (lower = better quality).
-            </p>
-          </CardContent>
-        </Card>
-      </section>
-      <section className="compare-panel" aria-labelledby="lm-compare-title">
-        <Card>
-          <CardContent>
-            <h2 id="lm-compare-title">Landmark count effect — nodes generated — {start} → {goal}</h2>
-            <p className="footnotes">
-              Nodes generated per algorithm at 2 / 4 / 8 landmarks. Uninformed algos are unaffected (same value all columns). Fewer = tighter heuristic.
-            </p>
-            <div className="compare-scroll">
-              <table className="compare">
-                <thead>
-                  <tr>
-                    <th scope="col">Algorithm</th>
-                    <th scope="col">2 landmarks</th>
-                    <th scope="col">4 landmarks</th>
-                    <th scope="col">8 landmarks ★</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lmRows.map((row) => {
-                    const isA = row.key === algo
-                    const isB = row.key === algo2
-                    const rowClass = isA && isB ? 'row-lane-ab' : isA ? 'row-lane-a' : isB ? 'row-lane-b' : ''
-                    const affected = row.lm2 !== row.lm8 || row.lm4 !== row.lm8
-                    return (
-                      <tr key={row.key} className={rowClass}>
-                        <th scope="row">
-                          {isA && <span className="lane-badge lane-badge-a">A</span>}
-                          {isB && !isA && <span className="lane-badge lane-badge-b">B</span>}
-                          {isA && isB && <span className="lane-badge lane-badge-b">B</span>}
-                          {' '}{row.label}
-                        </th>
-                        <td style={{ opacity: affected ? 1 : 0.4 }}>{row.lm2}</td>
-                        <td style={{ opacity: affected ? 1 : 0.4 }}>{row.lm4}</td>
-                        <td style={{ opacity: affected ? 1 : 0.4, fontWeight: affected ? 600 : undefined }}>{row.lm8}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+                    ))}
+                  </tbody>
+                </table>
+                )}
+              </div>
+              <p className="footnotes">
+                {
+                  [
+                    `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
+                    'live step metrics (Visited/Frontier/Path) compared only at the final frame',
+                    ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
+                    ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
+                  ].filter(Boolean).join(' · ')
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </section>
       </main>
     </>
   )

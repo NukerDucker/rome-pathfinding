@@ -69,6 +69,16 @@ export function hALTOnly(node: NodeId, goal: NodeId): number {
   return altH(node, goal)
 }
 
+// Pure ALT lookup for a given preset/custom-landmark list — no reliance on the
+// module-level _altPreset/_customALTFn globals. Used by per-lane heatmaps.
+export function altHWith(node: NodeId, goal: NodeId, preset: LandmarkPreset, custom: readonly NodeId[]): number {
+  if (node === goal) return 0
+  if (preset === 'custom') {
+    return custom.length > 0 ? makeHALTArbitrary(custom)(node, goal) : 0
+  }
+  return ALT_FNS[preset](node, goal)
+}
+
 // Combined LP + ALT — tighter, used by 'astar-alt' entry
 export function h(node: NodeId, goal: NodeId): number {
   if (node === goal) return 0
