@@ -8,10 +8,11 @@ import { h } from './heuristic'
 // Forward:  f(n) = g_f(n) + h(n, goal)
 // Backward: f(n) = g_b(n) + h(n, start)   [Romania is undirected → h symmetric]
 //
-// Stopping (Pohl 1971): halt when
-//   min_f(forward_frontier) + min_f(backward_frontier) ≥ μ
+// Each frontier minimum bounds the WHOLE start-to-goal distance. Halt when
+//   max(min_f(forward_frontier), min_f(backward_frontier)) ≥ μ
 // where μ = best complete path cost seen so far.
-// Optimal because any undiscovered path must cost ≥ the frontier lower bound.
+// Adding these independent bounds double-counts the trip. With admissible h
+// and reopening on improvements, either search can certify the incumbent.
 
 function popMin(frontier: [number, number, NodeId][]): [number, number, NodeId] | null {
   if (frontier.length === 0) return null
@@ -80,16 +81,16 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
       if (ng < (gSelf[edge.to] ?? Infinity)) {
         gSelf[edge.to] = ng
         parSelf[edge.to] = u
-        if (!closedSelf.has(edge.to)) {
-          frontSelf.push([ng + h(edge.to, hTarget), ng, edge.to])
-          generated++
-        }
+        // Reopen improved states: admissibility alone does not imply consistency.
+        closedSelf.delete(edge.to)
+        frontSelf.push([ng + h(edge.to, hTarget), ng, edge.to])
+        generated++
       }
     }
   }
 
   while (frontF.length > 0 && frontB.length > 0) {
-    if (minF(frontF) + minF(frontB) >= mu) break
+    if (Math.max(minF(frontF), minF(frontB)) >= mu) break
 
     const fe = popMin(frontF)
     if (fe) {
@@ -104,7 +105,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
       })
     }
 
-    if (minF(frontF) + minF(frontB) >= mu) break
+    if (Math.max(minF(frontF), minF(frontB)) >= mu) break
 
     const be = popMin(frontB)
     if (be) {

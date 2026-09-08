@@ -131,7 +131,7 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
       return result;
     }
     
-    for(const [forwardDest, _] of Object.entries(visitedForwardPaths)){      
+    for(const forwardDest of Object.keys(visitedForwardPaths)){
       if(forwardDest in visitedBackwardPaths){
         commonDest = forwardDest;
         break;
