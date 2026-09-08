@@ -75,6 +75,6 @@ src/
   astar.ts            — A* with LP heuristic
   astar-alt.ts        — A* with combined LP+ALT
   astar-alt-only.ts   — A* with ALT only
-  biastar.ts          — bidirectional A* (Pohl 1971 stopping)
+  biastar.ts          — bidirectional A* (independent frontier bounds, reopening)
   App.tsx             — UI, toolbar, map render, heatmap, lane comparison
 ```

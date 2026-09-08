@@ -114,7 +114,7 @@ All algorithms wired in `ALGORITHMS`:
 | astaraltonly | astar-alt-only.ts | hALT (active preset) |
 | biastar | biastar.ts | max(hLP, hALT) |
 
-**Bidirectional A\*:** Pohl 1971 stopping — terminate when `minF_fwd + minF_bwd ≥ μ`. On 20 nodes slower than unidirectional (overhead > savings); O(b^(d/2)) advantage appears at millions of nodes.
+**Bidirectional A\*:** terminate when `max(minF_fwd, minF_bwd) ≥ μ`, where μ is the best complete route found. Each frontier minimum independently bounds the entire optimal route, so their sum is not a valid bound. Improved states are reopened to support admissible, potentially inconsistent heuristics. Stale entries can only delay termination because they can lower a frontier minimum. The often-quoted O(b^(d/2)) is a balanced-tree intuition, not a guaranteed bound for this implementation; compare measured expansions and preprocessing costs instead.
 
 ---
 
