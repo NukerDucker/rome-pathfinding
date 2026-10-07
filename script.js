@@ -978,7 +978,7 @@ const LABEL_GAP = 4;      // map image px between the bottom of the node disc an
 const LABEL_FONT_MIN = 13, LABEL_FONT_MAX = 26;
 // Labels show just the city's initial (larger, see .node-label in style.css)
 // until the city is hovered (mouse within TAP_RADIUS) or tapped (touch).
-const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 4; // map image px
+const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 6; // map image px
 const TAP_RADIUS = 36;    // map image px: how close a click must be to a node (road junction) to pick it
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -1088,7 +1088,7 @@ function makeLaneOverlay(vp, lane){
     if(state.showLine){
       const arc = arcPoints(state.start, state.goal);
       if(arc){
-        html += `<line class="arc-chord" x1="${arc.ca.x}" y1="${arc.ca.y}" x2="${arc.cb.x}" y2="${arc.cb.y}" stroke-width="${ARC_WIDTH * 0.6}"/>`;
+        html += `<line class="arc-chord" x1="${arc.ca.x}" y1="${arc.ca.y}" x2="${arc.cb.x}" y2="${arc.cb.y}" stroke-width="${ARC_WIDTH * 0.8}"/>`;
         html += `<polyline class="arc" points="${arc.pts}" stroke-width="${ARC_WIDTH}"/>`;
       }
     }

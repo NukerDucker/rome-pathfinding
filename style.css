@@ -3,12 +3,12 @@
 --bg:#f1f1f1; --panel:#ffffff; --border:#333; --border-soft:#999;
 --text:#111; --text-soft:#555; --header-bg:#e2e2e2;
 /* Search node states: shared by the legend dots and the map node discs */
---state-current:#b44cff; --state-frontier:#f0b43c; --state-visited:#9aa0a6;
---state-path:#66cc77; --state-unvisited:#967d50;
---marker-start:#66cc77; --marker-goal:#e0584a; --marker-landmark:#ffd43b;
---road-tree:#fff3c4; --road-path:#66cc77; --arc:#f5c518;
+--state-current:#662d91; --state-frontier:#ffea00; --state-visited:#9aa0a6;
+--state-path:#f02e92; --state-unvisited:#6c4c10;
+--marker-start:#0400ff; --marker-goal:#ff0000; --marker-landmark:#ffd43b;
+--road-tree:#662d91; --road-path:#f02e92; --arc:#f5c518;
 --better:#1f7a35; /* comparison table: winning value */
---disc-opacity:.65; /* every node disc on the map, whatever its state */
+--disc-opacity:1; /* every node disc on the map, whatever its state */
 }
 @font-face {
   font-family: 'Minecraft';
@@ -60,7 +60,7 @@ image-rendering:pixelated;
 /* ===================== 2. CONTROL ROW =====================
 	Swap targets: dropdown-field.png (behind selects), button.png (swap btn, landmarks btn) */
 .control-row{
-display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
+display:flex; align-items:center; justify-content: center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
 }
 .control-row label{ font-size:clamp(10px, 2.3vw, 12px); font-weight:bold; color:var(--text-soft); }
 /* Pixel art skin: every <select> on the page uses the same dropdown-field
@@ -140,7 +140,7 @@ background:#fff; color:var(--text); cursor:pointer; font-size:12px; line-height:
 .algo-label-frame{ flex:1; min-width:0; }
 .algo-header{
 display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px;
-background:var(--header-bg);
+background-color:transparent; font-size:20px;
 }
 .algo-badge{
 width:26px; height:26px; border:2px solid var(--border); display:flex; align-items:center;
@@ -163,15 +163,15 @@ transform-origin:0 0; will-change:transform; cursor:grab;
 /* Sprites placed on the map (castles, ...): positioned by script.js in stage coords */
 .map-entity-layer{ position:absolute; z-index:1; pointer-events:none; overflow:visible; contain:layout; }
 /* ---- search-state overlays (script.js: makeLaneOverlay) ---- */
-.map-svg-layer{ overflow:visible; }
-.map-svg-layer .road-tree{ stroke:var(--road-tree); stroke-linecap:round; opacity:.65; }
-.map-svg-layer .road-path{ stroke:var(--road-path); stroke-linecap:round; opacity:.65; }
+.map-svg-layer{ position:absolute; z-index:2; pointer-events:none; overflow:visible; }
+.map-svg-layer .road-tree{ stroke:var(--road-tree); stroke-linecap:round; stroke-width: 9px; opacity:1; }
+.map-svg-layer .road-path{ stroke:var(--road-path); stroke-linecap:round; stroke-width: 10px; opacity:1; }
 .map-svg-layer .arc{ fill:none; stroke:var(--arc); stroke-linecap:round; }
-.map-svg-layer .arc-chord{ stroke:var(--arc); stroke-dasharray:6 8; opacity:.45; }
+.map-svg-layer .arc-chord{ stroke:var(--arc); stroke-dasharray:6 8; opacity: 1;; }
 .map-svg-layer .heat{ opacity:.6; }
 /* Node disc: oval on each city's road junction; fill = state, ring = start/goal */
 .node-disc{
-position:absolute; left:0; top:0; box-sizing:border-box; border-radius:50%;
+position:absolute; left:0; top:0; z-index: 3; box-sizing:border-box; border-radius:50%;
 border:2px solid #333; background:var(--state-unvisited);
 opacity:var(--disc-opacity); /* one transparency for all states (colours themselves are solid) */
 }
@@ -179,9 +179,8 @@ opacity:var(--disc-opacity); /* one transparency for all states (colours themsel
 .node-disc.state-frontier{ background:var(--state-frontier); }
 .node-disc.state-visited{ background:var(--state-visited); }
 .node-disc.state-path{ background:var(--state-path); }
-.node-disc.is-start{ border:4px solid var(--marker-start); }
-.node-disc.is-goal{ border:4px solid var(--marker-goal); }
-.node-disc.is-start.state-unvisited, .node-disc.is-goal.state-unvisited{ background:#fff; } /* hollow, like the legend */
+.node-disc.is-start{ background:var(--marker-start); }
+.node-disc.is-goal{ background:var(--marker-goal); }
 .node-disc.is-landmark{ outline:2px dashed var(--marker-landmark); outline-offset:3px; }
 .node-label{
 position:absolute; left:0; top:0; white-space:nowrap; pointer-events:none;

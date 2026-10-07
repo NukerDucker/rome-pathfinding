@@ -25,8 +25,8 @@
   <button class="icon-btn" id="randomBtn" title="Random From/To">&#127922;</button>
 
   <label>WITH</label>
+  <div>
   <select id="algoASelect"></select> <!-- options filled from the engine's ALGORITHMS -->
-
   <!-- Landmark control A: button collapses/expands into a dropdown in place -->
   <div class="landmark-control" id="landmarkControlA">
     <!-- landmark algorithms: always on (count selectable); others: optional visual overlay -->
@@ -36,11 +36,12 @@
     </select>
     <button class="landmark-close" id="landmarkCloseA" hidden title="Collapse">&#10005;</button>
   </div>
+  </div>
 
   <span class="divider-vs">VS</span>
 
+  <div>
   <select id="algoBSelect"></select>
-
   <!-- Landmark control B: same behavior, independent state -->
   <div class="landmark-control" id="landmarkControlB">
     <button class="landmark-btn" id="landmarkBtnB">Landmarks</button>
@@ -49,50 +50,6 @@
     </select>
     <button class="landmark-close" id="landmarkCloseB" hidden title="Collapse">&#10005;</button>
   </div>
-</div>
-
-<!-- ===================== 3. COMPARISON PANELS ===================== -->
-<div class="section plain-section" style="padding:14px; position:relative;">
-  <!-- Label frames: one independent frame per side, above its map frame -->
-  <div class="algo-label-row">
-    <div class="algo-label-frame">
-      <div class="algo-header">
-        <div class="algo-badge">A</div>
-        <strong id="algoALabel">UCS</strong>
-      </div>
-    </div>
-    <div class="algo-label-frame">
-      <div class="algo-header">
-        <div class="algo-badge">B</div>
-        <strong id="algoBLabel">A* (LP+ALT)</strong>
-      </div>
-    </div>
-  </div>
-
-  <div class="compare-wrap">
-    <div class="algo-panel">
-      <div class="algo-canvas">
-        <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm A" class="map-img" draggable="false"></div>
-        <div class="map-hud">
-          <span class="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
-          <button class="map-reset" title="Reset view">RESET</button>
-        </div>
-        <p class="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
-      </div>
-    </div>
-
-    <div class="vs-circle">VS</div>
-
-    <div class="algo-panel">
-      <div class="algo-canvas">
-        <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm B" class="map-img" draggable="false"></div>
-        <div class="map-hud">
-          <span class="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
-          <button class="map-reset" title="Reset view">RESET</button>
-        </div>
-        <p class="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -140,6 +97,51 @@
     </div>
   </div>
 
+</div>
+
+<!-- ===================== 3. COMPARISON PANELS ===================== -->
+<div class="section plain-section" style="padding:14px; position:relative;">
+  <!-- Label frames: one independent frame per side, above its map frame -->
+  <div class="algo-label-row">
+    <div class="algo-label-frame">
+      <div class="algo-header">
+        <div class="algo-badge">A</div>
+        <strong id="algoALabel">UCS</strong>
+      </div>
+    </div>
+    <div class="algo-label-frame">
+      <div class="algo-header">
+        <div class="algo-badge">B</div>
+        <strong id="algoBLabel">A* (LP+ALT)</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-wrap">
+    <div class="algo-panel">
+      <div class="algo-canvas">
+        <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm A" class="map-img" draggable="false"></div>
+        <div class="map-hud">
+          <span class="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
+          <button class="map-reset" title="Reset view">RESET</button>
+        </div>
+        <p class="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
+      </div>
+    </div>
+
+    <div class="vs-circle">VS</div>
+
+    <div class="algo-panel">
+      <div class="algo-canvas">
+        <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm B" class="map-img" draggable="false"></div>
+        <div class="map-hud">
+          <span class="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
+          <button class="map-reset" title="Reset view">RESET</button>
+        </div>
+        <p class="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===================== 5. FULL COMPARISON TABLE ===================== -->
