@@ -96,6 +96,8 @@ Why `generated` often doesn't change between presets: even perfect h still disco
 
 LP buys +0.001 over ALT alone. **Q&A answer for "why keep LP":** LP is an independent bound from vector decomposition — different data and method from triangle-inequality landmarks. `max(hLP, hALT)` means admissibility never rests solely on landmark choice.
 
+> **Averaging convention.** The 0.729 LP figure above is the *mean of per-pair h/road ratios*. Reporting the *ratio of sums* instead (sum h ÷ sum true distance over all 380 ordered pairs) gives **0.683** for LP; ALT and combined are essentially unchanged (0.985 / 0.986). The left sidebar guide quotes the ratio-of-sums numbers. Both conventions are computed by `eval/independent-eval.ts`.
+
 ---
 
 ## Algorithms registry (`src/search.ts`)

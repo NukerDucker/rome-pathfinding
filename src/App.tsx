@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import katex from 'katex'
-import 'katex/dist/katex.min.css'
-import { ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
@@ -21,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Guide } from '@/components/Guide'
+import { Tex } from '@/components/Tex'
 import './App.css'
 
 const ALGO_FOOTNOTES: Record<string, string> = {
@@ -58,14 +58,6 @@ function laneLandmarkCities(
 
 // Typeset a LaTeX expression inline (span element). The time/space complexity
 // strings in search.ts are already LaTeX, so they are passed straight through.
-function Tex({ children, className }: { children: string; className?: string }) {
-  const html = useMemo(
-    () => katex.renderToString(children, { throwOnError: false, displayMode: false }),
-    [children],
-  )
-  return <span className={`tex${className ? ` ${className}` : ''}`} dangerouslySetInnerHTML={{ __html: html }} />
-}
-
 // Row-name suffix describing which landmark config a lane runs with.
 function laneLmSuffix(
   usesLandmarks: boolean | undefined,
@@ -478,6 +470,209 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
   )
 }
 
+// ── Merged single-map view ──────────────────────────────────────────────────
+// Both lanes share one map. Every road is drawn as two parallel strands split
+// down the middle (left strand = lane A, right strand = lane B); each node disc
+// is split vertically the same way; landmark rings show a coloured half for each
+// lane that selected the city. Reads two algorithms' progress on one picture.
+const MROAD_W = 15
+const MROAD_OFF = 9
+const MROAD_SEAM = 4
+const MCLIP_R = 80
+
+function mergedEdgeClass(lane: 'a' | 'b', state: EdgeState): string {
+  if (state === 'base') return 'mroad mroad-base'
+  return `mroad mroad-${lane}-${state}`
+}
+
+type MergedMapParams = {
+  stepIdx: number
+  lastIdx: number
+  lastIdx2: number
+  result: SearchResult
+  result2: SearchResult
+  hoveredCity: NodeId | null
+  start: NodeId
+  goal: NodeId
+  showLine: boolean
+  heatA?: Record<NodeId, number>
+  heatB?: Record<NodeId, number>
+  landmarksA?: readonly NodeId[]
+  landmarksB?: readonly NodeId[]
+  onCityClick?: (city: NodeId) => void
+  pickLandmarkMode?: boolean
+}
+
+function MergedSVGMap({
+  stepIdx, lastIdx, lastIdx2, result, result2, hoveredCity, start, goal,
+  showLine, heatA, heatB, landmarksA, landmarksB, onCityClick, pickLandmarkMode,
+}: MergedMapParams) {
+  const stepA: Step | undefined = result.steps[Math.min(stepIdx, lastIdx)]
+  const stepB: Step | undefined = result2.steps[Math.min(stepIdx, lastIdx2)]
+  const finalA: boolean = stepIdx >= lastIdx
+  const finalB: boolean = stepIdx >= lastIdx2
+  const stateA = new Map<string, EdgeState>(
+    buildEdgeViews(stepA, result.parent, start, result.path, finalA && result.found)
+      .map((e) => [edgeKey(e.a, e.b), e.state] as [string, EdgeState]),
+  )
+  const stateB = new Map<string, EdgeState>(
+    buildEdgeViews(stepB, result2.parent, start, result2.path, finalB && result2.found)
+      .map((e) => [edgeKey(e.a, e.b), e.state] as [string, EdgeState]),
+  )
+  const searching = !(finalA && finalB)
+
+  return (
+    <svg
+      className="map"
+      width="2800"
+      height="1900"
+      viewBox="600 300 2800 1900"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Merged Romania road map — lane A vs lane B"
+    >
+      <defs>
+        {CITIES.map((city) => {
+          const code = cityCode(city)
+          const c = ROMANIA[city]
+          return (
+            <g key={`mclip-${city}`}>
+              <clipPath id={`mclipL-${code}`}>
+                <rect x={c.x - MCLIP_R} y={c.y - MCLIP_R} width={MCLIP_R} height={MCLIP_R * 2} />
+              </clipPath>
+              <clipPath id={`mclipR-${code}`}>
+                <rect x={c.x} y={c.y - MCLIP_R} width={MCLIP_R} height={MCLIP_R * 2} />
+              </clipPath>
+            </g>
+          )
+        })}
+      </defs>
+
+      <rect className="map-bg" x={625} y={325} width={2750} height={1850} rx={80} />
+
+      {/* Roads — two parallel strands, split down the middle */}
+      {BASE_EDGES.map((edge) => {
+        const a = ROMANIA[edge.a], b = ROMANIA[edge.b]
+        const dx = b.x - a.x, dy = b.y - a.y
+        const len = Math.hypot(dx, dy) || 1
+        const ux = -dy / len, uy = dx / len
+        const key = edgeKey(edge.a, edge.b)
+        const sA = stateA.get(key) ?? 'base'
+        const sB = stateB.get(key) ?? 'base'
+        return (
+          <g key={`mroad-${edge.a}-${edge.b}`}>
+            <line className={mergedEdgeClass('a', sA)} strokeWidth={MROAD_W}
+              x1={a.x + ux * MROAD_OFF} y1={a.y + uy * MROAD_OFF}
+              x2={b.x + ux * MROAD_OFF} y2={b.y + uy * MROAD_OFF} />
+            <line className={mergedEdgeClass('b', sB)} strokeWidth={MROAD_W}
+              x1={a.x - ux * MROAD_OFF} y1={a.y - uy * MROAD_OFF}
+              x2={b.x - ux * MROAD_OFF} y2={b.y - uy * MROAD_OFF} />
+          </g>
+        )
+      })}
+
+      {/* Centre seam — drawn over every road so the split reads even when both
+          halves are the neutral “base” colour */}
+      {BASE_EDGES.map((edge) => {
+        const a = ROMANIA[edge.a], b = ROMANIA[edge.b]
+        return (
+          <line key={`mseam-${edge.a}-${edge.b}`} className="mroad-seam"
+            strokeWidth={MROAD_SEAM}
+            x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+        )
+      })}
+
+      {showLine && renderArcEdges(start, goal)}
+
+      {/* km pills — tinted by the “busier” of the two lanes' states */}
+      {BASE_EDGES.map((edge) => {
+        const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
+        const my = (ROMANIA[edge.a].y + ROMANIA[edge.b].y) / 2
+        const w = labelWidth(edge.km)
+        const key = edgeKey(edge.a, edge.b)
+        const sA = stateA.get(key) ?? 'base'
+        const sB = stateB.get(key) ?? 'base'
+        const labelState: EdgeState = (sA === 'path' || sB === 'path') ? 'path'
+          : (sA === 'tree' || sB === 'tree') ? 'tree' : 'base'
+        return (
+          <g key={`mlabel-${edge.a}-${edge.b}`} className={`edge-label edge-label-${labelState}`}>
+            <rect x={mx - w / 2} y={my - LABEL_H / 2} width={w} height={LABEL_H} rx={LABEL_RX} />
+            <text x={mx} y={my} dominantBaseline="central">{edge.km}</text>
+          </g>
+        )
+      })}
+
+      {/* Heatmap — split vertically: left = lane A, right = lane B */}
+      {(heatA || heatB) && (
+        <g className="heatmap-layer" style={{ pointerEvents: 'none' }}>
+          {CITIES.map((city) => {
+            const c = ROMANIA[city]
+            const code = cityCode(city)
+            const nA = heatA?.[city]
+            const nB = heatB?.[city]
+            return (
+              <g key={`mheat-${city}`}>
+                {nA !== undefined && (
+                  <g clipPath={`url(#mclipL-${code})`}>
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nA * 240)}, 85%, 55%)`} opacity={0.75} />
+                  </g>
+                )}
+                {nB !== undefined && (
+                  <g clipPath={`url(#mclipR-${code})`}>
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nB * 240)}, 85%, 55%)`} opacity={0.75} />
+                  </g>
+                )}
+              </g>
+            )
+          })}
+        </g>
+      )}
+
+      {/* Nodes — split vertically: left half lane A, right half lane B */}
+      {CITIES.map((city) => {
+        const coord = ROMANIA[city]
+        const code = cityCode(city)
+        const cA = stepA ? nodeState(city, stepA, finalA, result.found, result.path) : 'unvisited'
+        const cB = stepB ? nodeState(city, stepB, finalB, result2.found, result2.path) : 'unvisited'
+        const isHovered = city === hoveredCity
+        const isStart = city === start && searching
+        const isGoal = city === goal && searching
+        const lmInA = landmarksA?.includes(city) ?? false
+        const lmInB = landmarksB?.includes(city) ?? false
+        return (
+          <g
+            key={city}
+            className={`node-split${isHovered ? ' node-hover' : ''}${pickLandmarkMode ? ' node-clickable' : ''}`}
+            onClick={() => onCityClick?.(city)}
+          >
+            <title>{city}{lmInA || lmInB ? ' ★ landmark' : ''}</title>
+            {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
+            {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
+            {lmInA && (
+              <g clipPath={`url(#mclipL-${code})`}>
+                <circle className="marker-ring marker-lm-a" cx={coord.x} cy={coord.y} r={70} />
+              </g>
+            )}
+            {lmInB && (
+              <g clipPath={`url(#mclipR-${code})`}>
+                <circle className="marker-ring marker-lm-b" cx={coord.x} cy={coord.y} r={70} />
+              </g>
+            )}
+            <g clipPath={`url(#mclipL-${code})`} className={`mhalf node node-${cA}`}>
+              <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+              <text x={coord.x} y={coord.y} dominantBaseline="central">{code}</text>
+            </g>
+            <g clipPath={`url(#mclipR-${code})`} className={`mhalf node node-${cB}`}>
+              <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+              <text x={coord.x} y={coord.y} dominantBaseline="central">{code}</text>
+            </g>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 // Subscribe a component to a CSS media query. Used to pick the comparison-table
 // orientation (wide on desktop, transposed on narrow screens).
 function useMediaQuery(query: string): boolean {
@@ -548,6 +743,17 @@ function App() {
   const [lmOverlayB, setLmOverlayB] = useState(false)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [pickLandmarkMode, setPickLandmarkMode] = useState(false)
+  const [merged, setMerged] = useState(true)
+  // Guide sidebar: open on wide screens, collapsed on narrow ones.
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth > 1100,
+  )
+
+  // Stats go to the right sidebar only when the merged view has room (wide
+  // window); otherwise they sit below the map so the centre column stays wide.
+  const isWide = useMediaQuery('(min-width: 1500px)')
+  const statsInSidebar = merged && isWide
+  const useTall = merged || isCompact
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
@@ -626,6 +832,15 @@ function App() {
   const onCityClickB = (city: NodeId) => {
     if (!pickLandmarkMode) return
     if (!meta2.usesLandmarks) setLmOverlayB(true)
+    toggleCustom(setCustomB, city)
+  }
+  // Merged map: one click adds/removes the city as a landmark in BOTH lanes, so
+  // the split ring immediately shows both halves.
+  const onCityClickMerged = (city: NodeId) => {
+    if (!pickLandmarkMode) return
+    if (!meta.usesLandmarks) setLmOverlayA(true)
+    if (!meta2.usesLandmarks) setLmOverlayB(true)
+    toggleCustom(setCustomA, city)
     toggleCustom(setCustomB, city)
   }
 
@@ -790,9 +1005,116 @@ function App() {
   ) =>
     `${wrap ? 'col-wrap' : ''}${better === side ? (side === 'a' ? ' better-a' : ' better-b') : ''}${label === 'Step' ? ' col-nowrap' : ''}`
 
+  // Algorithm-comparison stats. Rendered once, slotted either into the right
+  // sidebar or below the map depending on STATS_IN_SIDEBAR.
+  const statsPanel = (
+    <section className="compare-panel" aria-labelledby="compare-title">
+      <Card>
+        <CardContent>
+          <h2 id="compare-title" className="compare-title">
+            <span>Algorithm comparison</span>
+            <span className="ct-route">{start} → {goal}</span>
+          </h2>
+          <div className="compare-scroll">
+            {useTall ? (
+            <table className="compare compare-tall">
+              <thead>
+                <tr>
+                  <th scope="col" className="tall-metric-col">Metric</th>
+                  <th scope="col" className="tall-head tall-head-a">
+                    <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+                    <span className="tall-head-label">{rowLabelA}</span>
+                  </th>
+                  <th scope="col" className="tall-head tall-head-b">
+                    <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+                    <span className="tall-head-label">{rowLabelB}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {cols.map((c) => (
+                  <tr key={c.label}>
+                    <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                    <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
+                    <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            ) : (
+            <table className="compare compare-fixed table-wide">
+              <thead>
+                <tr>
+                  <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
+                  {cols.map((c) => (
+                    <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="row-lane-a">
+                  <th scope="row">
+                    <div className="run-cell">
+                      <span className="run-label">
+                        <span className="lane-badge lane-badge-a">A</span>
+                        <span className="run-label-text">{rowLabelA}</span>
+                      </span>
+                    </div>
+                  </th>
+                  {cols.map((c) => (
+                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
+                      <div className="run-cell">{c.a}</div>
+                    </td>
+                  ))}
+                </tr>
+                <tr className="row-lane-b">
+                  <th scope="row">
+                    <div className="run-cell">
+                      <span className="run-label">
+                        <span className="lane-badge lane-badge-b">B</span>
+                        <span className="run-label-text">{rowLabelB}</span>
+                      </span>
+                    </div>
+                  </th>
+                  {cols.map((c) => (
+                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
+                      <div className="run-cell">{c.b}</div>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+            )}
+          </div>
+          <p className="footnotes">
+            {
+              [
+                `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
+                'live step metrics (Visited/Frontier/Path) compared only at the final frame',
+                ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
+                ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
+              ].filter(Boolean).join(' · ')
+            }
+          </p>
+        </CardContent>
+      </Card>
+    </section>
+  )
+
   return (
-    <>
+    <div className={`app-shell${statsInSidebar ? ' app-shell-fit' : ''}`}>
+    <Guide open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="app-main">
     <h1 className="app-title">
+      <button
+        className="sidebar-toggle"
+        aria-label={sidebarOpen ? 'Hide the guide' : 'Show the guide'}
+        aria-pressed={sidebarOpen}
+        title={sidebarOpen ? 'Hide guide' : 'Show guide'}
+        onClick={() => setSidebarOpen((v) => !v)}
+      >
+        <BookOpen aria-hidden="true" />
+      </button>
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
@@ -901,8 +1223,109 @@ function App() {
         </div>
       </div>
 
+      <div className={`workspace${statsInSidebar ? ' workspace-fit' : ''}`}>
       <main className="app">
-        <div className="lanes">
+        {/* Toolbar — above the map */}
+        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
+
+          {/* Group 1: Node state legend */}
+          <div className="toolbar-group" aria-label="Node state legend">
+            <span className="toolbar-group-label">Legend</span>
+            <ul className="legend" aria-label="Node state colors">
+              <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+              <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+              <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+              <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+              <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+              <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+              <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+            </ul>
+          </div>
+
+          {/* Group 2: Overlays */}
+          <div className="toolbar-group" aria-label="Map overlays">
+            <span className="toolbar-group-label">Overlays</span>
+            <div className="toolbar-row">
+              <Button
+                variant={showLine ? 'default' : 'outline'} size="sm"
+                onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
+                title="Show straight line from origin to destination"
+              >
+                <span className="swatch swatch-arc" aria-hidden="true" />
+                Straight Line
+              </Button>
+              <Button
+                variant={showHeatmap ? 'default' : 'outline'} size="sm"
+                onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
+                title="h-value heatmap — red=near goal, blue=far"
+              >
+                🌡 Heatmap
+              </Button>
+              <Button
+                variant={merged ? 'default' : 'outline'} size="sm"
+                onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
+                aria-pressed={merged}
+                title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
+              >
+                ⬓ {merged ? 'Merged map' : 'Merge maps'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Tool: landmark picker */}
+          <div className="toolbar-group" aria-label="Tools">
+            <span className="toolbar-group-label">Tool</span>
+            <div className="toolbar-row">
+              <Button
+                variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
+                onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
+                title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
+              >
+                ★ Landmarks ({customA.length + customB.length})
+              </Button>
+            </div>
+          </div>
+
+          {/* Group 3: Playback */}
+          <div className="toolbar-group" aria-label="Playback">
+            <span className="toolbar-group-label">Playback</span>
+            <div className="transport">
+              <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
+                <RotateCcw aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
+                <ChevronLeft aria-hidden="true" />
+              </Button>
+              <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
+                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              </Button>
+              <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
+                <ChevronRight aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Group 4: Speed */}
+          <div className="toolbar-group toolbar-group-speed" aria-label="Speed">
+            <span className="toolbar-group-label">Speed</span>
+            <div className="speed">
+              <span className="speed-labels">
+                <span>Slow</span>
+                <span className="speed-value">{delay}ms</span>
+                <span>Fast</span>
+              </span>
+              <Slider
+                min={MIN_DELAY} max={MAX_DELAY} step={50}
+                value={MAX_DELAY - delay}
+                onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
+                aria-label="Animation speed"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
           {/* Lane A */}
           <section className="lane lane-a" aria-label="Lane A">
             <div className="lane-header">
@@ -950,202 +1373,51 @@ function App() {
               </span>
             </div>
           </section>
-        </div>
 
-        {/* Toolbar — sticky bottom */}
-        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
-
-          {/* Group 1: Node state legend */}
-          <div className="toolbar-group" aria-label="Node state legend">
-            <span className="toolbar-group-label">Legend</span>
-            <ul className="legend" aria-label="Node state colors">
-              <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-              <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-              <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-              <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-              <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-              <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-              <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-            </ul>
-          </div>
-
-          <div className="toolbar-divider" aria-hidden="true" />
-
-          {/* Group 2: Overlays */}
-          <div className="toolbar-group" aria-label="Map overlays">
-            <span className="toolbar-group-label">Overlays</span>
-            <div className="toolbar-row">
-              <Button
-                variant={showLine ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
-                title="Show straight line from origin to destination"
-              >
-                <span className="swatch swatch-arc" aria-hidden="true" />
-                Straight Line
-              </Button>
-              <Button
-                variant={showHeatmap ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
-                title="h-value heatmap — red=near goal, blue=far"
-              >
-                🌡 Heatmap
-              </Button>
-            </div>
-          </div>
-
-          <div className="toolbar-divider" aria-hidden="true" />
-
-          {/* Tool: landmark picker */}
-          <div className="toolbar-group" aria-label="Tools">
-            <span className="toolbar-group-label">Tool</span>
-            <div className="toolbar-row">
-              <Button
-                variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
-                onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
-                title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
-              >
-                ★ Landmarks ({customA.length + customB.length})
-              </Button>
-            </div>
-          </div>
-
-          <div className="toolbar-spacer" aria-hidden="true" />
-
-          {/* Group 3: Playback */}
-          <div className="toolbar-group" aria-label="Playback">
-            <span className="toolbar-group-label">Playback</span>
-            <div className="transport">
-              <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
-                <RotateCcw aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
-                <ChevronLeft aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
-                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
-                <ChevronRight aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="toolbar-divider" aria-hidden="true" />
-
-          {/* Group 4: Speed */}
-          <div className="toolbar-group toolbar-group-speed" aria-label="Speed">
-            <span className="toolbar-group-label">Speed</span>
-            <div className="speed">
-              <span className="speed-labels">
-                <span>Slow</span>
-                <span className="speed-value">{delay}ms</span>
-                <span>Fast</span>
+          {/* Merged single-map view — shown only when “Merge maps” is toggled on */}
+          <section className="lane lane-merged" aria-label="Merged map (lane A and B)">
+            <div className="lane-header lane-header-merged">
+              <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+              <span className="lane-algo-name">{meta.label}{laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}</span>
+              <span className="lane-vs-inline" aria-hidden="true">vs</span>
+              <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+              <span className="lane-algo-name">{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
+              <span className="merged-legend">
+                <span className="ml-item"><span className="ml-swatch ml-a" aria-hidden="true" />{meta.label}</span>
+                <span className="ml-item"><span className="ml-swatch ml-b" aria-hidden="true" />{meta2.label}</span>
               </span>
-              <Slider
-                min={MIN_DELAY} max={MAX_DELAY} step={50}
-                value={MAX_DELAY - delay}
-                onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
-                aria-label="Animation speed"
-              />
             </div>
-          </div>
-
+            <div className="map-wrap">
+              <MergedSVGMap
+                stepIdx={stepIdx} lastIdx={lastIdx} lastIdx2={lastIdx2}
+                result={result} result2={result2}
+                hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                heatA={heatA} heatB={heatB}
+                landmarksA={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
+                landmarksB={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
+                onCityClick={onCityClickMerged} pickLandmarkMode={pickLandmarkMode}
+              />
+              <span className="heatmap-legend" aria-label="Heatmap scale"
+                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </span>
+            </div>
+          </section>
         </div>
 
-        {/* Single combined table — only the two selected algorithms (A and B) */}
-        <section className="compare-panel" aria-labelledby="compare-title">
-          <Card>
-            <CardContent>
-              <h2 id="compare-title" className="compare-title">
-                <span>Algorithm comparison</span>
-                <span className="ct-route">{start} → {goal}</span>
-              </h2>
-              <div className="compare-scroll">
-                {!isCompact ? (
-                <table className="compare compare-fixed table-wide">
-                  <thead>
-                    <tr>
-                      <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
-                      {cols.map((c) => (
-                        <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="row-lane-a">
-                      <th scope="row">
-                        <div className="run-cell">
-                          <span className="run-label">
-                            <span className="lane-badge lane-badge-a">A</span>
-                            <span className="run-label-text">{rowLabelA}</span>
-                          </span>
-                        </div>
-                      </th>
-                      {cols.map((c) => (
-                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
-                          <div className="run-cell">{c.a}</div>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="row-lane-b">
-                      <th scope="row">
-                        <div className="run-cell">
-                          <span className="run-label">
-                            <span className="lane-badge lane-badge-b">B</span>
-                            <span className="run-label-text">{rowLabelB}</span>
-                          </span>
-                        </div>
-                      </th>
-                      {cols.map((c) => (
-                        <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
-                          <div className="run-cell">{c.b}</div>
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-                ) : (
-                <table className="compare compare-tall">
-                  <thead>
-                    <tr>
-                      <th scope="col" className="tall-metric-col">Metric</th>
-                      <th scope="col" className="tall-head tall-head-a">
-                        <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-                        <span className="tall-head-label">{rowLabelA}</span>
-                      </th>
-                      <th scope="col" className="tall-head tall-head-b">
-                        <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-                        <span className="tall-head-label">{rowLabelB}</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cols.map((c) => (
-                      <tr key={c.label}>
-                        <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                        <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
-                        <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                )}
-              </div>
-              <p className="footnotes">
-                {
-                  [
-                    `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
-                    'live step metrics (Visited/Frontier/Path) compared only at the final frame',
-                    ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
-                    ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
-                  ].filter(Boolean).join(' · ')
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </section>
+        {!statsInSidebar && statsPanel}
       </main>
-    </>
+
+      {statsInSidebar && (
+        <aside className="stats-panel" aria-label="Algorithm comparison">
+          {statsPanel}
+        </aside>
+      )}
+      </div>
+    </div>
+    </div>
   )
 }
 

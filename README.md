@@ -10,6 +10,8 @@ Romania map pathfinding visualizer — AI assignment (KMITL Year 3, 2026).
 
 Step-by-step animation of search algorithms on the Romania map. Bento two-lane layout for side-by-side algorithm comparison. Frontier/visited highlighting, arc overlay, speed slider, play/pause/step, H-value heatmap, click-to-set-landmark.
 
+Also ships a **left-hand guide sidebar** that walks from Uniform-Cost Search to A\*, into the heuristic (LP + ALT), the `max` ensemble, and its measured performance, plus an optional **merged single-map view** (roads split down the middle, node discs and landmark rings split vertically, one colour per lane).
+
 ## Stack
 
 - Vite 8 + React 19 + TypeScript ~6.0
@@ -76,5 +78,11 @@ src/
   astar-alt.ts        — A* with combined LP+ALT
   astar-alt-only.ts   — A* with ALT only
   biastar.ts          — bidirectional A* (independent frontier bounds, reopening)
-  App.tsx             — UI, toolbar, map render, heatmap, lane comparison
+  components/Guide.tsx — left sidebar explainer (UCS → A* → heuristic → ensemble)
+  components/Tex.tsx   — shared KaTeX inline renderer
+  App.tsx             — UI, toolbar, map render, heatmap, lane comparison, merged view
+  App.css             — layout + guide + merged-map styles
+eval/
+  independent-eval.ts — external measurement of heuristic informedness + expansions
+requests.txt          — specs for the sidebar's animated GIFs (for the asset agent)
 ```
