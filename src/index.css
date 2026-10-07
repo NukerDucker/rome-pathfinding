@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -20,7 +21,7 @@
 
   --sans: 'Geist Variable', system-ui, sans-serif;
   --heading: 'Geist Variable', system-ui, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --mono: 'JetBrains Mono Variable', ui-monospace, Consolas, monospace;
   --serif: Georgia, 'Times New Roman', serif;
 
   font: 18px/145% var(--sans);

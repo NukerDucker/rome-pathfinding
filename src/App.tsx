@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { BookOpen, ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, Columns2, Dices, MapPin, Moon, Pause, Play, RotateCcw, Sparkles, Sun, Thermometer, X } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
@@ -92,7 +92,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
         className="lm-toggle"
         title={`Show landmark overlay for ${lane} (visual only — algorithm unchanged)`}
         onClick={() => setOverlay(true)}
-      >✦ Landmarks</button>
+      ><Sparkles size={12} aria-hidden="true" /> Landmarks</button>
     )
   }
   return (
@@ -102,7 +102,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
           className="query-lm-custom"
           title={`Custom landmarks active (${customCount}). Click to clear and return to the preset.`}
           onClick={onClearCustom}
-        >★ Custom ({customCount})</button>
+        ><MapPin size={12} aria-hidden="true" /> Custom ({customCount})</button>
       ) : (
         <>
           <Select value={count} onValueChange={(v) => v && onCount(v as LandmarkCount)}>
@@ -124,7 +124,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
           aria-label={`Hide landmark overlay for ${lane}`}
           title="Hide landmark overlay"
           onClick={() => setOverlay(false)}
-        >✕</button>
+        ><X size={12} aria-hidden="true" /></button>
       )}
     </div>
   )
@@ -429,14 +429,12 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
             const norm = heatmapValues[city]
             if (norm === undefined) return null
             const coord = ROMANIA[city]
-            const hue = Math.round(norm * 240)
             return (
               <circle
                 key={`heat-${city}`}
                 cx={coord.x} cy={coord.y}
                 r={NODE_R + 14}
-                fill={`hsl(${hue}, 85%, 55%)`}
-                opacity={0.75}
+                style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * norm }}
               />
             )
           })}
@@ -614,12 +612,12 @@ function MergedSVGMap({
               <g key={`mheat-${city}`}>
                 {nA !== undefined && (
                   <g clipPath={`url(#mclipL-${code})`}>
-                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nA * 240)}, 85%, 55%)`} opacity={0.75} />
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * nA }} />
                   </g>
                 )}
                 {nB !== undefined && (
                   <g clipPath={`url(#mclipR-${code})`}>
-                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nB * 240)}, 85%, 55%)`} opacity={0.75} />
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * nB }} />
                   </g>
                 )}
               </g>
@@ -666,6 +664,16 @@ function MergedSVGMap({
               <circle cx={coord.x} cy={coord.y} r={NODE_R} />
               <text x={coord.x} y={coord.y} dominantBaseline="central">{code}</text>
             </g>
+            {stepA && stepA.current === city && !finalA && (
+              <g clipPath={`url(#mclipL-${code})`}>
+                <circle key={`pa-${stepIdx}`} className="cur-ping" style={{ stroke: 'var(--map-accent)' }} cx={coord.x} cy={coord.y} r={NODE_R} />
+              </g>
+            )}
+            {stepB && stepB.current === city && !finalB && (
+              <g clipPath={`url(#mclipR-${code})`}>
+                <circle key={`pb-${stepIdx}`} className="cur-ping" style={{ stroke: 'var(--lane-b)' }} cx={coord.x} cy={coord.y} r={NODE_R} />
+              </g>
+            )}
           </g>
         )
       })}
@@ -1086,16 +1094,14 @@ function App() {
             </table>
             )}
           </div>
-          <p className="footnotes">
-            {
-              [
-                `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
-                'live step metrics (Visited/Frontier/Path) compared only at the final frame',
-                ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
-                ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
-              ].filter(Boolean).join(' · ')
-            }
-          </p>
+          <ul className="footnotes">
+            {[
+              `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
+              'live step metrics (Visited/Frontier/Path) compared only at the final frame',
+              ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
+              ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
+            ].filter(Boolean).map((t) => <li key={t}>{t}</li>)}
+          </ul>
         </CardContent>
       </Card>
     </section>
@@ -1257,9 +1263,9 @@ function App() {
               <Button
                 variant={showHeatmap ? 'default' : 'outline'} size="sm"
                 onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
-                title="h-value heatmap — red=near goal, blue=far"
+                title="h-value heatmap — stronger red = nearer the goal (lower h)"
               >
-                🌡 Heatmap
+                <Thermometer size={14} aria-hidden="true" /> Heatmap
               </Button>
               <Button
                 variant={merged ? 'default' : 'outline'} size="sm"
@@ -1267,7 +1273,7 @@ function App() {
                 aria-pressed={merged}
                 title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
               >
-                ⬓ {merged ? 'Merged map' : 'Merge maps'}
+                <Columns2 size={14} aria-hidden="true" /> {merged ? 'Merged map' : 'Merge maps'}
               </Button>
             </div>
           </div>
@@ -1281,7 +1287,7 @@ function App() {
                 onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
                 title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
               >
-                ★ Landmarks ({customA.length + customB.length})
+                <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
               </Button>
             </div>
           </div>

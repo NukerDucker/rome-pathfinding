@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { Tex } from './Tex'
 
 // ── Left-hand guide ─────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
     >
       <div className="guide-head">
         <span className="guide-title">How the search works</span>
-        <button className="guide-close" onClick={onClose} aria-label="Hide guide">✕</button>
+        <button className="guide-close" onClick={onClose} aria-label="Hide guide"><X size={14} aria-hidden="true" /></button>
       </div>
 
       <div className="guide-body">
