@@ -533,29 +533,35 @@
   50% { r: 98; opacity: 0.85; }
 }
 
-/* ── Comparison table ────────────────────────────────────────────────── */
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+/* Groups pack into rows and wrap as the centre column narrows; captions stay
+   aligned, the widest group (legend) gets its own row. No separators. */
 .toolbar {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: 0 var(--sp-4);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-3) var(--sp-6);
+  padding: var(--sp-3) var(--sp-4) 2rem;
   background: var(--dock-bg);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  min-height: 64px;
-  flex-wrap: wrap;
   position: sticky;
-  bottom: 0;
+  top: 0;
   z-index: 10;
   backdrop-filter: blur(8px);
 }
 
+.toolbar > .toolbar-group:first-child { flex: 0 1 auto; }
+
+/* Cap the legend so it wraps to a compact block and packs beside the controls */
+.legend { max-width: 300px; }
+
 .toolbar-group {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
-  padding: var(--sp-2) 0;
-  flex-shrink: 0;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .toolbar-group-label {
@@ -575,21 +581,8 @@
   flex-wrap: wrap;
 }
 
-.toolbar-divider {
-  width: 1px;
-  height: 36px;
-  background: var(--border);
-  flex-shrink: 0;
-  margin: 0;
-}
-
-.toolbar-spacer {
-  flex: 1;
-}
-
-.toolbar-group-speed .speed {
-  min-width: 140px;
-}
+.toolbar-group-speed { flex: 0 0 auto; }
+.toolbar-group-speed .speed { min-width: 150px; }
 
 /* ── Legend ──────────────────────────────────────────────────────────── */
 .legend {
@@ -642,8 +635,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  min-width: 160px;
-  justify-self: end;
+  min-width: 0;
 }
 
 .speed-labels {
@@ -901,17 +893,11 @@
     flex: 0 0 auto;
   }
 
-  /* Toolbar: drop chrome separators, let groups stack */
+  /* Toolbar: tighter padding on phones (columns come from the container query) */
   .toolbar {
-    gap: var(--sp-2);
-    padding: var(--sp-2);
-    min-height: auto;
+    gap: var(--sp-2) var(--sp-4);
+    padding: var(--sp-2) var(--sp-3) 1.25rem;
   }
-  .toolbar-divider,
-  .toolbar-spacer { display: none; }
-  .toolbar-group { flex: 1 1 auto; }
-  .toolbar-group-speed { min-width: 0; }
-  .toolbar-group-speed .speed { min-width: 0; }
   .toolbar-group-speed .speed-labels { flex-wrap: wrap; }
 
   /* Compact legend chips — 4 columns × 2 rows (fits the 7 items) */
@@ -920,7 +906,7 @@
     gap: var(--sp-1) 8px;
     display: grid;
     grid-template-columns: repeat(4, auto);
-    justify-content: center;
+    justify-content: start;
   }
 
   /* Lane header names shouldn't overflow */
@@ -1058,4 +1044,382 @@ html.theme-anim *::after {
 .compare-scroll {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
+}
+
+/* ── App shell: left guide sidebar + main column ───────────────────── */
+.app-shell {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Merged view: pin the shell to the viewport so nothing needs to scroll. */
+.app-shell-fit {
+  height: 100dvh;
+  overflow: hidden;
+}
+.app-shell-fit .app-main { height: 100%; min-height: 0; }
+.app-shell-fit .guide { height: 100%; }
+
+/* Sidebar open/close toggle, mirroring the theme toggle in the masthead */
+.sidebar-toggle {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-toggle:hover {
+  background: color-mix(in srgb, var(--text-h) 8%, transparent);
+}
+.sidebar-toggle svg { width: 18px; height: 18px; }
+
+/* ── Guide (left sidebar) ──────────────────────────────────────────── */
+.guide {
+  flex: 0 0 0;
+  width: 0;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 0.24s ease,
+    flex-basis 0.24s ease,
+    opacity 0.16s ease,
+    visibility 0s linear 0.24s;
+}
+.guide.guide-open {
+  flex-basis: 340px;
+  width: 340px;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    width 0.24s ease,
+    flex-basis 0.24s ease,
+    opacity 0.16s ease,
+    visibility 0s;
+}
+
+.guide-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.guide-title {
+  font-family: var(--heading);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-h);
+}
+.guide-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.guide-close:hover { background: color-mix(in srgb, var(--text) 10%, transparent); }
+
+.guide-body { padding: 12px 16px 28px; }
+.guide-lede { font-size: 13px; line-height: 1.55; color: var(--text); margin: 0 0 10px; }
+
+.guide-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+.guide-nav a {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 0;
+  color: var(--text);
+  text-decoration: none;
+}
+.guide-nav a:hover { color: var(--map-accent); }
+
+.guide-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  scroll-margin-top: 56px;
+}
+.guide-section h3 { font-size: 13.5px; font-weight: 600; color: var(--text-h); margin: 0 0 8px; }
+.guide p { font-size: 12.5px; line-height: 1.6; color: var(--text); margin: 0 0 8px; }
+.guide ul, .guide ol { margin: 0 0 8px; padding-left: 18px; }
+.guide li { font-size: 12.5px; line-height: 1.55; color: var(--text); margin-bottom: 4px; }
+.guide strong { color: var(--text-h); font-weight: 600; }
+.guide code { font-size: 11px; line-height: 1.4; padding: 1px 5px; background: var(--code-bg); border-radius: 4px; }
+.guide .katex { font-size: 1.02em; }
+.guide-eq { overflow-x: auto; margin: 0 0 8px; padding: 6px 2px 8px; }
+
+.guide-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  border-left: 3px solid var(--map-accent);
+  background: color-mix(in srgb, var(--map-accent) 8%, transparent);
+  padding: 8px 10px;
+  border-radius: 0 6px 6px 0;
+  margin: 0 0 10px;
+}
+.guide-note strong { color: var(--text-h); }
+.guide-try {
+  border-left-color: var(--lane-b);
+  background: color-mix(in srgb, var(--lane-b) 9%, transparent);
+}
+
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.guide-table th, .guide-table td {
+  border: 1px solid var(--border);
+  padding: 3px 6px;
+  text-align: left;
+  color: var(--text);
+}
+.guide-table th:first-child, .guide-table td:first-child { text-align: left; }
+.guide-table thead th {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+.guide-table strong { color: var(--text-h); }
+
+.guide-figure { margin: 10px 0 4px; }
+.guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.guide-figure figcaption { font-size: 11px; line-height: 1.45; color: var(--text); margin-top: 5px; }
+.guide-figure-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.guide-foot { font-size: 11px; color: var(--text); opacity: 0.85; margin: 18px 0 0; }
+
+.swatch-lm-a { background: var(--map-accent); }
+.swatch-lm-b { background: var(--lane-b); }
+
+@media (max-width: 1100px) {
+  /* Below the breakpoint the guide is an overlay, not a column: hide it fully
+     when closed (a 0-width column would wrap its text into a huge scroll). */
+  .guide { display: none; }
+  .guide.guide-open {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(86vw, 360px);
+    height: 100vh;
+    flex-basis: auto;
+    z-index: 60;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ── Merged single-map view ────────────────────────────────────────── */
+.lanes-merged { display: flex; flex-direction: column; }
+.lanes-merged > .lane-a,
+.lanes-merged > .lane-b,
+.lanes-merged > .lane-vs { display: none; }
+.lane-merged {
+  display: none;
+  border-top: 3px solid color-mix(in srgb, var(--map-accent) 55%, var(--lane-b));
+}
+.lanes-merged > .lane-merged { display: flex; }
+
+.lane-header-merged { gap: var(--sp-2); }
+.lane-vs-inline {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.merged-legend {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.ml-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Short line segment: purple = lane A's algorithm, teal = lane B's */
+.ml-swatch {
+  width: 24px;
+  height: 5px;
+  border-radius: 3px;
+  flex: none;
+}
+.ml-a { background: var(--map-accent); }
+.ml-b { background: var(--lane-b); }
+
+/* Roads split down the middle: one parallel strand per lane */
+.mroad { fill: none; stroke-linecap: round; transition: stroke 0.15s; }
+.mroad-base { stroke: var(--map-road); }
+.mroad-a-tree { stroke: var(--map-accent); }
+.mroad-b-tree { stroke: var(--lane-b); }
+.mroad-a-path { stroke: var(--state-path); }
+.mroad-b-path { stroke: var(--state-path); }
+.mroad-seam { stroke: var(--bg); stroke-linecap: butt; }
+
+/* Split landmark rings: purple half = lane A picked it, teal half = lane B */
+.node-split .marker-start { stroke: var(--marker-start); }
+.node-split .marker-goal { stroke: var(--marker-goal); }
+.node-split .marker-lm-a { stroke: var(--map-accent); stroke-dasharray: 12 6; }
+.node-split .marker-lm-b { stroke: var(--lane-b); stroke-dasharray: 12 6; }
+
+/* ── Workspace: centre map (+ optional right stats sidebar) ────────── */
+.workspace {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Merged mode: the centre column owns the height and everything flexes to fit,
+   so the middle panel never scrolls. */
+.workspace-fit {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+.workspace-fit > .app {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace-fit > .app > .lanes { flex: 1 1 auto; min-height: 0; }
+
+/* Merged map fills the centre column exactly; the SVG's own
+   preserveAspectRatio="xMidYMid meet" fits and centres the drawing inside it.
+   Sizing the box to 100%/100% (instead of width:auto) means the map always
+   reflows when the guide opens/closes — it can never get stuck smaller. */
+.workspace-fit .lanes-merged > .lane-merged { flex: 1 1 auto; min-height: 0; }
+.workspace-fit .lane-merged .map-wrap { flex: 1 1 auto; min-height: 0; padding: var(--sp-4); }
+.workspace-fit .lane-merged .map {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Stats sidebar (merged mode only) ──────────────────────────────── */
+.stats-panel {
+  flex: 0 0 360px;
+  width: 360px;
+  box-sizing: border-box;
+  align-self: stretch;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+}
+.stats-panel .compare-panel { padding: var(--sp-3) var(--sp-3) var(--sp-4); }
+
+/* ── Stacked layout (narrow): release the fixed height ─────────────── */
+@media (max-width: 1100px) {
+  .app-shell-fit { height: auto; overflow: visible; }
+  .app-shell-fit .app-main { height: auto; }
+  .workspace-fit { flex-direction: column; }
+  .workspace-fit > .app { overflow: visible; }
+  .stats-panel {
+    align-self: auto;
+    width: 100%;
+    flex-basis: auto;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .workspace-fit .lane-merged .map { height: auto; width: 100%; margin-inline: 0; }
+}
+
+/* ── Panel transitions ─────────────────────────────────────────────── */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.lanes-merged > .lane-merged,
+.stats-panel,
+.compare-panel { animation: panel-in 0.22s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .guide { transition: none; }
+  .lanes-merged > .lane-merged,
+  .stats-panel,
+  .compare-panel { animation: none; }
 }
