@@ -62,7 +62,7 @@
   justify-content: center;
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-6);
-  border-bottom: 2px solid var(--map-accent);
+  border-bottom: 1px solid var(--border);
 }
 
 .app-title {
@@ -82,8 +82,6 @@
   gap: 0.55em;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--map-accent) 6%, transparent), transparent 70%);
 
   @media (max-width: 768px) {
     font-size: 16px;
@@ -120,7 +118,7 @@
 }
 
 .app-title-sep {
-  color: var(--map-accent);
+  color: var(--text);
 }
 
 .app-title-sub {
@@ -132,13 +130,19 @@
 /* ── Query bar (From … To … with A vs B) ──────────────────────────── */
 .query-bar {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-3);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-6);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+}
+
+.query-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: nowrap;
 }
 
 .query-word {
@@ -543,22 +547,20 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--sp-3) var(--sp-6);
-  padding: var(--sp-3) var(--sp-4) var(--sp-5);
-  background: var(--dock-bg);
-  border-top: 1px solid var(--border);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 10;
-  backdrop-filter: blur(8px);
+  z-index: 30;
 }
 
 .toolbar > .toolbar-group:first-child { flex: 0 1 auto; }
 
-/* Cap the legend so it wraps to a compact block and packs beside the controls */
-.legend { max-width: 300px; }
+/* Legend always occupies its own first row; controls flow on row 2 */
+.legend { flex-basis: 100%; order: -1; max-width: none; }
 
 .toolbar-group {
   display: flex;
@@ -1199,8 +1201,7 @@ html.theme-anim *::after {
 .guide-nav a:hover { color: var(--map-accent); }
 
 .guide-section {
-  margin-top: 16px;
-  padding-top: 14px;
+  padding: 8px 0;
   border-top: 1px solid var(--border);
   scroll-margin-top: 56px;
 }
@@ -1217,16 +1218,14 @@ html.theme-anim *::after {
   font-size: 12px;
   line-height: 1.5;
   color: var(--text);
-  border-left: 3px solid var(--map-accent);
-  background: color-mix(in srgb, var(--map-accent) 8%, transparent);
-  padding: 8px 10px;
-  border-radius: 0 6px 6px 0;
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 10px 14px;
   margin: 0 0 10px;
 }
 .guide-note strong { color: var(--text-h); }
 .guide-try {
-  border-left-color: var(--lane-b);
-  background: color-mix(in srgb, var(--lane-b) 9%, transparent);
+  /* inherits .guide-note base style with no color stripe */
 }
 
 .guide-table {

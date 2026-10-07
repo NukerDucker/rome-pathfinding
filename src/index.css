@@ -133,15 +133,11 @@
     color-scheme: dark;
 }
 
-.dark #social .button-icon {
-  filter: invert(1) brightness(2);
-}
 
 #root {
   width: 90%;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
   border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
@@ -182,8 +178,7 @@ p {
   margin: 0;
 }
 
-code,
-.counter {
+code {
   font-family: var(--mono);
   display: inline-flex;
   border-radius: 4px;

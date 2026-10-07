@@ -115,7 +115,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
               ))}
             </SelectContent>
           </Select>
-          <span className="query-word query-word-lm">Landmark</span>
+          <span className="query-word query-word-lm">LM</span>
         </>
       )}
       {!usesLandmarks && (
@@ -701,11 +701,9 @@ function useMediaQuery(query: string): boolean {
 // native color scheme so the app's CSS variables (now keyed to `.dark`) switch.
 function ThemeToggle() {
   const [dark, setDark] = useState(() => {
-    const prefersDark =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-    const initial = document.documentElement.classList.contains('dark') || prefersDark
+    const initial = true  // dark is default
     document.documentElement.classList.toggle('dark', initial)
-    document.documentElement.style.colorScheme = initial ? 'dark' : 'light'
+    document.documentElement.style.colorScheme = 'dark'
     return initial
   })
   useEffect(() => {
@@ -950,6 +948,12 @@ function App() {
       better: betterLower(result.generated, result2.generated),
     },
     {
+      label: 'Peak memory',
+      a: String(benchA.peakFrontier),
+      b: String(benchB.peakFrontier),
+      better: betterLower(benchA.peakFrontier, benchB.peakFrontier),
+    },
+    {
       label: 'Path',
       a: finalA ? pathLabel : '—',
       b: finalB ? pathLabel2 : '—',
@@ -957,12 +961,6 @@ function App() {
       wrap: true,
     },
     { label: 'Time (µs)', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
-    {
-      label: 'Peak memory',
-      a: String(benchA.peakFrontier),
-      b: String(benchB.peakFrontier),
-      better: betterLower(benchA.peakFrontier, benchB.peakFrontier),
-    },
     {
       label: 'Cost (km)',
       a: benchCost(benchA),
@@ -1127,104 +1125,98 @@ function App() {
       <ThemeToggle />
     </h1>
       <div className="query-bar" role="toolbar" aria-label="Search configuration">
-        <div className="query-route">
-        <span className="query-word">From</span>
-        <Select
-          value={start}
-          onValueChange={(v) => v && handleStartChange(v as NodeId)}
-          onOpenChange={(open) => !open && setHoveredCity(null)}
-        >
-          <SelectTrigger className="w-36 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {CITIES.map((city) => (
-              <SelectItem
-                key={city} value={city}
-                onMouseEnter={() => setHoveredCity(city)}
-                onMouseLeave={() => setHoveredCity(null)}
-              >{city}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <span className="query-word">To</span>
-        <Select
-          value={goal}
-          onValueChange={(v) => v && handleGoalChange(v as NodeId)}
-          onOpenChange={(open) => !open && setHoveredCity(null)}
-        >
-          <SelectTrigger className="w-36 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {CITIES.map((city) => (
-              <SelectItem
-                key={city} value={city}
-                onMouseEnter={() => setHoveredCity(city)}
-                onMouseLeave={() => setHoveredCity(null)}
-              >{city}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline" size="icon"
-          aria-label="Randomize start and goal cities"
-          title="Randomize"
-          onClick={handleRandomize}
-        >
-          <Dices aria-hidden="true" />
-        </Button>
-        </div>
-
-        <div className="query-lane">
-          <span className="query-word">with</span>
-          <div className="query-algo query-algo-a">
-          <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-          <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
-            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane A">
-              <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
-            </SelectTrigger>
+        {/* Row 1: route */}
+        <div className="query-row">
+          <Select
+            value={start}
+            onValueChange={(v) => v && handleStartChange(v as NodeId)}
+            onOpenChange={(open) => !open && setHoveredCity(null)}
+          >
+            <SelectTrigger className="w-32 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {ALGO_OPTIONS.map(([key, m]) => (
-                <SelectItem key={key} value={key}>{m.label}</SelectItem>
+              {CITIES.map((city) => (
+                <SelectItem
+                  key={city} value={city}
+                  onMouseEnter={() => setHoveredCity(city)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                >{city}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <LandmarkPicker
-            lane="A"
-            usesLandmarks={meta.usesLandmarks}
-            overlay={lmOverlayA}
-            setOverlay={setLmOverlayA}
-            count={landmarkA}
-            onCount={handleLandmarkAChange}
-            customCount={customA.length}
-            onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
-          />
-          </div>
+          <span className="query-word" aria-hidden="true">→</span>
+          <Select
+            value={goal}
+            onValueChange={(v) => v && handleGoalChange(v as NodeId)}
+            onOpenChange={(open) => !open && setHoveredCity(null)}
+          >
+            <SelectTrigger className="w-32 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CITIES.map((city) => (
+                <SelectItem
+                  key={city} value={city}
+                  onMouseEnter={() => setHoveredCity(city)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                >{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline" size="icon"
+            aria-label="Randomize start and goal cities"
+            title="Randomize"
+            onClick={handleRandomize}
+          >
+            <Dices aria-hidden="true" />
+          </Button>
         </div>
-
-        <div className="query-lane">
+        {/* Row 2: algorithm comparison */}
+        <div className="query-row">
+          <div className="query-algo query-algo-a">
+            <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+            <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane A">
+                <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ALGO_OPTIONS.map(([key, m]) => (
+                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <LandmarkPicker
+              lane="A"
+              usesLandmarks={meta.usesLandmarks}
+              overlay={lmOverlayA}
+              setOverlay={setLmOverlayA}
+              count={landmarkA}
+              onCount={handleLandmarkAChange}
+              customCount={customA.length}
+              onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
+            />
+          </div>
           <span className="query-word">vs</span>
           <div className="query-algo query-algo-b">
-          <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-          <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
-            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane B">
-              <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {ALGO_OPTIONS.map(([key, m]) => (
-                <SelectItem key={key} value={key}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <LandmarkPicker
-            lane="B"
-            usesLandmarks={meta2.usesLandmarks}
-            overlay={lmOverlayB}
-            setOverlay={setLmOverlayB}
-            count={landmarkB}
-            onCount={handleLandmarkBChange}
-            customCount={customB.length}
-            onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
-          />
+            <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+            <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
+              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane B">
+                <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ALGO_OPTIONS.map(([key, m]) => (
+                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <LandmarkPicker
+              lane="B"
+              usesLandmarks={meta2.usesLandmarks}
+              overlay={lmOverlayB}
+              setOverlay={setLmOverlayB}
+              count={landmarkB}
+              onCount={handleLandmarkBChange}
+              customCount={customB.length}
+              onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
+            />
           </div>
         </div>
       </div>
@@ -1232,101 +1224,90 @@ function App() {
       <div className={`workspace${statsInSidebar ? ' workspace-fit' : ''}`}>
       <main className="app">
         {/* Toolbar — above the map */}
-        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
+        <div className="toolbar flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg)] flex-wrap" role="toolbar" aria-label="Visualizer controls">
 
-          {/* Group 1: Node state legend */}
-          <div className="toolbar-group" aria-label="Node state legend">
-            <span className="toolbar-group-label">Legend</span>
-            <ul className="legend" aria-label="Node state colors">
-              <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-              <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-              <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-              <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-              <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-              <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-              <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-            </ul>
+          {/* Legend */}
+          <ul className="legend" aria-label="Node state colors">
+            <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+            <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+            <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+            <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+            <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+            <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+            <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+          </ul>
+
+          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
+
+          {/* Overlays */}
+          <Button
+            variant={showLine ? 'default' : 'outline'} size="sm"
+            onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
+            title="Show straight line from origin to destination"
+          >
+            <span className="swatch swatch-arc" aria-hidden="true" />
+            Straight Line
+          </Button>
+          <Button
+            variant={showHeatmap ? 'default' : 'outline'} size="sm"
+            onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
+            title="h-value heatmap — stronger red = nearer the goal (lower h)"
+          >
+            <Thermometer size={14} aria-hidden="true" /> Heatmap
+          </Button>
+          <Button
+            variant={merged ? 'default' : 'outline'} size="sm"
+            onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
+            aria-pressed={merged}
+            title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
+          >
+            <Columns2 size={14} aria-hidden="true" /> {merged ? 'Merged map' : 'Merge maps'}
+          </Button>
+
+          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
+
+          {/* Tool */}
+          <Button
+            variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
+            onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
+            title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
+          >
+            <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
+          </Button>
+
+          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
+
+          {/* Playback */}
+          <div className="transport">
+            <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
+              <RotateCcw aria-hidden="true" />
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
+              {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
+              <ChevronRight aria-hidden="true" />
+            </Button>
           </div>
 
-          {/* Group 2: Overlays */}
-          <div className="toolbar-group" aria-label="Map overlays">
-            <span className="toolbar-group-label">Overlays</span>
-            <div className="toolbar-row">
-              <Button
-                variant={showLine ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
-                title="Show straight line from origin to destination"
-              >
-                <span className="swatch swatch-arc" aria-hidden="true" />
-                Straight Line
-              </Button>
-              <Button
-                variant={showHeatmap ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
-                title="h-value heatmap — stronger red = nearer the goal (lower h)"
-              >
-                <Thermometer size={14} aria-hidden="true" /> Heatmap
-              </Button>
-              <Button
-                variant={merged ? 'default' : 'outline'} size="sm"
-                onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
-                aria-pressed={merged}
-                title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
-              >
-                <Columns2 size={14} aria-hidden="true" /> {merged ? 'Merged map' : 'Merge maps'}
-              </Button>
-            </div>
-          </div>
+          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
 
-          {/* Tool: landmark picker */}
-          <div className="toolbar-group" aria-label="Tools">
-            <span className="toolbar-group-label">Tool</span>
-            <div className="toolbar-row">
-              <Button
-                variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
-                onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
-                title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
-              >
-                <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
-              </Button>
-            </div>
-          </div>
-
-          {/* Group 3: Playback */}
-          <div className="toolbar-group" aria-label="Playback">
-            <span className="toolbar-group-label">Playback</span>
-            <div className="transport">
-              <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
-                <RotateCcw aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
-                <ChevronLeft aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
-                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
-                <ChevronRight aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Group 4: Speed */}
-          <div className="toolbar-group toolbar-group-speed" aria-label="Speed">
-            <span className="toolbar-group-label">Speed</span>
-            <div className="speed">
-              <span className="speed-labels">
-                <span>Slow</span>
-                <span className="speed-value">{delay}ms</span>
-                <span>Fast</span>
-              </span>
-              <Slider
-                min={MIN_DELAY} max={MAX_DELAY} step={50}
-                value={MAX_DELAY - delay}
-                onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
-                aria-label="Animation speed"
-              />
-            </div>
+          {/* Speed */}
+          <div className="speed toolbar-group-speed">
+            <span className="speed-labels">
+              <span>Slow</span>
+              <span className="speed-value">{delay}ms</span>
+              <span>Fast</span>
+            </span>
+            <Slider
+              min={MIN_DELAY} max={MAX_DELAY} step={50}
+              value={MAX_DELAY - delay}
+              onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
+              aria-label="Animation speed"
+            />
           </div>
 
         </div>
