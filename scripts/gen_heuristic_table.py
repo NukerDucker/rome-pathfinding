@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate src/heuristic_table.ts — precomputed LP vector-decomposition heuristic.
+"""Regenerate src/engine/heuristic_table.ts — precomputed LP vector-decomposition heuristic.
 
 h(a, b) = min  Σ αᵢ·kmᵢ
           s.t. Σ αᵢ·vecᵢ = chord_AB,   0 ≤ αᵢ ≤ 1
@@ -18,7 +18,7 @@ Usage (from repo root or anywhere):
     python3 scripts/gen_heuristic_table.py
 
 Requirements: python3, numpy, scipy.  Parses city coords + edges straight
-from src/romania.ts so the table can never drift from the app's data.
+from src/engine/romania.ts so the table can never drift from the app's data.
 """
 from __future__ import annotations
 
@@ -30,10 +30,10 @@ import numpy as np
 from scipy.optimize import linprog
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC_ROMANIA = ROOT / "src" / "romania.ts"
-OUT = ROOT / "src" / "heuristic_table.ts"
+SRC_ROMANIA = ROOT / "src" / "engine" / "romania.ts"
+OUT = ROOT / "src" / "engine" / "heuristic_table.ts"
 
-# ── parse src/romania.ts (single source of truth) ──────────────────────────
+# ── parse src/engine/romania.ts (single source of truth) ──────────────────────────
 
 text = SRC_ROMANIA.read_text()
 
@@ -199,7 +199,7 @@ if violations:
         print(f"  VIOLATION {a}->{b}: h={v:.4f} > road={road}")
     sys.exit(1)
 
-# ── emit src/heuristic_table.ts ─────────────────────────────────────────────
+# ── emit src/engine/heuristic_table.ts ─────────────────────────────────────────────
 
 keys = sorted(table)
 lines = [

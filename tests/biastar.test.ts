@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { biastar } from '../src/biastar'
-import { ucs } from '../src/ucs'
-import { CITIES, ROMANIA } from '../src/romania'
-import { ALGORITHMS, pathCost } from '../src/search'
-import { h, restoreALTState, saveALTState, setALTPreset, setCustomLandmarks } from '../src/heuristic'
+import { biastar } from '../src/engine/biastar'
+import { ucs } from '../src/engine/ucs'
+import { CITIES, ROMANIA } from '../src/engine/romania'
+import { ALGORITHMS, pathCost } from '../src/engine/search'
+import { h, restoreALTState, saveALTState, setALTPreset, setCustomLandmarks } from '../src/engine/heuristic'
 
 const originalState = saveALTState()
 afterEach(() => restoreALTState(originalState))
