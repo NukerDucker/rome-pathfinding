@@ -70,7 +70,8 @@ appearance:none; -webkit-appearance:none;
 background-image:url('assets/dropdown-field.png');
 background-repeat:no-repeat; background-size:100% 100%;
 background-color:transparent; border:none;
-padding:10px 30px 10px 14px; min-width:110px;
+padding:10px 30px 10px 16px; min-width:110px;
+text-indent: 4px !important;
 font-weight:bold; color:#4a3a20;
 image-rendering:pixelated; cursor:pointer;
 }
@@ -99,22 +100,27 @@ padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointe
 /* Pixel art skin: off-state uses the "+" pill asset (text hidden, baked into image).
 	on/locked states stay as plain dark buttons with visible "Landmarks: N" text. */
 .landmark-btn{
-padding:8px 16px 8px 30px; border:none; background-color:transparent;
+padding:10px 16px 10px 16px; border:none; background-color:transparent;
 background-image:url('assets/pill-add.png');
 background-repeat:no-repeat; background-size:100% 100%;
 cursor:pointer; font-size:11px; color:#4a3a20; font-weight:bold;
-min-width:130px; height:34px; text-align:right;
-image-rendering:pixelated;
+min-width:130px; height:34px; text-align: center
 }
 .landmark-btn.on{
-border:2px solid var(--border); background:#333; background-image:none;
-color:#fff; cursor:pointer; font-size:12px;
+background-image:url('assets/btn-start.png');
+background-repeat:no-repeat; background-size:100% 100%;
+cursor:pointer; font-size:11px; color:#4a3a20; font-weight:bold;
+min-width:130px; height:34px;
+image-rendering:pixelated;
 }
 .landmark-btn.locked{
-border:2px solid var(--border); background:#333; background-image:none;
-color:#fff; cursor:pointer; font-size:12px;
+background-image:url('assets/btn-start.png');
+background-repeat:no-repeat; background-size:100% 100%;
+cursor:pointer; font-size:11px; color:#4a3a20; font-weight:bold;
+min-width:130px; height:34px;
+image-rendering:pixelated;
 }
-.landmark-btn.locked::after{ content:" \1F512"; font-size:10px; } /* small lock hint */
+.landmark-btn.locked::before{ content:" \1F512"; font-size:10px; } /* small lock hint */
 .landmark-dropdown{ font-size:13px; } /* inherits the global pixel art select skin */
 .landmark-close{
 width:28px; height:34px; margin-left:4px; border:2px solid var(--border);
