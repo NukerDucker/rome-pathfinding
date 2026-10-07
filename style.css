@@ -141,7 +141,9 @@
     flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
     color:var(--text-soft); font-size:14px; background:#fafafa; overflow:hidden;
     position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
+    user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
   }
+  .algo-canvas img, .algo-canvas canvas, .algo-canvas svg{ -webkit-user-drag:none; } /* ...or draggable as an image */
   /* Zoom/pan target: script.js sets its transform; origin top-left keeps the math simple */
   .map-stage{
     flex:1; align-self:stretch; display:flex; align-items:center; justify-content:center;

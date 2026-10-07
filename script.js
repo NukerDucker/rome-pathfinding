@@ -701,8 +701,10 @@ function makeMapViewport(canvas){
     return { mid, dist: Math.hypot(a.x - b.x, a.y - b.y) || 1 };
   }
 
+  canvas.addEventListener('dragstart', e => e.preventDefault()); // belt and braces for browsers that still start an image drag
   canvas.addEventListener('pointerdown', e => {
     if(e.target === resetBtn || e.button > 0) return;
+    e.preventDefault(); // no native image drag or text selection: a press on the map always pans
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
     stopTween();
@@ -977,7 +979,7 @@ const LABEL_FONT_MIN = 13, LABEL_FONT_MAX = 26;
 // Labels show just the city's initial (larger, see .node-label in style.css)
 // until the city is hovered (mouse within TAP_RADIUS) or tapped (touch).
 const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 4; // map image px
-const TAP_RADIUS = 36;    // map image px: how close a click must be to pick a castle
+const TAP_RADIUS = 36;    // map image px: how close a click must be to a node (road junction) to pick it
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // Straight Line overlay: chord + gentle elliptical arc between start and goal,
@@ -1093,13 +1095,14 @@ function makeLaneOverlay(vp, lane){
     world.innerHTML = html;
   }
 
-  // Nearest castle to a screen point, within TAP_RADIUS map px (else null)
+  // Nearest node (road junction, where the disc is drawn) to a screen point,
+  // within TAP_RADIUS map px (else null)
   function cityAt(clientX, clientY){
     const p = vp.clientToImage(clientX, clientY);
     if(!p) return null;
     let best = null, bestD = TAP_RADIUS;
     for(const city of CITIES){
-      const c = CITY_POSITIONS[city];
+      const c = ROAD_POSITIONS[city];
       const dist = c ? Math.hypot(c.x - p.x, c.y - p.y) : Infinity;
       if(dist < bestD){ best = city; bestD = dist; }
     }
@@ -1128,7 +1131,7 @@ function makeLaneOverlay(vp, lane){
     const city = cityAt(clientX, clientY);
     // touch/pen have no hover: a tap shows that city's name until another tap
     if(pointerType !== 'mouse'){ pinned = city; refreshLabels(); }
-    // Tool on: clicking near a castle toggles it as this lane's custom landmark
+    // Tool on: clicking near a node toggles it as this lane's custom landmark
     if(state.pickLandmarks && city) toggleCustomLandmark(lane, city);
   });
 
