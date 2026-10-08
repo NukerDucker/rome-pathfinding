@@ -553,7 +553,7 @@ function makeMapViewport(canvas){
   }
 
   // "X: xxx, Y: yyy, Scale: 1.0x" -- X/Y in the map image's own pixel grid
-  // (e.g. 0..1199 for the 1200x1200 map). Tracks the pixel under the cursor
+  // (e.g. 0..1198 x 0..941 for the 1199x942 map). Tracks the pixel under the cursor
   // while hovering, otherwise the pixel at the centre of the view.
   let readoutText = '';
   function updateReadout(){
@@ -1308,21 +1308,42 @@ renderThemeToggle();
 
 /* ===================== BREAD BUTTON (just for fun) =====================
    Plays the full-screen "GET BREAD" animation once (CSS .play); clicks while
-   it's playing are ignored; it cleans up when the overlay's fade ends. */
+   it's playing are ignored; it cleans up when the overlay's fade ends.
+   After the first GET BREAD, a little bread pops up in its slot on top of the
+   Guide intro card (once that slot is on screen) and stays; clicking that
+   bread plays GET BREAD again. */
 const breadOverlay = document.getElementById('breadOverlay');
-document.getElementById('breadBtn').addEventListener('click', () => {
+const breadPerch = document.getElementById('breadPerch');
+let breadPerchPending = false;
+function playBread(){
   if(breadOverlay.classList.contains('play')) return;
   breadOverlay.classList.add('play');
-});
+}
+document.getElementById('breadBtn').addEventListener('click', playBread);
+breadPerch.addEventListener('click', playBread);
 breadOverlay.addEventListener('animationend', e => {
-  if(e.target === breadOverlay) breadOverlay.classList.remove('play'); // ignore the bread/text animations
+  if(e.target !== breadOverlay) return; // ignore the bread/text animations
+  breadOverlay.classList.remove('play');
+  if(breadPerch.hidden && !breadPerchPending){ // first GET BREAD: send a bread to the Guide card
+    breadPerchPending = true;
+    breadPerchObserver.observe(document.getElementById('perchBread'));
+  }
 });
+const breadPerchObserver = new IntersectionObserver(entries => {
+  if(!breadPerchPending || !entries.some(e => e.isIntersecting)) return;
+  breadPerchPending = false;
+  breadPerchObserver.disconnect();
+  breadPerch.hidden = false;
+  breadPerch.animate( // pops up with a bounce
+    [{ transform: 'translateY(30px) scale(.4)', opacity: 0 }, { transform: 'translateY(-12px) scale(1.1)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }],
+    { duration: 500, easing: 'ease-out' });
+}, { threshold: 0.6 });
 
 /* ===================== DUCK (just for fun) =====================
    Each click: a synthesized quack (no sound file) and a hop. It gets more
    annoyed as you click (higher quack, bigger hop); on the 10th click it lets
-   out a long quack and rolls off the right edge of the screen. It's back
-   after a page refresh. The audio context is created on the first click, as
+   out a long quack, rolls off the screen and moves between its Map and Guide
+   homes (see DUCK_HOMES). The audio context is created on the first click, as
    browsers require. */
 const DUCK_PATIENCE = 10;
 let quackCtx = null;
@@ -1349,56 +1370,781 @@ function quack(pitch = 1, length = 0.22){
   osc.stop(t + length + 0.03);
 }
 const duckBtn = document.getElementById('duckBtn');
-let duckClicks = 0, duckGone = false;
+// new URL(..., import.meta.url) lets Vite include these sprites in `vite build`
+const DUCK_ROLLED_SRC = new URL('./assets/duck-rolled.png', import.meta.url).href;  // 53x36
+const DUCK_STANDING_SRC = new URL('./assets/duck.png', import.meta.url).href;       // 48x48
+new Image().src = DUCK_ROLLED_SRC; // preload so the swap is instant
+const duckImg = duckBtn.querySelector('img');
+// Two homes: Map page (bottom of the comparison cards) and Guide page (perched
+// on top of the intro card, left end). 10 clicks on the Map page: it rolls off
+// the right edge and rolls in to its Guide perch once that spot is on screen.
+// There it stays: clicks just quack + hop. Back on the Map after a refresh.
+const DUCK_HOMES = {
+  map:   { el: document.getElementById('duckHomeMap'),   exit: 'right', enterFrom: 'right' },
+  guide: { el: document.getElementById('duckHomeGuide'), exit: 'left',  enterFrom: 'left' },
+};
+let duckHome = 'map', duckClicks = 0, duckBusy = false, duckPending = false;
+
+// one click's reaction: the lying-down duck flashes during a hop of `hop` px
+function duckHop(hop){
+  duckBtn.style.setProperty('--hop', hop + 'px');
+  duckImg.src = DUCK_ROLLED_SRC;
+  duckBtn.classList.remove('hop');
+  void duckBtn.offsetWidth; // restart the hop animation on rapid clicks
+  duckBtn.classList.add('hop');
+}
 duckBtn.addEventListener('click', () => {
-  if(duckGone) return;
+  if(duckBusy) return;
+  if(duckHome === 'guide'){ quack(); duckHop(-12); return; } // happy on its Guide perch: never leaves
   duckClicks++;
   if(duckClicks >= DUCK_PATIENCE){ duckRollAway(); return; }
   const annoyance = duckClicks / DUCK_PATIENCE;            // 0.1 .. 0.9
   quack(1 + annoyance * 0.6);                              // quack rises in pitch
-  duckBtn.style.setProperty('--hop', (-12 - annoyance * 28) + 'px'); // hop grows
-  duckBtn.classList.remove('hop');
-  void duckBtn.offsetWidth; // restart the hop animation on rapid clicks
-  duckBtn.classList.add('hop');
+  duckHop(-12 - annoyance * 28);                           // hop grows
 });
-duckBtn.addEventListener('animationend', () => duckBtn.classList.remove('hop'));
-
-// Fed up: switch to the lying-down duck sprite, lift it out of the (scrolling,
-// clipped) cards box onto the screen at the same spot, then roll it right while
-// it fades away (~1s) and remove it.
-const DUCK_ROLLED_SRC = 'assets/duck-rolled.png'; // 53x36 sprite
-new Image().src = DUCK_ROLLED_SRC; // preload so the swap is instant
-function duckRollAway(){
-  duckGone = true;
-  quack(1.6, 1.2); // one long, offended quack, lasting through the exit
-  const box = duckBtn.getBoundingClientRect();
+duckBtn.addEventListener('animationend', () => {
   duckBtn.classList.remove('hop');
-  // same pixel scale as the standing duck (48px sprite shown at box.height),
-  // sitting on the same ground line and centred where the duck stood
-  const scale = box.height / 48;
+  if(!duckBusy) duckImg.src = DUCK_STANDING_SRC; // back to the standing duck after the hop
+});
+
+// Lift the duck out of its box onto the screen as the lying-down sprite, at
+// `box` (its standing spot), so it can roll freely. The map row is a size
+// container that would trap position:fixed, so it moves to <body>.
+function duckLiftOut(box){
+  const scale = box.height / 48; // same pixel scale as the standing duck
   const w = Math.round(53 * scale), h = Math.round(36 * scale);
-  duckBtn.querySelector('img').src = DUCK_ROLLED_SRC;
-  // .map-row is a size container, which would trap position:fixed inside it;
-  // move the duck to <body> so it's positioned against the screen
+  duckImg.src = DUCK_ROLLED_SRC;
   document.body.appendChild(duckBtn);
   Object.assign(duckBtn.style, {
     position: 'fixed', margin: '0', zIndex: '900', width: w + 'px', height: h + 'px',
-    left: (box.left + (box.width - w) / 2) + 'px', top: (box.bottom - h) + 'px',
+    left: (box.left + (box.width - w) / 2) + 'px', top: (box.bottom - h) + 'px', visibility: '',
   });
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const distance = window.innerWidth - box.left + w; // to fully past the right edge
-  // roll right while fading: fully visible for the first half, then fades out
-  const spin = Math.round(distance / w) * 90;
-  const frames = reduceMotion
-    ? [{ opacity: 1 }, { opacity: 0 }]
-    : [
-        { transform: 'translateX(0) rotate(0deg)', opacity: 1 },
-        { transform: `translateX(${distance / 2}px) rotate(${spin / 2}deg)`, opacity: 1, offset: 0.5 },
-        { transform: `translateX(${distance}px) rotate(${spin}deg)`, opacity: 0 },
-      ];
-  duckBtn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
-    .finished.then(() => { duckBtn.hidden = true; });
+  return { w, h };
 }
+// Put the duck back in a home as the standing sprite, with its normal styles
+function duckSettle(home){
+  duckBtn.getAnimations().forEach(an => an.cancel());
+  duckBtn.removeAttribute('style');
+  duckImg.src = DUCK_STANDING_SRC;
+  DUCK_HOMES[home].el.appendChild(duckBtn);
+}
+
+// Fed up: long offended quack, roll off this page's edge while fading (~1s),
+// then wait (hidden) in the other home for it to come on screen.
+// Fun animations always play in full (even with the OS "reduce motion"
+// setting): they only run when you click, never on their own.
+function duckRollAway(){
+  duckBusy = true;
+  quack(1.6, 1.2); // lasts through the exit
+  duckBtn.classList.remove('hop');
+  const box = duckBtn.getBoundingClientRect();
+  const { w } = duckLiftOut(box);
+  const right = DUCK_HOMES[duckHome].exit === 'right';
+  const distance = right ? window.innerWidth - box.left + w : -(box.left + w); // fully off that edge
+  const spin = Math.round(distance / w) * 90; // rolls the way it moves
+  const frames = [
+    { transform: 'translateX(0) rotate(0deg)', opacity: 1 },
+    { transform: `translateX(${distance / 2}px) rotate(${spin / 2}deg)`, opacity: 1, offset: 0.5 },
+    { transform: `translateX(${distance}px) rotate(${spin}deg)`, opacity: 0 },
+  ];
+  duckBtn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
+    .finished.then(() => {
+      duckHome = duckHome === 'map' ? 'guide' : 'map';
+      duckSettle(duckHome);
+      duckBtn.hidden = true;
+      duckClicks = 0;
+      duckPending = true;
+      duckBusy = false;
+      duckWatchArrival();
+    });
+}
+
+// Roll in to the new home once its spot is on screen (tab open + scrolled to)
+const duckArrivalObserver = new IntersectionObserver(entries => {
+  if(duckPending && entries.some(e => e.isIntersecting)) duckRollIn();
+}, { threshold: 0.5 });
+function duckWatchArrival(){
+  duckArrivalObserver.disconnect();
+  // the empty home has no size; give it the duck's footprint so it can be "seen"
+  DUCK_HOMES[duckHome].el.classList.add('duck-home-waiting');
+  duckArrivalObserver.observe(DUCK_HOMES[duckHome].el);
+}
+function duckRollIn(){
+  duckPending = false;
+  duckBusy = true;
+  duckArrivalObserver.disconnect();
+  const home = DUCK_HOMES[duckHome];
+  home.el.classList.remove('duck-home-waiting');
+  // measure the standing spot (invisible), then lift out and roll in to it
+  duckBtn.hidden = false;
+  duckBtn.style.visibility = 'hidden';
+  const box = duckBtn.getBoundingClientRect();
+  if(box.width === 0){ // spot not measurable right now (e.g. hidden): keep waiting
+    duckBtn.hidden = true;
+    duckBtn.removeAttribute('style');
+    duckPending = true;
+    duckBusy = false;
+    duckWatchArrival();
+    return;
+  }
+  const { w } = duckLiftOut(box);
+  const fromLeft = home.enterFrom === 'left';
+  const distance = fromLeft ? -(box.left + w) : window.innerWidth - box.left + w; // start fully off that edge
+  const spin = Math.round(distance / w) * 90;
+  const frames = [
+    { transform: `translateX(${distance}px) rotate(${spin}deg)`, opacity: 0 },
+    { transform: `translateX(${distance / 2}px) rotate(${spin / 2}deg)`, opacity: 1, offset: 0.5 },
+    { transform: 'translateX(0) rotate(0deg)', opacity: 1 },
+  ];
+  quack(1.2, 0.3); // "I'm here"
+  duckBtn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
+    .finished.then(() => {
+      duckSettle(duckHome); // stand up in its new home
+      duckBtn.classList.add('hop');
+      duckBusy = false;
+    });
+}
+
+/* ===================== PEEKING CAT (just for fun) =====================
+   Each Merge toggle has a 1-in-10 chance to make the cat peek up from the
+   bottom edge of a visible map (random spot), look around ~2s and slide back
+   down. Only its head shows; the map clips the body. Click: meow + duck away. */
+const CAT_CHANCE = 0.1;
+const CAT_HEAD = 32 / 48; // the head (cap + face) is the top 32 of the sprite's 48 rows
+const peekCat = document.getElementById('peekCat');
+let catAnim = null;
+
+function meow(){
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)(); // shared with the duck
+  const ctx = quackCtx, t = ctx.currentTime;
+  // "mee-ow": pitch rises then falls, through a vowel-like band-pass that opens then closes
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(520, t);
+  osc.frequency.linearRampToValueAtTime(820, t + 0.18);
+  osc.frequency.exponentialRampToValueAtTime(480, t + 0.55);
+  const mouth = ctx.createBiquadFilter();
+  mouth.type = 'bandpass';
+  mouth.Q.value = 3;
+  mouth.frequency.setValueAtTime(900, t);
+  mouth.frequency.linearRampToValueAtTime(1800, t + 0.2);
+  mouth.frequency.exponentialRampToValueAtTime(700, t + 0.55);
+  const amp = ctx.createGain();
+  amp.gain.setValueAtTime(0.0001, t);
+  amp.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
+  amp.gain.setValueAtTime(0.5, t + 0.35);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+  osc.connect(mouth).connect(amp).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.65);
+}
+
+function catPeek(){
+  // a visible map: map A, or (split view) map A or B
+  const canvases = [...document.querySelectorAll('#compareWrap .algo-panel')]
+    .filter(p => getComputedStyle(p).visibility !== 'hidden')
+    .map(p => p.querySelector('.algo-canvas'));
+  const canvas = canvases[Math.floor(Math.random() * canvases.length)];
+  canvas.appendChild(peekCat);
+  peekCat.hidden = false;
+  const room = canvas.clientWidth - peekCat.offsetWidth;
+  peekCat.style.left = Math.round(room * (0.05 + Math.random() * 0.9)) + 'px';
+  const hiddenY = 'translateY(100%)', peekY = `translateY(${(1 - CAT_HEAD) * 100}%)`;
+  const frames = [{ transform: hiddenY }, { transform: peekY, offset: 0.15 }, { transform: peekY, offset: 0.85 }, { transform: hiddenY }];
+  catAnim = peekCat.animate(frames, { duration: 2800, easing: 'ease-in-out' }); // ~0.4s up, ~2s peek, ~0.4s down
+  // not clicked while peeking: it goes and stands on the A vs B box instead
+  // (a click cancels this animation, so this only runs when it was ignored)
+  catAnim.finished.then(() => { peekCat.hidden = true; catAnim = null; catStandAppear(); }).catch(() => {});
+}
+
+mergeChk.addEventListener('change', () => {
+  // one cat at a time on the A vs B box (peeks continue after it moved to the Guide)
+  if(!catAnim && (catState !== 'home' || catStand.hidden) && Math.random() < CAT_CHANCE) catPeek();
+});
+// keep presses on the cat from panning the map underneath
+peekCat.addEventListener('pointerdown', e => e.stopPropagation());
+peekCat.addEventListener('click', () => {
+  if(!catAnim) return;
+  meow();
+  const now = getComputedStyle(peekCat).transform; // duck away fast from wherever it is
+  catAnim.cancel();
+  catAnim = peekCat.animate([{ transform: now }, { transform: 'translateY(100%)' }], { duration: 180, easing: 'ease-in' });
+  catAnim.finished.then(() => { peekCat.hidden = true; catAnim = null; }).catch(() => {});
+});
+
+// ---- Standing cat: on top of the A vs B box until clicked, then it runs off
+//      the screen and runs in to its slot on top of the Guide intro card
+//      (once that slot is on screen), where it stays: clicks = meow + hop ----
+const catStand = document.getElementById('catStand');
+const catPerch = document.getElementById('perchCat');
+let catRunning = false;
+let catState = 'home'; // 'home' (A vs B box) | 'toGuide' | 'guide'
+
+function catStandAppear(){
+  if(catState !== 'home') return; // it already lives on the Guide page
+  catStand.hidden = false;
+  // pops up onto the box with a little bounce
+  catStand.animate(
+    [{ transform: 'translateY(30px) scale(.6)', opacity: 0 }, { transform: 'translateY(-10px) scale(1.05)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }],
+    { duration: 450, easing: 'ease-out' });
+}
+
+// short, high, surprised "mrrp!"
+function mrrp(){
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)(); // shared with the duck
+  const ctx = quackCtx, t = ctx.currentTime;
+  const osc = ctx.createOscillator(), mouth = ctx.createBiquadFilter(), amp = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(700, t);
+  osc.frequency.exponentialRampToValueAtTime(1150, t + 0.12);
+  mouth.type = 'bandpass'; mouth.Q.value = 3;
+  mouth.frequency.setValueAtTime(1400, t);
+  mouth.frequency.exponentialRampToValueAtTime(2200, t + 0.12);
+  amp.gain.setValueAtTime(0.0001, t);
+  amp.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  osc.connect(mouth).connect(amp).connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.2);
+}
+
+// little bouncy run frames: from x offset `from` to `to` (px), optional startled hop first
+function catRunFrames(from, to, startle){
+  const frames = startle
+    ? [{ transform: `translate(${from}px, 0)`, offset: 0 }, { transform: `translate(${from}px, -26px)`, offset: 0.15 }, { transform: `translate(${from}px, 0)`, offset: 0.25 }]
+    : [{ transform: `translate(${from}px, 0)`, offset: 0 }];
+  const start = startle ? 0.25 : 0, STEPS = 8;
+  for(let i = 1; i <= STEPS; i++){
+    const t = i / STEPS;
+    const hop = i % 2 && i < STEPS ? -12 : 0; // little bounces while running, lands flat
+    frames.push({ transform: `translate(${from + (to - from) * t}px, ${hop}px)`, offset: start + (1 - start) * t });
+  }
+  return frames;
+}
+
+catStand.addEventListener('click', () => {
+  if(catRunning) return;
+  if(catState === 'guide'){ // on its Guide perch it stays: meow + hop
+    meow();
+    catStand.animate([{ transform: 'none' }, { transform: 'translateY(-16px)', offset: 0.4 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
+    return;
+  }
+  catRunning = true;
+  mrrp();
+  const box = catStand.getBoundingClientRect();
+  // lift onto the screen (position:fixed in <body>) so it can run past the box
+  // and off the screen edge without being clipped or moved by page scroll
+  document.body.appendChild(catStand);
+  Object.assign(catStand.style, {
+    position: 'fixed', left: box.left + 'px', top: box.top + 'px', right: 'auto', bottom: 'auto', zIndex: '950',
+  });
+  // run off the nearest screen edge: startled hop, then a bouncy dash
+  const toRight = box.left + box.width / 2 > window.innerWidth / 2;
+  const distance = toRight ? window.innerWidth - box.left + 20 : -(box.right + 20);
+  catStand.animate(catRunFrames(0, distance, true), { duration: 1100, easing: 'linear', fill: 'forwards' }).finished.then(() => {
+    catStand.getAnimations().forEach(an => an.cancel());
+    catStand.removeAttribute('style');
+    catStand.hidden = true;
+    // next stop: its slot on the Guide intro card, once that's on screen
+    catPerch.appendChild(catStand);
+    catStand.classList.add('in-slot');
+    catState = 'toGuide';
+    catRunning = false;
+    catPerchObserver.observe(catPerch);
+  });
+});
+
+// Run in to the Guide slot from the nearest screen edge, then stand there
+const catPerchObserver = new IntersectionObserver(entries => {
+  if(catState !== 'toGuide' || !entries.some(e => e.isIntersecting)) return;
+  catPerchObserver.disconnect();
+  catState = 'guide';
+  catRunning = true;
+  catStand.hidden = false;
+  catStand.style.visibility = 'hidden';
+  const box = catStand.getBoundingClientRect(); // its standing spot in the slot
+  document.body.appendChild(catStand);
+  catStand.classList.remove('in-slot');
+  Object.assign(catStand.style, {
+    position: 'fixed', left: box.left + 'px', top: box.top + 'px', right: 'auto', bottom: 'auto', zIndex: '950', visibility: '',
+  });
+  const fromRight = box.left + box.width / 2 > window.innerWidth / 2;
+  const from = fromRight ? window.innerWidth - box.left + 20 : -(box.right + 20); // start just off that edge
+  catStand.animate(catRunFrames(from, 0, false), { duration: 1000, easing: 'linear', fill: 'forwards' }).finished.then(() => {
+    catStand.getAnimations().forEach(an => an.cancel());
+    catStand.removeAttribute('style');
+    catPerch.appendChild(catStand);
+    catStand.classList.add('in-slot');
+    meow(); // "I live here now"
+    catRunning = false;
+  });
+}, { threshold: 0.6 });
+
+/* ===================== WHALE (just for fun) =====================
+   Click the VS badge (split view): the whale leaps out of the bottom of one map
+   (random: A or B) with a splash and whoosh, flips over the badge, splashes
+   down at the bottom of the other map and dives. Positions come from the maps' on-screen boxes. */
+const whale = document.getElementById('whale');
+const compareWrap = document.getElementById('compareWrap');
+let whaleJumping = false;
+
+// Short burst of filtered noise: a whoosh (band-pass sweep) or a splash (low-pass hit)
+function whaleSound(kind, volume = 1){ // volume: 1 = normal
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)(); // shared with the duck
+  const ctx = quackCtx, t = ctx.currentTime;
+  const len = kind === 'whoosh' ? 0.7 : 0.5;
+  const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * len), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  const amp = ctx.createGain();
+  if(kind === 'whoosh'){
+    filter.type = 'bandpass'; filter.Q.value = 1.5;
+    filter.frequency.setValueAtTime(300, t);
+    filter.frequency.exponentialRampToValueAtTime(2500, t + len);
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(0.35 * volume, t + len * 0.5);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  } else {
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2200, t);
+    filter.frequency.exponentialRampToValueAtTime(300, t + len);
+    amp.gain.setValueAtTime(0.7 * volume, t);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  }
+  src.connect(filter).connect(amp).connect(ctx.destination);
+  src.start(t);
+}
+
+// splash at (x, y): in the maps' container, or on the screen (onScreen = viewport coords)
+function whaleSplash(x, y, onScreen = false){
+  const s = document.createElement('div');
+  s.className = 'whale-splash';
+  s.style.left = x + 'px'; s.style.top = y + 'px';
+  if(onScreen){ s.style.position = 'fixed'; s.style.zIndex = '960'; document.body.appendChild(s); }
+  else compareWrap.appendChild(s);
+  s.addEventListener('animationend', () => s.remove(), { once: true });
+}
+
+// After 5 jumps it launches up off the screen instead of landing, then falls
+// from the sky onto its slot on the Guide intro card (once that's on screen)
+// and stays there: clicks = splash + hop. The VS badge does nothing after that.
+const WHALE_LEAVE_AFTER = 5;
+let whaleJumps = 0, whaleState = 'map'; // 'map' | 'toGuide' | 'guide'
+const whalePerch = document.getElementById('whalePerch');
+
+document.getElementById('vsBadge').addEventListener('click', () => {
+  if(whaleJumping || whaleState !== 'map') return;
+  const leaving = ++whaleJumps >= WHALE_LEAVE_AFTER;
+  const panels = compareWrap.querySelectorAll('.algo-panel .algo-canvas');
+  if(panels.length < 2) return;
+  whaleJumping = true;
+  const wrap = compareWrap.getBoundingClientRect();
+  const a = panels[0].getBoundingClientRect(), b = panels[1].getBoundingClientRect();
+  const W = 96, H = 96;
+  // centre points (relative to the maps' container), just inside each map's bottom edge
+  const spot = r => ({ x: r.left + r.width / 2 - wrap.left, y: r.bottom - wrap.top - 34 });
+  // random direction each click: map B -> map A, or map A -> map B
+  const [start, end] = Math.random() < 0.5 ? [spot(b), spot(a)] : [spot(a), spot(b)];
+  const goingRight = end.x > start.x;
+  // the sprite faces right: mirror it when heading left, so it always faces where it's going
+  const face = goingRight ? '' : ' scaleX(-1)';
+  const peakY = Math.min(a.top, b.top) - wrap.top - 60; // arc ~60px above both maps' top edge
+  const at = (p, extra = '') => `translate(${p.x - W / 2}px, ${p.y - H / 2}px)${extra}${face}`;
+
+  whale.hidden = false;
+  whaleSplash(start.x, start.y + 20);
+  whaleSound('whoosh');
+
+  // parabola from start to end through peakY, rising out of the water and fading in
+  // (always plays in full, even with the OS "reduce motion" setting: click-only fun)
+  const frames = [];
+  const N = 24;
+  for(let i = 0; i <= N; i++){
+    const t = i / N;
+    const x = start.x + (end.x - start.x) * t;
+    const base = start.y + (end.y - start.y) * t;
+    const y = base + (peakY - base) * 4 * t * (1 - t);
+    // one full flip over the jump, rolling forward in its direction of travel
+    // (counter-clockwise heading left, clockwise heading right)
+    frames.push({ transform: at({ x, y }, ` rotate(${(goingRight ? 360 : -360) * t}deg)`), opacity: Math.min(1, t / 0.08), offset: t });
+  }
+  if(leaving){
+    // 5th jump: rise to the top of the arc, then keep launching up off the
+    // top of the screen, still spinning
+    const rise = frames.slice(0, N / 2 + 1); // t 0..0.5: up to the top of the arc (offset 0.5)
+    const peak = { x: start.x + (end.x - start.x) * 0.5, y: peakY };
+    const gone = { x: peak.x + (end.x - start.x) * 0.25, y: -wrap.top - H * 1.5 }; // above the screen's top
+    const spin = goingRight ? 360 : -360;
+    rise.push({ transform: at(gone, ` rotate(${spin * 1.5}deg)`), opacity: 1, offset: 1 });
+    whale.animate(rise, { duration: 1500, easing: 'linear', fill: 'forwards' }).finished.then(() => {
+      whale.getAnimations().forEach(an => an.cancel());
+      whale.hidden = true;
+      whaleJumping = false;
+      whaleState = 'toGuide';
+      whaleGuideObserver.observe(document.getElementById('perchWhale'));
+    });
+    return;
+  }
+  whale.animate(frames, { duration: 1500, easing: 'linear', fill: 'forwards' }).finished
+    .then(() => {
+      whaleSplash(end.x, end.y + 20);
+      whaleSound('splash', 0.35); // Map-page landing: quieter splash
+      // dive: sink a little and fade into the water
+      return whale.animate(
+        [{ transform: at(end), opacity: 1 }, { transform: at({ x: end.x, y: end.y + 30 }), opacity: 0 }],
+        { duration: 350, easing: 'ease-in', fill: 'forwards' }).finished;
+    })
+    .finally(() => {
+      whale.getAnimations().forEach(an => an.cancel());
+      whale.hidden = true;
+      whaleJumping = false;
+    });
+});
+
+// Falls from the sky onto its Guide slot with a flip and a splash, then stays
+const whaleGuideObserver = new IntersectionObserver(entries => {
+  if(whaleState !== 'toGuide' || !entries.some(e => e.isIntersecting)) return;
+  whaleGuideObserver.disconnect();
+  whaleState = 'guide';
+  whalePerch.hidden = false;
+  whalePerch.style.visibility = 'hidden';
+  const box = whalePerch.getBoundingClientRect(); // its spot in the slot
+  whalePerch.style.visibility = '';
+  const drop = -(box.bottom + 40); // start just above the top of the screen
+  whaleSound('whoosh');
+  whalePerch.animate(
+    [{ transform: `translateY(${drop}px) rotate(-360deg)` }, { transform: 'translateY(0) rotate(0deg)' }],
+    { duration: 900, easing: 'cubic-bezier(.5,0,.9,.6)' }) // speeds up as it falls
+    .finished.then(() => {
+      whaleSplash(box.left + box.width / 2, box.bottom - 10, true);
+      whaleSound('splash');
+    });
+}, { threshold: 0.6 });
+whalePerch.addEventListener('click', () => { // on its Guide perch: splash + hop
+  const box = whalePerch.getBoundingClientRect();
+  whaleSplash(box.left + box.width / 2, box.bottom - 10, true);
+  whaleSound('splash');
+  whalePerch.animate([{ transform: 'none' }, { transform: 'translateY(-18px)', offset: 0.4 }, { transform: 'none' }], { duration: 360, easing: 'ease-out' });
+});
+
+/* ===================== CAPYBARA (just for fun) =====================
+   Each Next / Previous press has a 1-in-10 chance to make the capybara rise
+   out of the top edge of the map box. Click it: it crumbles into pixel dust
+   that drifts away, then (once its Guide slot is on screen) the dust swirls
+   in and rebuilds it there. On the Guide card each click crumbles and
+   rebuilds it in place. The dust is the sprite's own 48x48 pixels, drawn on
+   a full-screen canvas. */
+const CAPY_CHANCE = 0.1;
+const capyMap = document.getElementById('capy');
+const capyGuide = document.getElementById('capyPerch');
+let capyState = 'none'; // 'none' | 'map' | 'busy' | 'toGuide' | 'guide'
+
+// the sprite's opaque pixels: [{ x, y, color }] in sprite pixels (0..47)
+const capyPixels = (() => {
+  const img = new Image();
+  img.src = new URL('./assets/capy.png', import.meta.url).href;
+  const list = [];
+  img.decode().then(() => {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    for(let y = 0; y < c.height; y++) for(let x = 0; x < c.width; x++){
+      const i = (y * c.width + x) * 4;
+      if(d[i + 3] > 20) list.push({ x, y, color: `rgba(${d[i]},${d[i + 1]},${d[i + 2]},${d[i + 3] / 255})` });
+    }
+  }).catch(() => {});
+  return list;
+})();
+
+// soft "poof" (crumble) or a little rising chime (rebuild)
+function capySound(kind){
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)(); // shared with the duck
+  const ctx = quackCtx, t = ctx.currentTime;
+  if(kind === 'poof'){
+    const len = 0.6;
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * len), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+    const src = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), amp = ctx.createGain();
+    src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 2500; amp.gain.value = 0.1; // quiet
+    src.connect(hp).connect(amp).connect(ctx.destination);
+    src.start(t);
+  } else {
+    [660, 880, 1320].forEach((f, i) => {
+      const osc = ctx.createOscillator(), amp = ctx.createGain(), at = t + i * 0.09;
+      osc.type = 'triangle'; osc.frequency.value = f;
+      amp.gain.setValueAtTime(0.0001, at);
+      amp.gain.exponentialRampToValueAtTime(0.08, at + 0.01); // quiet
+      amp.gain.exponentialRampToValueAtTime(0.0001, at + 0.25);
+      osc.connect(amp).connect(ctx.destination);
+      osc.start(at); osc.stop(at + 0.3);
+    });
+  }
+}
+
+// Run the dust on a temporary full-screen canvas.
+//  'crumble': from the sprite at `rect`, pixels peel off left to right and drift up-right, fading
+//  'rebuild': the same played backwards: dust swirls in and settles into the sprite at `rect`
+//  mirrored: build the sprite flipped left-right (the Guide capy faces the centre)
+function capyDust(rect, mode, mirrored = false){
+  return new Promise(resolve => {
+    if(!capyPixels.length){ resolve(); return; } // sprite data not ready: skip the effect
+    const canvas = document.createElement('canvas');
+    canvas.className = 'capy-dust';
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
+    // the on-screen size must be set explicitly: a canvas doesn't stretch to inset:0,
+    // so without this it shows at width*dpr CSS px and the dust looks enlarged
+    canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px';
+    document.body.appendChild(canvas);
+    const g = canvas.getContext('2d');
+    g.scale(dpr, dpr);
+    const px = rect.width / 48; // screen px per sprite px
+    const parts = capyPixels.map(p => {
+      const sx = mirrored ? 47 - p.x : p.x;
+      const home = { x: rect.left + sx * px, y: rect.top + p.y * px };
+      const angle = -Math.PI / 4 + (Math.random() - 0.5) * 1.6; // mostly up-right
+      const dist = 60 + Math.random() * 140;
+      return {
+        color: p.color, home,
+        away: { x: home.x + Math.cos(angle) * dist, y: home.y + Math.sin(angle) * dist - 30 },
+        delay: (sx / 48) * 0.45 + Math.random() * 0.1, // left-to-right sweep
+        spin: (Math.random() - 0.5) * 6,
+      };
+    });
+    const DURATION = 1300;
+    const t0 = performance.now();
+    function frame(now){
+      const T = (now - t0) / DURATION;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      for(const q of parts){
+        // each pixel's own progress 0..1 after its delay
+        let k = Math.min(1, Math.max(0, (T - q.delay) / (1 - 0.55)));
+        if(mode === 'rebuild') k = 1 - k; // backwards: dust -> sprite
+        const e = k * k * (3 - 2 * k);    // smoothstep
+        // swirl: curve sideways a little on the way
+        const x = q.home.x + (q.away.x - q.home.x) * e + Math.sin(e * Math.PI) * q.spin * 6;
+        const y = q.home.y + (q.away.y - q.home.y) * e;
+        g.globalAlpha = 1 - e;
+        g.fillStyle = q.color;
+        const size = px * (1 - e * 0.5);
+        g.fillRect(x, y, size + 0.25, size + 0.25); // tiny overlap: no hairline gaps between pixels
+      }
+      if(T < 1) requestAnimationFrame(frame);
+      else { canvas.remove(); resolve(); }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+// Rise out of the map box's top edge (the clip hides the part still "underground")
+function capySpawn(){
+  capyState = 'map';
+  capyMap.hidden = false;
+  const H = 80, edge = 10; // the capy stands 10px down into the box's frame
+  capyMap.animate([
+    { transform: `translateY(${H - edge}px)`, clipPath: `inset(0 0 ${H - edge}px 0)` },
+    { transform: 'translateY(-6px)', clipPath: 'inset(0 0 0 0)', offset: 0.8 },
+    { transform: 'none', clipPath: 'inset(0 0 0 0)' },
+  ], { duration: 700, easing: 'ease-out' });
+}
+['nextBtn', 'prevBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => {
+  if(capyState === 'none' && Math.random() < CAPY_CHANCE) capySpawn();
+}));
+
+// Map: crumble away, then wait for the Guide slot to come on screen
+capyMap.addEventListener('click', () => {
+  if(capyState !== 'map') return;
+  capyState = 'busy';
+  const rect = capyMap.querySelector('img').getBoundingClientRect();
+  capySound('poof');
+  capyMap.style.visibility = 'hidden';
+  capyDust(rect, 'crumble').then(() => {
+    capyMap.hidden = true;
+    capyMap.style.visibility = '';
+    capyState = 'toGuide';
+    capyGuideObserver.observe(document.getElementById('perchCapy'));
+  });
+});
+const capyGuideObserver = new IntersectionObserver(entries => {
+  if(capyState !== 'toGuide' || !entries.some(e => e.isIntersecting)) return;
+  capyGuideObserver.disconnect();
+  capyRebuild();
+}, { threshold: 0.6 });
+
+// Rebuild on the Guide slot from dust
+function capyRebuild(){
+  capyState = 'busy';
+  capyGuide.hidden = false;
+  capyGuide.style.visibility = 'hidden';
+  const rect = capyGuide.querySelector('img').getBoundingClientRect();
+  capySound('chime');
+  capyDust(rect, 'rebuild', true).then(() => { // assembles facing the centre (mirrored)
+    capyGuide.style.visibility = '';
+    capyState = 'guide';
+  });
+}
+// Guide: each click crumbles it and rebuilds it in the same spot
+capyGuide.addEventListener('click', () => {
+  if(capyState !== 'guide') return;
+  capyState = 'busy';
+  const rect = capyGuide.querySelector('img').getBoundingClientRect();
+  capySound('poof');
+  capyGuide.style.visibility = 'hidden';
+  capyDust(rect, 'crumble', true).then(() => setTimeout(capyRebuild, 250));
+});
+
+/* ===================== BIRD (just for fun) =====================
+   Each Random click has a 1-in-10 chance to make the bird fly in (flapping)
+   and perch on the route box, above the Random button. Click it: tweet, it
+   flies off, and it lands on the Guide intro card once that card is on
+   screen. There it stays: clicks just chirp + hop. */
+const BIRD_CHANCE = 0.1;
+// Two sprite sets, picked by the direction it flies (and kept when it lands)
+// (bird.png / bird-fly.png face right; bird-right.png / bird-fly-right.png face left)
+const BIRD_SPRITES = {
+  left:  { stand: new URL('./assets/bird-right.png', import.meta.url).href,      // 48x48
+           fly:   new URL('./assets/bird-fly-right.png', import.meta.url).href },// 48x48
+  right: { stand: new URL('./assets/bird.png', import.meta.url).href,            // 48x48
+           fly:   new URL('./assets/bird-fly.png', import.meta.url).href },      // 59x48
+};
+for(const set of Object.values(BIRD_SPRITES)) for(const src of Object.values(set)) new Image().src = src; // preload
+let birdFacing = 'left';
+const birdBtn = document.getElementById('bird');
+const birdImg = birdBtn.querySelector('img');
+const BIRD = 64; // on-screen size (px)
+// 'none' | 'flying' | 'map' (perched on route box) | 'waitGuide' | 'guide' (perched on intro card)
+let birdState = 'none';
+const BIRD_PERCHES = {
+  map:   { box: () => document.querySelector('.route-box'),  x: box => {
+    const r = document.getElementById('randomBtn').getBoundingClientRect(); return r.left + r.width / 2; } },
+  guide: { box: () => document.getElementById('perchBird'),   x: box => { // its slot on the Guide intro card
+    const r = box.getBoundingClientRect(); return r.left + r.width / 2; } },
+};
+
+function birdSound(kind){
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)(); // shared with the duck
+  const ctx = quackCtx, t = ctx.currentTime;
+  if(kind === 'chirp'){
+    // two quick rising "tweet"s
+    for(const start of [0, 0.13]){
+      const osc = ctx.createOscillator(), amp = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2300, t + start);
+      osc.frequency.exponentialRampToValueAtTime(3800, t + start + 0.08);
+      amp.gain.setValueAtTime(0.0001, t + start);
+      amp.gain.exponentialRampToValueAtTime(0.3, t + start + 0.01);
+      amp.gain.exponentialRampToValueAtTime(0.0001, t + start + 0.09);
+      osc.connect(amp).connect(ctx.destination);
+      osc.start(t + start); osc.stop(t + start + 0.1);
+    }
+  } else {
+    // one soft wing flap: a tiny burst of low-passed noise
+    const len = 0.07;
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * len), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), amp = ctx.createGain();
+    src.buffer = buf; lp.type = 'lowpass'; lp.frequency.value = 900; amp.gain.value = 0.25;
+    src.connect(lp).connect(amp).connect(ctx.destination);
+    src.start(t);
+  }
+}
+
+// Fly the bird (position:fixed) from `from` to `to` (screen points = its feet),
+// along a curve that rises above both, flapping (sprite swap + flap sound).
+function birdFly(from, to, duration){
+  birdBtn.classList.remove('bird-perched', 'in-slot');
+  birdBtn.removeAttribute('style');
+  document.body.appendChild(birdBtn);
+  birdBtn.hidden = false;
+  const ctrl = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 90 };
+  const frames = [];
+  const N = 20;
+  for(let i = 0; i <= N; i++){
+    const t = i / N, u = 1 - t; // quadratic bezier
+    const x = u * u * from.x + 2 * u * t * ctrl.x + t * t * to.x;
+    const y = u * u * from.y + 2 * u * t * ctrl.y + t * t * to.y;
+    frames.push({ transform: `translate(${x - BIRD / 2}px, ${y - BIRD}px)`, offset: t });
+  }
+  birdFacing = to.x >= from.x ? 'right' : 'left'; // face the way it's flying
+  const sprites = BIRD_SPRITES[birdFacing];
+  let up = true;
+  birdImg.src = sprites.fly;
+  const flap = setInterval(() => {
+    up = !up;
+    birdImg.src = up ? sprites.fly : sprites.stand;
+    if(up) birdSound('flap');
+  }, 120);
+  return birdBtn.animate(frames, { duration, easing: 'ease-in-out', fill: 'forwards' }).finished
+    .finally(() => { clearInterval(flap); birdImg.src = sprites.fly; });
+}
+
+// A point off the top of the screen, to the left or right of `near`
+const birdOffscreen = near => ({ x: near.x + (Math.random() < 0.5 ? -1 : 1) * window.innerWidth * 0.6, y: -40 });
+
+function birdFlyIn(where){
+  birdState = 'flying';
+  const perch = BIRD_PERCHES[where], box = perch.box();
+  const boxRect = box.getBoundingClientRect();
+  // feet on the route box's top edge, or at the bottom of its Guide slot
+  const feet = { x: perch.x(box), y: where === 'guide' ? boxRect.bottom : boxRect.top + 10 };
+  birdFly(birdOffscreen(feet), feet, 1400).then(() => {
+    // land: sit inside the box so it scrolls with the page
+    birdBtn.getAnimations().forEach(an => an.cancel());
+    birdBtn.removeAttribute('style');
+    box.appendChild(birdBtn);
+    if(where === 'guide') birdBtn.classList.add('in-slot'); // stands in its slot
+    else {
+      birdBtn.classList.add('bird-perched');
+      birdBtn.style.left = (feet.x - box.getBoundingClientRect().left - BIRD / 2) + 'px';
+    }
+    // turn to face the centre of the screen (route box: left side -> faces right;
+    // Guide slot: right side -> faces left)
+    birdFacing = feet.x < window.innerWidth / 2 ? 'right' : 'left';
+    birdImg.src = BIRD_SPRITES[birdFacing].stand;
+    birdSound('chirp');
+    birdState = where;
+  });
+}
+
+function birdFlyAway(thenToGuide){
+  birdState = 'flying';
+  const r = birdBtn.getBoundingClientRect();
+  const feet = { x: r.left + r.width / 2, y: r.bottom };
+  birdFly(feet, birdOffscreen(feet), 1100).then(() => {
+    birdBtn.getAnimations().forEach(an => an.cancel());
+    birdBtn.hidden = true;
+    if(thenToGuide){ birdState = 'waitGuide'; birdGuideObserver.observe(document.getElementById('perchBird')); }
+    else birdState = 'none';
+  });
+}
+
+// Land on the Guide intro card once it's on screen (Guide tab open + scrolled to)
+const birdGuideObserver = new IntersectionObserver(entries => {
+  if(birdState === 'waitGuide' && entries.some(e => e.isIntersecting)){
+    birdGuideObserver.disconnect();
+    birdFlyIn('guide');
+  }
+}, { threshold: 0.6 });
+
+document.getElementById('randomBtn').addEventListener('click', () => {
+  if(birdState === 'none' && Math.random() < BIRD_CHANCE) birdFlyIn('map');
+});
+birdBtn.addEventListener('click', () => {
+  if(birdState === 'guide'){ // on its Guide perch it stays: chirp + little hop
+    birdSound('chirp');
+    birdBtn.animate([{ transform: 'none' }, { transform: 'translateY(-14px)', offset: 0.4 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
+    return;
+  }
+  if(birdState !== 'map') return;
+  birdSound('chirp');
+  birdFlyAway(true); // from the Map: off to the Guide
+});
 
 /* ===================== TABS (Map | Guide) ===================== */
 const tabs = [

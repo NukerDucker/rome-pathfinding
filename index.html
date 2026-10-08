@@ -19,6 +19,10 @@
 <!-- Bread button (secret, just for fun): hidden until day/night is switched 5 times
      this visit (script.js). Click: giant bread + "GET BREAD" fades up full screen, then away -->
 <button class="bread-btn" id="breadBtn" type="button" aria-label="Get bread" title="Get bread" hidden><img src="assets/bread.png" alt=""></button>
+<!-- Bird (just for fun): 1-in-10 chance on each Random click to fly in and perch on
+     the route box; click it and it flies to the Guide intro card, where it stays
+     (clicks there: chirp + hop). script.js moves it between perches -->
+<button class="bird" id="bird" type="button" aria-label="Bird" title="Tweet" hidden><img src="assets/bird.png" alt=""></button>
 <div class="bread-overlay" id="breadOverlay" aria-hidden="true">
   <img class="bread-big" src="assets/bread.png" alt="">
   <div class="bread-text">GET BREAD</div>
@@ -49,6 +53,9 @@
   </div>
 
   <div class="section control-row algo-box" role="group" aria-label="Algorithm selection">
+    <!-- Standing cat (just for fun): appears on top of this box when the peeking cat
+         goes unclicked; click = startled meow and it runs off (script.js) -->
+    <button class="cat-stand" id="catStand" type="button" aria-label="Cat" title="Meow" hidden><img src="assets/cat.png" alt=""></button>
     <div class="lane-pill">
       <img class="lane-sign" src="assets/NavigationBar/A sign.png" alt="A">
       <span class="select-wrap"><select id="algoASelect" class="algo-select" aria-label="Algorithm for lane A"></select></span> <!-- options filled from the engine's ALGORITHMS -->
@@ -89,6 +96,9 @@
 <!-- ===================== 5. MAP PANEL + COMPARISON SIDEBAR ===================== -->
 <div class="map-row">
 <div class="section map-panel">
+  <!-- Capybara (just for fun): 1-in-10 chance on each Next/Previous press to rise out of
+       the top of this box; click = it turns to dust and rebuilds on the Guide card (script.js) -->
+  <button class="capy" id="capy" type="button" aria-label="Capybara" title="Poof" hidden><img src="assets/capy.png" alt=""></button>
   <!-- Merge on: "A name VS B name" in one line. Merge off: VS hidden, each
        lane's name sits right above its own map (CSS) -->
   <div class="map-panel-head">
@@ -112,11 +122,16 @@
           <button class="map-reset" title="Reset view">RESET</button>
         </div>
         <p class="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
+        <!-- Peeking cat (just for fun): 1-in-10 chance on each Merge toggle, peeks up from
+             the bottom edge of a visible map; click = meow (script.js moves/animates it) -->
+        <button class="peek-cat" id="peekCat" type="button" aria-label="Cat" title="Meow" hidden><img src="assets/cat.png" alt=""></button>
       </div>
     </div>
 
-    <!-- VS badge between the two maps: shown only with Merge off (CSS) -->
-    <img class="vs-badge" src="assets/vs-badge.png" alt="" aria-hidden="true">
+    <!-- VS badge between the two maps: shown only with Merge off (CSS).
+         Click: a whale leaps out of one map and splashes down in the other, direction random (script.js) -->
+    <button class="vs-badge" id="vsBadge" type="button" aria-label="VS (click for a whale)" title="Click me"><img src="assets/vs-badge.png" alt=""></button>
+    <img class="whale" id="whale" src="assets/whale.png" alt="" aria-hidden="true" hidden>
 
     <!-- Map B: hidden while Merge is on (lane B draws on map A); shown side by side when off -->
     <div class="algo-panel algo-panel-hidden">
@@ -179,7 +194,7 @@
 
     <div class="stats-cols">
       <div class="stats-col">
-        <div class="stats-head"><div class="algo-badge">A</div><span id="rowA">A &middot; UCS</span></div>
+        <div class="stats-head"><span id="rowA">A &middot; UCS</span></div>
         <div class="stats-card">
           <h4>Live</h4>
           <div class="stat-row"><span>Step</span><b id="fullStepA">0/0</b></div>
@@ -212,7 +227,7 @@
       </div>
 
       <div class="stats-col">
-        <div class="stats-head"><div class="algo-badge">B</div><span id="rowB">B &middot; A* (LP+ALT)</span></div>
+        <div class="stats-head"><span id="rowB">B &middot; A* (LP+ALT)</span></div>
         <div class="stats-card">
           <h4>Live</h4>
           <div class="stat-row"><span>Step</span><b id="fullStepB">0/0</b></div>
@@ -246,8 +261,11 @@
     </div>
 
     <p class="stats-caption">Time = mean of 400 runs (&mu;s) &middot; Peak Memory = largest frontier &middot; Landmarks 2/4/8 = nodes generated per preset &middot; live step metrics compared at final frame.</p>
-    <!-- Duck (just for fun): merged view only (CSS); click = quack (script.js) -->
-    <button class="duck-btn" id="duckBtn" type="button" aria-label="Quack" title="Quack"><img src="assets/duck.png" alt=""></button>
+    <!-- Duck (just for fun): merged view only (CSS); click = quack (script.js).
+         After 10 clicks it rolls off to the Guide intro card and stays there. -->
+    <div class="duck-home" id="duckHomeMap">
+      <button class="duck-btn" id="duckBtn" type="button" aria-label="Quack" title="Quack"><img src="assets/duck.png" alt=""></button>
+    </div>
   </div>
 </aside>
 </div><!-- /map-row -->
@@ -261,23 +279,42 @@
        <span class="tex"> holds LaTeX that script.js renders with KaTeX
        (.tex-display = centred block). Figures fall back to a "pending" box if
        the GIF in gifs/ fails to load. -->
-  <article class="section guide-page" aria-label="How the search works">
-    <div class="guide-head">
-      <span class="guide-eyebrow">Romania Pathfinding</span>
-      <h2 class="guide-title">How the search works</h2>
-    </div>
-
-    <div class="guide-body">
+  <!-- Separate wood-framed boxes: intro (full width), then a sticky topic-list
+       box (left) beside one box per topic (right). -->
+  <article class="guide-page guide-body" aria-label="How the search works">
+    <header class="section guide-intro">
+      <!-- Perches along the top of this card (just for fun), left to right. Each
+           animal arrives here from the Map page and stays (script.js):
+           duck (10 clicks), bread (GET BREAD), cat (clicked off the A vs B box),
+           whale (5 VS jumps), capybara (dusted off the map box), bird (clicked off the route box).
+           The middle (~40-60%) stays clear for the Map | Guide tabs above. -->
+      <div class="guide-perch duck-home" id="duckHomeGuide" style="--slot:8%"></div>
+      <div class="guide-perch" id="perchBread" style="--slot:22%">
+        <button class="perch-bread" id="breadPerch" type="button" aria-label="Get bread" title="Get bread" hidden><img src="assets/bread.png" alt=""></button>
+      </div>
+      <div class="guide-perch" id="perchCat" style="--slot:34%"></div>
+      <div class="guide-perch" id="perchWhale" style="--slot:66%">
+        <button class="perch-whale" id="whalePerch" type="button" aria-label="Whale" title="Splash" hidden><img src="assets/whale.png" alt=""></button>
+      </div>
+      <div class="guide-perch" id="perchCapy" style="--slot:80%">
+        <button class="perch-capy" id="capyPerch" type="button" aria-label="Capybara" title="Poof" hidden><img src="assets/capy.png" alt=""></button>
+      </div>
+      <div class="guide-perch" id="perchBird" style="--slot:92%"></div>
+      <div class="guide-head">
+        <span class="guide-eyebrow">Romania Pathfinding</span>
+        <h2 class="guide-title">How the search works</h2>
+      </div>
       <p class="guide-lede">
         Finding a cheapest route on this map is a <strong>search</strong>. We start with a
         method that knows nothing about the goal (<em>uninformed</em>), watch it waste effort,
         then upgrade it with a <em>heuristic</em>, and finally combine two heuristics into one.
         Every number below was measured on all 380 ordered city pairs.
       </p>
+    </header>
 
-      <!-- two columns: sticky contents list (left) | sections (right) -->
+      <!-- two columns: sticky topic list box (left) | topic boxes (right) -->
       <div class="guide-layout">
-      <nav class="guide-nav" aria-label="Contents">
+      <nav class="section guide-nav" aria-label="Contents">
         <a href="#g-ucs">1 · Uniform-Cost Search</a>
         <a href="#g-astar">2 · A★: adding a guess</a>
         <a href="#g-heuristic">3 · What a heuristic is</a>
@@ -291,7 +328,7 @@
       <div class="guide-sections">
 
       <!-- ── 1. UCS ── -->
-      <section class="guide-section" id="g-ucs">
+      <section class="section guide-section" id="g-ucs">
         <h3>1 · Uniform-Cost Search (UCS)</h3>
         <p>
           Keep a <strong>frontier</strong> of nodes to explore. Always expand the node with the
@@ -317,7 +354,7 @@
       </section>
 
       <!-- ── 2. A* ── -->
-      <section class="guide-section" id="g-astar">
+      <section class="section guide-section" id="g-astar">
         <h3>2 · A★: adding a guess</h3>
         <p>
           A★ keeps the same <span class="tex">g(n)</span> but adds a <strong>heuristic</strong>
@@ -353,7 +390,7 @@
       </section>
 
       <!-- ── 3. Heuristic ── -->
-      <section class="guide-section" id="g-heuristic">
+      <section class="section guide-section" id="g-heuristic">
         <h3>3 · What a heuristic actually is</h3>
         <p>
           A heuristic <span class="tex">h(n)</span> is a cheap estimate of the cost still to go, computed
@@ -390,7 +427,7 @@
       </section>
 
       <!-- ── 4. LP ── -->
-      <section class="guide-section" id="g-lp">
+      <section class="section guide-section" id="g-lp">
         <h3>4 · Our first bound: LP vector-decomposition</h3>
         <p>
           Draw each road as a little arrow (a vector) whose length is its real kilometre value,
@@ -420,7 +457,7 @@
       </section>
 
       <!-- ── 5. ALT ── -->
-      <section class="guide-section" id="g-alt">
+      <section class="section guide-section" id="g-alt">
         <h3>5 · Our second bound: ALT (landmarks)</h3>
         <p>
           Pick a few <strong>landmark</strong> cities <span class="tex">L</span>, far-flung corners of the map.
@@ -458,7 +495,7 @@
       </section>
 
       <!-- ── 6. Ensemble ── -->
-      <section class="guide-section" id="g-ensemble">
+      <section class="section guide-section" id="g-ensemble">
         <h3>6 · The ensemble: take the maximum</h3>
         <p>
           We have two admissible bounds that come from <em>different evidence</em>. Combine them
@@ -499,7 +536,7 @@
       </section>
 
       <!-- ── 7. Performance ── -->
-      <section class="guide-section" id="g-perf">
+      <section class="section guide-section" id="g-perf">
         <h3>7 · Does it perform better? (measured)</h3>
         <p>
           An independent evaluation re-ran everything over all 380 ordered city pairs with its
@@ -549,7 +586,7 @@
       </section>
 
       <!-- ── 8. Reading the maps (describes this app's controls) ── -->
-      <section class="guide-section" id="g-map">
+      <section class="section guide-section" id="g-map">
         <h3>8 · Reading the maps</h3>
         <p>
           <strong>Two lanes.</strong> Pick any two algorithms in the algorithm box, lane
@@ -560,7 +597,7 @@
         <ul>
           <li><strong>Node colours:</strong> current · frontier · visited · path · unvisited, with start and goal rings (legend under the map).</li>
           <li><strong>Landmarks:</strong> each lane has a landmark dropdown. Algorithms that need landmarks choose 2 / 4 / 8; the others can pick Off / 2 / 4 / 8 to show landmarks on the map (visual only). Turn on the <em>Landmarks</em> tool and click cities to build a custom set; the dropdown then shows <em>Custom (n)</em>.</li>
-          <li><strong>Distances:</strong> each road's length in km. A badge turns purple when a lane has explored that road and red when it is on the final route.</li>
+          <li><strong>Distances:</strong> each road's length in km. A badge turns pink-purple when a lane has explored that road and orange-red when it is on the final route.</li>
           <li><strong>Heatmap:</strong> each city coloured by its lane's <span class="tex">h</span>-value: red near the goal, blue far away.</li>
           <li><strong>Straight Line:</strong> the SLD arc from start to goal that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
         </ul>
@@ -576,14 +613,12 @@
         </p>
       </section>
 
-      </div>
-      </div><!-- /guide-layout -->
-
       <p class="guide-foot">
         Guide based on the search implementation in <code>src/engine/</code>. Measurements come
         from an independent evaluation over all 380 ordered city pairs.
       </p>
-    </div>
+      </div>
+      </div><!-- /guide-layout -->
   </article>
 </div>
 

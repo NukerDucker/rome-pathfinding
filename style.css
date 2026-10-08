@@ -3,13 +3,13 @@
 --bg:#f1f1f1; --panel:#ffffff; --border:#333; --border-soft:#999;
 --text:#111; --text-soft:#555; --header-bg:#e2e2e2;
 /* Search node states: shared by the legend dots and the map node discs.
-   Palette: "Kidcore Ball-Pit" deepened ~20% so it sits on the bright map art
-   (from blue #1840F0, purple #7A2390, red #E8002E, orange #F57010, yellow
-   #FFD000), with a neutral grey for unvisited. */
---state-current:#5E1B70; --state-frontier:#E0B400; --state-visited:#1A35B8;
---state-path:#B80025; --state-unvisited:#3a3a3a;
---marker-start:#CC5A0A; --marker-goal:#B80025; --marker-landmark:#ffd43b;
---road-tree:#5E1B70; --road-path:#B80025; --arc:#CC5A0A;
+   Palette: Okabe-Ito (colour-blind safe), spread from light to dark so the
+   states differ in brightness as well as hue:
+   frontier (light) > visited > current > path > unvisited (dark). */
+--state-current:#CC79A7; --state-frontier:#F0E442; --state-visited:#56B4E9;
+--state-path:#D55E00; --state-unvisited:#1a1a1a;
+--marker-start:#E69F00; --marker-goal:#0072B2; --marker-landmark:#ffd43b;
+--road-tree:#CC79A7; --road-path:#D55E00; --arc:#E69F00;
 --better:#1f7a35; /* comparison table: winning value */
 --disc-opacity:1; /* every node disc on the map, whatever its state */
 }
@@ -94,7 +94,6 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 .bread-btn[hidden]{ display:none; } /* secret until unlocked */
 .bread-btn.reveal{ animation:bread-reveal .45s cubic-bezier(.34,1.56,.64,1); } /* pop in with a bounce */
 @keyframes bread-reveal{ 0%{ transform:scale(0); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
-@media (prefers-reduced-motion: reduce){ .bread-btn.reveal{ animation:none; } }
 .bread-overlay{
 display:none; position:fixed; inset:0; z-index:1000; pointer-events:none; overflow:hidden;
 align-items:center; justify-content:center; flex-direction:column;
@@ -125,10 +124,6 @@ animation:bread-pop 4.5s ease both;
 100%{ transform:translate(-53.1%, -67.7%) scale(1.06); }
 }
 @keyframes bread-pop{ 0%, 30%{ transform:scale(0); } 40%{ transform:scale(1.15); } 47%, 100%{ transform:scale(1); } }
-@media (prefers-reduced-motion: reduce){
-.bread-big, .bread-text{ animation:none; } /* no growing/popping: just fade in and out */
-.bread-big{ transform:translate(-53.1%, -67.7%); }
-}
 
 /* ===================== DUCK (just for fun) =====================
 	Bottom of the Algorithm Comparison box, merged view only. Click: quack
@@ -138,13 +133,94 @@ animation:bread-pop 4.5s ease both;
 display:block; margin:10px auto 0; padding:0; width:64px; height:64px;
 background:none; border:none; cursor:pointer;
 }
-.duck-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.duck-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; } /* keeps the wide lying-down sprite in proportion, on the same ground line */
 .duck-btn:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
 .duck-btn.hop{ animation:duck-hop .35s ease-out; }
 @keyframes duck-hop{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(var(--hop, -12px)) rotate(-6deg); } }
 .map-row:has(.compare-wrap.is-split) .duck-btn{ display:none; } /* split view: no duck */
+/* While the duck is on its way to a home, the empty home keeps the duck's
+   footprint so script.js can tell when it's on screen and roll the duck in.
+   The Map home only counts in merged view (the duck isn't shown in split). */
+.duck-home-waiting{ height:74px; }
+/* Guide perches: fixed slots along the top edge of the intro card (--slot =
+   centre, % of the card width), so the animals stay evenly spread at any
+   width. Each slot keeps an animal-sized footprint even while empty, so
+   script.js can tell when it's on screen. Animals stand on the card's frame. */
+.guide-perch{
+position:absolute; left:var(--slot); bottom:calc(100% - 10px); transform:translateX(-50%);
+width:80px; height:80px; z-index:40;
+display:flex; align-items:flex-end; justify-content:center; pointer-events:none;
+}
+.guide-perch > *{ pointer-events:auto; }
+.guide-perch .duck-btn{ margin:0; }
+.perch-bread{ width:56px; height:56px; padding:0; background:none; border:none; cursor:pointer; }
+.perch-bread[hidden]{ display:none; }
+.perch-bread img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.perch-bread:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.perch-whale{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
+.perch-whale[hidden]{ display:none; }
+.perch-whale img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
+.perch-whale:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.perch-capy{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
+.perch-capy[hidden]{ display:none; }
+.perch-capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
+.perch-capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+/* bird / cat once settled in a slot: normal flow inside the slot */
+.bird.in-slot, .cat-stand.in-slot{ position:static; pointer-events:auto; }
+.map-row:has(.compare-wrap.is-split) .duck-home-waiting{ display:none; }
 .duck-btn[hidden]{ display:none; } /* rolled away */
-@media (prefers-reduced-motion: reduce){ .duck-btn.hop{ animation:none; } }
+
+/* ===================== PEEKING CAT (just for fun) =====================
+	Sits on the bottom edge of a map (inside .algo-canvas, which clips it), so
+	only the head shows when script.js slides it up; the body stays below the
+	edge. Above the map art and HUD; click = meow. */
+.peek-cat{
+position:absolute; bottom:0; z-index:22; width:96px; height:96px; padding:0;
+background:none; border:none; cursor:pointer; transform:translateY(100%);
+}
+.peek-cat[hidden]{ display:none; }
+.peek-cat img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.peek-cat:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; }
+
+/* Standing cat: on top of the A vs B algorithm box, near its right end, after
+   the peeking cat goes unclicked. script.js pops it in and runs it off. */
+.algo-box{ position:relative; }
+.cat-stand{
+position:absolute; bottom:calc(100% - 10px); right:60px; z-index:40;
+width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer;
+}
+.cat-stand[hidden]{ display:none; }
+.cat-stand img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.cat-stand:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+
+/* ===================== CAPYBARA (just for fun) =====================
+	Stands on the top edge of the map box (near its right end) after rising out
+	of it; script.js turns it into pixel dust (canvas) and rebuilds it on its
+	Guide slot. */
+.map-panel{ position:relative; }
+.capy{
+position:absolute; bottom:calc(100% - 10px); right:80px; z-index:40;
+width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer;
+}
+.capy[hidden]{ display:none; }
+.capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+/* full-screen canvas the dust particles are drawn on (added/removed by script.js) */
+.capy-dust{ position:fixed; inset:0; z-index:970; pointer-events:none; }
+
+/* ===================== BIRD (just for fun) =====================
+	Flies in (script.js, position:fixed while flying) and perches standing on
+	the top edge of a box: the route box above the Random button, or the
+	Guide intro card. While perched it sits inside that box (.bird-perched). */
+.route-box, .guide-intro{ position:relative; } /* perch anchors */
+.bird{
+position:fixed; left:0; top:0; z-index:950; width:64px; height:64px; padding:0;
+background:none; border:none; cursor:pointer; pointer-events:none;
+}
+.bird[hidden]{ display:none; }
+.bird img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; }
+.bird.bird-perched{ position:absolute; top:auto; bottom:calc(100% - 10px); z-index:40; pointer-events:auto; }
+.bird:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
 
 /* ===================== TABS (Map | Guide) ===================== */
 .tab-bar{ display:flex; justify-content:center; gap:6px; margin:0 0 12px; }
@@ -156,33 +232,33 @@ background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 .tab-panel[hidden]{ display:none; }
 
 /* ===================== GUIDE PAGE =====================
-	Full-width wood-framed article: left-aligned header + intro, then two
-	columns, a sticky contents list (left, current section highlighted by
-	script.js) and the sections (right). Headings, contents and table headers
-	stay in the pixel font; paragraphs use a plain system font and fill the
-	full width of their column. */
-.guide-page{ margin:0 0 12px; }
-.guide-head{ margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid #c9893f; }
-.guide-eyebrow{ display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
-.guide-title{ margin:4px 0 0; font-size:22px; color:#4a3a20; }
+	Separate wood-framed boxes: an intro box (full width), then two columns,
+	a sticky topic-list box (left, current topic highlighted by script.js) and
+	one box per topic (right). Everything uses the app's pixel font (formulas
+	keep KaTeX's math font). */
+.guide-page{ display:block; }
+.guide-head{ margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #c9893f; }
+.guide-eyebrow{ display:block; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
+.guide-title{ margin:4px 0 0; font-size:26px; color:#4a3a20; }
 .guide-body{
-font-family:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-font-size:15px; line-height:1.65; color:#2e2414;
+font-family:'Minecraft', monospace; /* same pixel font as the rest of the app */
+font-size:17px; line-height:1.75; color:#2e2414;
 }
-.guide-lede{ font-size:16px; margin:0 0 18px; }
-.guide-layout{ display:grid; grid-template-columns:210px minmax(0,1fr); gap:28px; align-items:start; }
+.guide-lede{ font-size:18px; margin:0; }
+.guide-layout{ display:grid; grid-template-columns:290px minmax(0,1fr); gap:12px; align-items:start; } /* list box wide enough for the bigger list text */
 .guide-nav{
-font-family:'Minecraft', monospace; font-size:12px; line-height:1.4;
+font-family:'Minecraft', monospace; font-size:17px; line-height:1.4;
 display:flex; flex-direction:column; gap:2px;
-position:sticky; top:12px; /* stays in view while the sections scroll */
-padding:0 14px 0 0; border-right:2px solid #c9893f;
+position:sticky; top:12px; /* the list box follows you down the page */
 }
 .guide-nav a{ color:#4a3a20; text-decoration:none; padding:5px 8px; border-radius:4px; }
 .guide-nav a:hover, .guide-nav a:focus-visible{ text-decoration:underline; }
-.guide-nav a.active{ background:#FFE9B8; box-shadow:inset 3px 0 0 #c9893f; font-weight:bold; } /* section being read */
-.guide-section{ padding-top:8px; margin-bottom:28px; scroll-margin-top:12px; }
+.guide-nav a.active{ background:#FFE9B8; box-shadow:inset 3px 0 0 #c9893f; font-weight:bold; } /* topic being read */
+.guide-sections{ min-width:0; }
+.guide-section{ scroll-margin-top:12px; }
+.guide-section > :last-child{ margin-bottom:0; }
 .guide-section h3{
-font-family:'Minecraft', monospace; font-size:17px; color:#4a3a20;
+font-family:'Minecraft', monospace; font-size:24px; color:#4a3a20;
 margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid #c9893f;
 }
 .guide-section p, .guide-section ul, .guide-section ol{ margin:0 0 12px; }
@@ -193,20 +269,20 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
 .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:4px; }
-.guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:14px; }
+.guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:16px; }
 .guide-table th{
-font-family:'Minecraft', monospace; font-size:11px; font-weight:normal; text-transform:uppercase;
+font-family:'Minecraft', monospace; font-size:13px; font-weight:normal; text-transform:uppercase;
 letter-spacing:1px; color:var(--text-soft); text-align:left;
 }
 .guide-table th, .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
-.guide-figure{ margin:6px 0 0; max-width:600px; }
+.guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
 .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:4px; background:#fff; }
-.guide-figure figcaption{ font-size:13px; color:var(--text-soft); margin-top:6px; }
+.guide-figure figcaption{ font-size:15px; color:var(--text-soft); margin-top:6px; }
 .guide-figure-missing{
 padding:28px 14px; font-size:13px; color:var(--text-soft);
 border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 }
-.guide-foot{ font-size:12px; color:var(--text-soft); margin:8px 0 0; }
+.guide-foot{ font-size:14px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
 .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:3px; }
 
 /* ===================== 2. CONTROL ROW =====================
@@ -322,13 +398,38 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
   position:static; visibility:visible; pointer-events:auto; z-index:auto;
 }
 /* VS badge: centred over the gap between map A and map B with Merge off;
-   hidden with Merge on. Ignores the pointer so both maps stay draggable. */
+   hidden with Merge on. Only the badge itself takes clicks (whale jump), so
+   the maps beside it stay draggable. */
 .vs-badge{
   display:none; position:absolute; left:50%; top:50%; z-index:25;
-  width:56px; height:auto; transform:translate(-50%, -50%);
+  width:56px; height:56px; padding:0; transform:translate(-50%, -50%);
+  background:none; border:none; cursor:pointer; transition:filter .12s ease;
+}
+.vs-badge img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.vs-badge:hover, .vs-badge:focus-visible{ filter:brightness(1.12); }
+.vs-badge:active{ filter:brightness(.9); }
+.vs-badge:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:50%; }
+.compare-wrap.is-split > .vs-badge{ display:block; }
+/* Whale (just for fun): leaps from the bottom of one map (random) over the VS
+   badge and splashes down at the bottom of the other. script.js moves it; above everything. */
+.whale{
+  position:absolute; left:0; top:0; z-index:30; width:96px; height:96px;
   image-rendering:pixelated; pointer-events:none;
 }
-.compare-wrap.is-split > .vs-badge{ display:block; }
+.whale[hidden]{ display:none; }
+/* Pixel splash: a ring of small square droplets that burst out and fade */
+.whale-splash{
+  position:absolute; left:0; top:0; z-index:29; width:8px; height:8px; pointer-events:none;
+  background:#fff; transform:translate(-50%, -50%);
+  box-shadow:
+    -24px -6px 0 #fff, 24px -6px 0 #fff, -14px -20px 0 #cfefff, 14px -20px 0 #cfefff,
+    0 -28px 0 #fff, -32px 6px 0 #cfefff, 32px 6px 0 #cfefff, -8px -12px 0 #cfefff, 8px -12px 0 #cfefff;
+  animation:whale-splash .6s ease-out forwards;
+}
+@keyframes whale-splash{
+  0%{ opacity:1; transform:translate(-50%, -50%) scale(.3); }
+  100%{ opacity:0; transform:translate(-50%, -80%) scale(1.4); }
+}
 /* Merge on: the merged map is exactly as wide as ONE map in split view, and
    the map box shrinks to hug it (the card sidebar moves in beside it; the row
    is centred). --split-map is computed from the row's width (.map-row is a
@@ -336,10 +437,10 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
    (row - sidebar - row gap - map box padding - gap between the two maps) / 2.
    Height stays the same as split view (.map-panel .algo-canvas min-height). */
 .map-row{ container-type:inline-size; }
-.map-row{ --split-map:calc((100cqw - 460px - 12px - 2 * (var(--frame) + 8px) - 12px) / 2); }
+.map-row{ --split-map:calc((100cqw - 520px - 12px - 2 * (var(--frame) + 8px) - 12px) / 2); }
 /* the cards box fills the rest of the row (merged only), and each lane's four
    cards sit two per row so numbers stay close to their labels */
-.map-row:has(.compare-wrap:not(.is-split)){ grid-template-columns:auto minmax(460px, 1fr); }
+.map-row:has(.compare-wrap:not(.is-split)){ grid-template-columns:auto minmax(520px, 1fr); }
 .map-row:has(.compare-wrap:not(.is-split)) .stats-col{
 display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start;
 }
@@ -371,19 +472,15 @@ border-top:3px dashed var(--road-path);
 .compare-wrap:not(.is-split) .lane-B .node-disc{ clip-path:inset(-8px -8px -8px 50%); }
 .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-tree,
 .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:4px; stroke-dasharray:10 7; }
-.playback-bar{ display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; } /* buttons + slider packed together, centred */
+.playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:nowrap; } /* buttons + slider on one line, centred; the slider shrinks to fit */
 .playback-bar .playback-row{ margin:0; }
-.playback-bar .speed-row{ flex:0 1 auto; min-width:180px; }
+.playback-bar .speed-row{ flex:0 1 auto; min-width:0; }
 /* Split view: same width as in merged view (one map wide, --split-map), centred,
    so the buttons and speed slider look identical in both modes */
 .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:var(--split-map); max-width:100%; margin:0 auto; }
-.algo-badge{
-width:26px; height:26px; border:2px solid var(--border); display:flex; align-items:center;
-justify-content:center; font-weight:bold; font-size:13px; background:#fff;
-}
 .algo-canvas{
 flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
-color:var(--text-soft); font-size:14px; background:#45D7F6; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
+color:var(--text-soft); font-size:14px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
 border-radius:8px; /* slightly rounded map corners (overflow:hidden clips the map to them) */
 position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
 user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
@@ -408,7 +505,8 @@ transform-origin:0 0; will-change:transform; cursor:grab;
 /* Node disc: oval on each city's road junction; fill = state, ring = start/goal */
 .node-disc{
 position:absolute; left:0; top:0; z-index: 3; box-sizing:border-box; border-radius:50%;
-border:2px solid #333; background:var(--state-unvisited);
+border:2px solid #222; background:var(--state-unvisited);
+box-shadow:0 0 0 2px #fff; /* white ring so every state colour pops off the green/blue map */
 opacity:var(--disc-opacity); /* one transparency for all states (colours themselves are solid) */
 }
 .node-disc.state-current{ background:var(--state-current); }
@@ -436,7 +534,7 @@ font-size:var(--km-font, 10px); line-height:1; padding:.2em .4em;
 color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:3px;
 font-variant-numeric:tabular-nums;
 }
-.km-badge.km-tree{ background:var(--road-tree); border-color:var(--road-tree); color:#fff; }
+.km-badge.km-tree{ background:var(--road-tree); border-color:var(--road-tree); color:#1a1a1a; } /* dark text: readable on the light pink-purple */
 .km-badge.km-path{ background:var(--road-path); border-color:var(--road-path); color:#fff; }
 body.picking-landmarks .map-stage{ cursor:crosshair; } /* Tool on: click castles */
 
@@ -492,12 +590,16 @@ width:40px; height:40px; border:none; background-color:transparent;
 background-repeat:no-repeat; background-size:100% 100%;
 font-size:0; image-rendering:pixelated;
 }
-/* "Start" (play/pause logic unchanged) sits on the vine plank asset (326x102 source),
-   sized to keep its proportions at the 40px playback height */
+/* "Start" (play/pause logic unchanged) sits on the vine plank asset (326x102
+   source). 96px wide to leave the speed slider room; drawn with border-image
+   like the dropdowns, so only the plank's middle narrows and the vine ends
+   (72px of the source each side = 28px at 40px tall) keep their shape. */
 #playBtn{
-width:128px; height:40px;
+width:96px; height:40px; padding:0;
 font-size:12px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
-background-image:url('assets/Button/Start button.png');
+background-image:none;
+border:0 solid transparent;
+border-image:url('assets/Button/Start button.png') 0 72 fill / 0 28px stretch;
 }
 #prevBtn{ background-image:url('assets/Button/Back button.png'); }
 #playBtn.playing{ filter:brightness(0.75); } /* darken when active, matches our earlier "darken for pressed state" approach */
@@ -522,8 +624,8 @@ font-size:0; image-rendering:pixelated; cursor:pointer;
 /* Ends show the limits (Slow 1500ms / Fast 0ms); the live delay sits under the slider */
 .speed-end{ text-align:center; line-height:1.3; }
 .speed-end small{ font-size:9px; color:var(--text-soft); }
-.speed-track{ flex:0 1 220px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:120px; } /* slider at most 220px long */
-.speed-track .pixel-slider{ width:100%; flex:none; }
+.speed-track{ flex:0 1 220px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:70px; } /* slider at most 220px long, shrinks to fit the row */
+.speed-track .pixel-slider{ width:100%; flex:none; min-width:0; }
 .speed-value{ font-size:11px; font-variant-numeric:tabular-nums; }
 
 /* Pixel-art slider. Track and fill use border-image so only the bar's middle
@@ -564,7 +666,7 @@ background:url('assets/Slider/Handle.png') center / 100% 100% no-repeat; image-r
 /* ===================== 5. MAP ROW + COMPARISON SIDEBAR =====================
 	Map on the left, wood-framed stats sidebar on the right. Inside the frame,
 	A | B columns of flat cards (header pill, Live, Result, Complexity, Landmarks). */
-.map-row{ display:grid; grid-template-columns:minmax(0,1fr) 460px; gap:12px; align-items:stretch; }
+.map-row{ display:grid; grid-template-columns:minmax(0,1fr) 520px; gap:12px; align-items:stretch; }
 .map-panel .algo-canvas{ min-height:420px; }
 /* Sidebar matches the map panel's height: contain:size stops its content from
    growing the row, and anything taller scrolls inside the frame. */
@@ -588,25 +690,24 @@ body{ scrollbar-width:thin; scrollbar-color:#c9893f transparent; }
 body::-webkit-scrollbar{ width:8px; }
 body::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
 body::-webkit-scrollbar-track{ background:transparent; }
-.stats-title{ text-align:center; margin:0 0 4px; font-size:20px; }
-.stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:13px; }
+.stats-title{ text-align:center; margin:0 0 4px; font-size:22px; }
+.stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:15px; }
 .stats-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .stats-col{ display:flex; flex-direction:column; gap:8px; min-width:0; }
 .stats-head{
 display:flex; align-items:center; gap:8px; padding:6px 8px; min-width:0;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:14px; color:#4a3a20;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:16px; color:#4a3a20;
 }
-.stats-head .algo-badge{ flex:none; width:22px; height:22px; font-size:11px; }
-.stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
 .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
 /* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
 .stats-card h4{
-margin:0 0 6px; padding-bottom:4px; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+margin:0 0 6px; padding-bottom:4px; font-size:15px; letter-spacing:1px; text-transform:uppercase;
 color:#4a3a20; font-weight:bold; border-bottom:2px solid #c9893f;
 }
 .stat-row{
 display:flex; align-items:center; justify-content:space-between; gap:6px;
-padding:4px 0; font-size:13px; border-bottom:1px solid rgba(120,70,20,.15);
+padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
 }
 .stat-row:last-child{ border-bottom:none; }
 .stat-row > span{ color:#5a4630; white-space:nowrap; } /* label: darker than --text-soft for readability */
@@ -617,7 +718,7 @@ padding:4px 0; font-size:13px; border-bottom:1px solid rgba(120,70,20,.15);
 .stat-row > b.better{ color:#fff; background:var(--better); padding-left:6px; } /* winning value chip */
 .no-caps{ text-transform:none; } /* keep µ from uppercasing into a Greek capital mu */
 .stat-row .katex{ font-size:1em; }
-.stats-caption{ font-size:11px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
+.stats-caption{ font-size:12px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
 @media (max-width:1200px){
 .map-row{ grid-template-columns:1fr; } /* not enough width for map + sidebar: stack */
 .map-row{ --split-map:calc((100cqw - 2 * (var(--frame) + 8px) - 12px) / 2); }
@@ -630,11 +731,8 @@ padding:4px 0; font-size:13px; border-bottom:1px solid rgba(120,70,20,.15);
 /* ===================== MOBILE BREAKPOINT =====================
 	Under 600px: stack the two maps (Merge off) and the playback bar, full-width title. */
 @media (max-width: 800px){
-.guide-layout{ grid-template-columns:1fr; gap:16px; }
-.guide-nav{
-position:static; border-right:none; padding:8px 10px;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
-}
+.guide-layout{ grid-template-columns:1fr; gap:0; } /* list box above the topic boxes */
+.guide-nav{ position:static; }
 }
 @media (max-width: 600px){
 body{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
@@ -645,6 +743,7 @@ body{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
 .map-row:has(.compare-wrap:not(.is-split)){ justify-items:stretch; }
 .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:auto; }
 .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:auto; } /* phones: full width in both modes */
+.playback-bar{ flex-wrap:wrap; } /* phones: slider may drop under the buttons */
 .map-panel:has(.compare-wrap.is-split) .map-panel-head{ display:flex; }
 .map-panel:has(.compare-wrap.is-split) .map-panel-head .divider-vs{ display:inline; }
 .compare-wrap:not(.is-split) > .algo-panel:first-child{ width:auto; flex:1; }
