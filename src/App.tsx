@@ -1080,7 +1080,9 @@ function App() {
       )}
 
       {tab === 'map' && <>
-      <div className="query-bar" role="toolbar" aria-label="Search configuration">
+      <div className="query-bars-row">
+        {/* Map card */}
+        <div className="query-bar" role="group" aria-label="Route selection">
           <Select
             value={start}
             onValueChange={(v) => v && handleStartChange(v as NodeId)}
@@ -1122,7 +1124,9 @@ function App() {
           >
             <Dices aria-hidden="true" />
           </Button>
-          <span className="query-sep" aria-hidden="true" />
+        </div>
+        {/* Algo card */}
+        <div className="query-bar query-bar-algo" role="toolbar" aria-label="Algorithm selection">
           <div className="query-algo query-algo-a">
             <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
             <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
@@ -1170,12 +1174,13 @@ function App() {
               onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
             />
           </div>
+        </div>
       </div>
 
       <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className={`workspace${fit ? ' workspace-fit' : ''}`}>
       <main className="app">
         {/* Toolbar — above the map */}
-        <div className="toolbar flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg)] flex-wrap" role="toolbar" aria-label="Visualizer controls">
+        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
 
           {/* Overlays */}
           <Button
@@ -1215,6 +1220,7 @@ function App() {
 
         </div>
 
+        <div className="app-body">
         <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
           {/* Lane A */}
           <div className="lanes-container">
@@ -1359,14 +1365,14 @@ function App() {
           </section>
         </div>
 
+        {statsInSidebar && (
+          <aside className="stats-panel" aria-label="Algorithm comparison">
+            {statsPanel}
+          </aside>
+        )}
+        </div>{/* .app-body */}
         {!statsInSidebar && statsPanel}
       </main>
-
-      {statsInSidebar && (
-        <aside className="stats-panel" aria-label="Algorithm comparison">
-          {statsPanel}
-        </aside>
-      )}
       </div>
       </>}
     </div>

@@ -1,0 +1,8 @@
+1
+00:00:00,000 --> 00:00:03,000
+Three ideas — no GPS, no SLD — that give 98.6% of the true distance
+
+2
+00:00:03,800 --> 00:00:06,800
+The app is live — every algorithm in the dropdown, landmarks clickable
+

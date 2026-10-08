@@ -1,0 +1,16 @@
+1
+00:00:02,000 --> 00:00:05,000
+BFS expands by layers — fewest hops, not shortest distance
+
+2
+00:00:05,300 --> 00:00:08,300
+BFS reports Arad→Sibiu→Fagaras→Bucharest: 450 km — WRONG
+
+3
+00:00:09,700 --> 00:00:12,700
+UCS expands cheapest-g first — correct, but explores in all directions
+
+4
+00:00:12,560 --> 00:00:15,560
+13 of 20 cities expanded — Zerind and Timisoara visited before the goal
+

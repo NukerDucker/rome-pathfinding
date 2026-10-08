@@ -1,0 +1,16 @@
+1
+00:00:00,000 --> 00:00:02,000
+Twenty cities, twenty-three roads
+
+2
+00:00:05,300 --> 00:00:07,800
+Start: Arad (west).  Goal: Bucharest (south-east)
+
+3
+00:00:08,800 --> 00:00:11,800
+Two routes from Sibiu — the fork that defines the whole video
+
+4
+00:00:10,400 --> 00:00:13,400
+Fagaras route: 450 km.  Pitesti route: 418 km.  Difference: 32 km
+

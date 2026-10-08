@@ -1,0 +1,24 @@
+1
+00:00:02,000 --> 00:00:06,000
+Pass 1 — A* with LP: f climbs from 388 to 418 across 5 expansions
+
+2
+00:00:05,333 --> 00:00:08,333
+The f column climbs: 388 → 395 → 418. Each rise = estimate was optimistic.
+
+3
+00:00:09,133 --> 00:00:13,133
+Pass 2 — A* LP+ALT: f is 418 before the first step — never moves
+
+4
+00:00:10,200 --> 00:00:13,200
+FREEZE — Rimnicu f=418 vs Fagaras f=450. The heuristic already knows.
+
+5
+00:00:16,266 --> 00:00:18,766
+f never moved. The search knew the answer from Arad.
+
+6
+00:00:17,733 --> 00:00:20,733
+Optimal path: 140 + 80 + 97 + 101 = 418 km
+
