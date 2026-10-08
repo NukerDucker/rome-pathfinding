@@ -230,14 +230,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  padding: 0 var(--sp-1);
 }
-
-.query-algo-a { border-color: color-mix(in srgb, var(--map-accent) 40%, var(--border)); }
-.query-algo-b { border-color: color-mix(in srgb, var(--lane-b) 40%, var(--border)); }
 
 .query-lm {
   display: inline-flex;
@@ -429,8 +423,6 @@
   align-items: center;
   gap: var(--sp-2);
   flex-wrap: wrap;
-  background: var(--surface);
-  border-radius: var(--radius);
   margin: var(--sp-3) var(--sp-3) 0;
   padding: var(--sp-2) var(--sp-3);
 }
@@ -472,7 +464,8 @@
 }
 
 .map-bg {
-  fill: var(--code-bg);
+  /* transparent so the map sits directly on the lane card — no inner panel */
+  fill: transparent;
 }
 
 /* ── Edges ──────────────────────────────────────────────────────────── */
@@ -1614,8 +1607,6 @@ html.theme-anim *::after {
   align-self: stretch;
   min-height: 0;
   overflow-y: auto;
-  background: var(--surface);
-  border-radius: var(--radius);
   text-align: left;
   margin-top: var(--sp-3);
 }
