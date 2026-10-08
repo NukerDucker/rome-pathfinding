@@ -13,7 +13,7 @@ import ROAD_POSITIONS from './assets/MapElements/Coordinates/path_positions.json
 // Internal developer flag. When true, a plain dev window is added to the page
 // for placing marker squares on the maps (positions exported as JSON).
 // Turn off before shipping.
-const DevMode = true;
+const DevMode = false;
 
 /* ===================== ENGINE GLUE =====================
    The pathfinding engine lives in src/engine/ (TypeScript, copied unchanged
@@ -232,8 +232,7 @@ toSelect.addEventListener('change', () => { state.goal = toSelect.value; inputsC
 for(const lane of ['A', 'B']){
   algoSelect[lane].addEventListener('change', () => {
     state.algo[lane] = algoSelect[lane].value;
-    landmarkControls[lane].collapse();
-    inputsChanged();
+    inputsChanged(); // re-renders the landmark dropdown with this algorithm's options
   });
 }
 
@@ -245,67 +244,46 @@ document.getElementById('randomBtn').addEventListener('click', () => {
 });
 
 /* ===================== LANDMARK CONTROLS =====================
-   Landmark algorithms (Greedy, A* LP+ALT, A* ALT only, Bidir. A*): always on,
-   locked; the button expands into a 2/4/8 count dropdown.
-   Other algorithms: off by default; turning it on shows the landmark overlay
-   on the map only (visual, the algorithm is unchanged); X turns it off.
-   Custom picks (Tool) override the preset; clicking "Custom (n)" clears them. */
+   One dropdown per lane.
+   Landmark algorithms (Greedy, A* LP+ALT, A* ALT only, Bidir. A*): 2 / 4 / 8.
+   Other algorithms: Off / 2 / 4 / 8; a number shows the landmark overlay on the
+   map only (visual, the algorithm is unchanged).
+   Custom picks (Tool) override the preset and show as "Custom (n)"; choosing
+   a number clears them. */
 function makeLandmarkControl(lane){
-  const btn = document.getElementById('landmarkBtn' + lane);
   const dropdown = document.getElementById('landmarkDropdown' + lane);
-  const closeBtn = document.getElementById('landmarkClose' + lane);
-  let expanded = false;
+  let optionsKey = ''; // rebuild options only when they change (render runs every playback step)
 
   function render(){
     const meta = ALGORITHMS[state.algo[lane]];
     const l = state.lanes[lane];
     const active = meta.usesLandmarks || l.overlay;
-    dropdown.value = l.count;
-    btn.classList.remove('on', 'locked');
-    if(!active){
-      btn.textContent = 'Landmark';
-      btn.title = 'Show landmark overlay (visual only, algorithm unchanged)';
-    } else if(l.custom.length > 0){
-      btn.classList.add(meta.usesLandmarks ? 'locked' : 'on');
-      btn.textContent = 'Custom (' + l.custom.length + ')';
-      btn.title = 'Custom landmarks active. Click to clear and return to the preset.';
-    } else {
-      btn.classList.add(meta.usesLandmarks ? 'locked' : 'on');
-      btn.textContent = 'Landmarks: ' + LM_SHORT[l.count];
-      btn.title = meta.usesLandmarks ? 'This algorithm uses landmarks; click to change the count' : 'Landmark overlay (visual only)';
+    const options = [];
+    if(!meta.usesLandmarks) options.push(['off', 'Off']);
+    if(active && l.custom.length > 0) options.push(['custom', 'Custom (' + l.custom.length + ')']);
+    for(const k of Object.keys(LM_SHORT)) options.push([k, LM_SHORT[k]]);
+    const key = options.map(o => o.join('=')).join('|');
+    if(key !== optionsKey){
+      optionsKey = key;
+      dropdown.replaceChildren(...options.map(([value, text]) => new Option(text, value)));
     }
-    btn.hidden = expanded;
-    dropdown.hidden = !expanded;
-    closeBtn.hidden = !expanded;
+    dropdown.value = !active ? 'off' : l.custom.length > 0 ? 'custom' : l.count;
+    dropdown.title = meta.usesLandmarks
+      ? 'Number of landmarks this algorithm uses'
+      : 'Optional landmark overlay (visual only, algorithm unchanged)';
   }
 
-  function collapse(){ expanded = false; render(); }
-
-  btn.addEventListener('click', () => {
-    const meta = ALGORITHMS[state.algo[lane]];
+  dropdown.addEventListener('change', () => {
     const l = state.lanes[lane];
-    if(l.custom.length > 0 && (meta.usesLandmarks || l.overlay)){ l.custom = []; inputsChanged(); return; }
-    if(!meta.usesLandmarks) l.overlay = true;
-    expanded = true;
-    render();
-    dropdown.focus();
-    renderMaps(); // overlay may have just turned on
+    const v = dropdown.value;
+    if(v === 'custom') return;
+    l.custom = [];
+    if(v === 'off'){ l.overlay = false; }
+    else { l.count = v; if(!ALGORITHMS[state.algo[lane]].usesLandmarks) l.overlay = true; }
+    inputsChanged();
   });
 
-  // X: collapse; also turns the visual overlay off for non-landmark algorithms
-  closeBtn.addEventListener('click', () => {
-    if(!ALGORITHMS[state.algo[lane]].usesLandmarks) state.lanes[lane].overlay = false;
-    collapse();
-    renderMaps();
-  });
-
-  dropdown.addEventListener('change', () => { state.lanes[lane].count = dropdown.value; inputsChanged(); });
-  dropdown.addEventListener('blur', () => {
-    // small delay so a click on the X button (which also steals focus) registers first
-    setTimeout(collapse, 120);
-  });
-
-  return { render, collapse };
+  return { render };
 }
 const landmarkControls = { A: makeLandmarkControl('A'), B: makeLandmarkControl('B') };
 
@@ -372,6 +350,16 @@ document.getElementById('restartBtn').addEventListener('click', () => {
 });
 // new speed applies from the next step
 speedSlider.addEventListener('input', () => { if(state.playing) scheduleNextStep(); });
+// pixel-art slider: green fill follows the handle (0..1 of the range), and the
+// text under it shows the current step delay (1500ms slowest .. 0ms fastest)
+const speedValue = document.getElementById('speedValue');
+const syncSliderFill = () => {
+  speedSlider.parentElement.style.setProperty('--frac', speedSlider.value / speedSlider.max);
+  speedValue.textContent = stepDelay() + 'ms';
+  speedSlider.setAttribute('aria-valuetext', stepDelay() + ' milliseconds per step');
+};
+speedSlider.addEventListener('input', syncSliderFill);
+syncSliderFill();
 
 /* ===================== RENDER: CONTROLS + TABLE ===================== */
 function renderControls(){
@@ -777,7 +765,9 @@ function makeMapViewport(canvas){
   function relayout(){ measure(); cur = clamp(cur); target = clamp(target); schedule(); layoutListeners.forEach(fn => fn()); }
   new ResizeObserver(relayout).observe(canvas);
   img.addEventListener('load', relayout);
-  window.addEventListener('scroll', measure, { passive:true });
+  // capture: the page scrolls on <body> (not the window), and element scroll
+  // events don't bubble, so listen in the capture phase to catch it
+  window.addEventListener('scroll', measure, { passive:true, capture:true });
 
   const layoutListeners = [];
 
@@ -1002,17 +992,26 @@ function arcPoints(start, goal){
 
 function makeLaneOverlay(vp, lane){
   const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('class', 'map-entity-layer map-svg-layer');
-  svg.style.zIndex = 1;
+  // lane-A / lane-B classes let CSS tell the lanes apart on the merged map
+  // (split discs, thin dashed lane-B roads drawn over lane A's)
+  svg.setAttribute('class', 'map-entity-layer map-svg-layer lane-' + lane);
+  svg.style.zIndex = lane === 'B' ? 2 : 1;
   const world = document.createElementNS(SVG_NS, 'g'); // map image px space
   svg.appendChild(world);
   const discLayer = document.createElement('div');
-  discLayer.className = 'map-entity-layer';
+  discLayer.className = 'map-entity-layer lane-' + lane;
   discLayer.style.zIndex = 2;
   const labelLayer = document.createElement('div');
   labelLayer.className = 'map-entity-layer';
   labelLayer.style.zIndex = 5;
   vp.stage.after(svg, discLayer, labelLayer);
+
+  // Hidden overlays (Merge toggle picks merged-B or split-B) ignore hover/taps
+  let visible = true;
+  function setVisible(v){
+    visible = v;
+    for(const el of [svg, discLayer, labelLayer]) el.style.display = v ? '' : 'none';
+  }
 
   const discs = {}, labels = {};
   for(const city of CITIES){
@@ -1121,13 +1120,14 @@ function makeLaneOverlay(vp, lane){
     }
   }
   vp.canvas.addEventListener('pointermove', e => {
-    if(e.pointerType === 'touch') return;
+    if(!visible || e.pointerType === 'touch') return;
     const city = cityAt(e.clientX, e.clientY);
     if(city !== hovered){ hovered = city; refreshLabels(); }
   });
   vp.canvas.addEventListener('pointerleave', () => { if(hovered){ hovered = null; refreshLabels(); } });
 
   vp.onTap((clientX, clientY, pointerType) => {
+    if(!visible) return;
     const city = cityAt(clientX, clientY);
     // touch/pen have no hover: a tap shows that city's name until another tap
     if(pointerType !== 'mouse'){ pinned = city; refreshLabels(); }
@@ -1138,22 +1138,283 @@ function makeLaneOverlay(vp, lane){
   vp.onLayout(layout);
   vp.onDraw(draw);
   layout();
-  return { update, draw: () => draw(vp.view()) };
+  return { update, setVisible, draw: () => draw(vp.view()) };
 }
 
-const laneOverlays = { A: makeLaneOverlay(mapViewports[0], 'A'), B: makeLaneOverlay(mapViewports[1], 'B') };
+// Lane A always draws on map A. Lane B has two overlays and the Merge toggle
+// shows one of them: merged (on map A, routes overlaid on one shared map) or
+// split (on map B, shown beside map A). mapViewports[1] always exists (its
+// panel is only hidden via CSS while merged).
+const laneOverlays = {
+  A: makeLaneOverlay(mapViewports[0], 'A'),
+  Bmerged: makeLaneOverlay(mapViewports[0], 'B'),
+  Bsplit: makeLaneOverlay(mapViewports[1], 'B'),
+};
+const allOverlays = Object.values(laneOverlays);
+
+/* ===================== DISTANCE BADGES =====================
+   One km badge per road, at the midpoint between its two junctions, on each
+   map. A badge turns "tree" (explored) or "path" (final route) when a lane
+   shown on that map uses the road; on the merged map, either lane counts. */
+const distanceChk = document.getElementById('distanceChk');
+const KM_FONT_MIN = 10, KM_FONT_MAX = 20; // badge text px at 1x .. MAX_SCALE zoom
+function makeDistanceLayer(vp, lanesShown){
+  const layer = document.createElement('div');
+  layer.className = 'map-entity-layer km-layer';
+  layer.style.zIndex = 4; // above node discs (2), below city labels (5)
+  vp.stage.after(layer);
+  const badges = BASE_EDGES.map(e => {
+    const el = layer.appendChild(document.createElement('div'));
+    el.className = 'km-badge';
+    el.textContent = e.km;
+    return el;
+  });
+
+  function layout(){
+    const box = vp.stageBox();
+    layer.style.left = box.left + 'px'; layer.style.top = box.top + 'px';
+    layer.style.width = box.w + 'px';   layer.style.height = box.h + 'px';
+  }
+
+  function draw(view){
+    const o = vp.imageToStage(0, 0);
+    if(!o) return; // map image not loaded yet
+    const k = (vp.imageToStage(1, 0).x - o.x) * view.s; // screen px per map image px
+    const ox = view.x + o.x * view.s, oy = view.y + o.y * view.s;
+    const zoomT = (view.s - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+    layer.style.setProperty('--km-font', (KM_FONT_MIN + (KM_FONT_MAX - KM_FONT_MIN) * zoomT) + 'px');
+    BASE_EDGES.forEach((e, i) => {
+      const pa = ROAD_POSITIONS[e.a], pb = ROAD_POSITIONS[e.b];
+      if(!pa || !pb) return;
+      const x = ox + (pa.x + pb.x) / 2 * k, y = oy + (pa.y + pb.y) / 2 * k;
+      badges[i].style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    });
+  }
+
+  function update(){
+    layer.hidden = !distanceChk.checked;
+    const tree = new Set(), onPath = new Set();
+    for(const lane of lanesShown()){
+      const L = derived[lane];
+      const step = L.result.steps[Math.min(state.stepIdx, L.last)];
+      const final = state.stepIdx >= L.last;
+      if(step) for(const key of treeEdgeKeys(step, L.result.parent, state.start)) tree.add(key);
+      if(final && L.result.found) for(const key of pathEdgeKeys(L.result.path)) onPath.add(key);
+    }
+    BASE_EDGES.forEach((e, i) => {
+      badges[i].className = 'km-badge' + (onPath.has(e.key) ? ' km-path' : tree.has(e.key) ? ' km-tree' : '');
+    });
+  }
+
+  vp.onLayout(layout);
+  vp.onDraw(draw);
+  layout();
+  return { update, draw: () => draw(vp.view()) };
+}
+const distanceLayers = [
+  makeDistanceLayer(mapViewports[0], () => document.getElementById('mergeChk').checked ? ['A', 'B'] : ['A']),
+  makeDistanceLayer(mapViewports[1], () => ['B']),
+];
+distanceChk.addEventListener('change', renderMaps);
 
 function renderMaps(){
   if(!derived) return;
-  laneOverlays.A.update();
-  laneOverlays.B.update();
+  allOverlays.forEach(o => o.update());
+  distanceLayers.forEach(d => d.update());
 }
+
+/* ===================== MERGE TOGGLE ===================== */
+const mergeChk = document.getElementById('mergeChk');
+function applyMerge(){
+  const merged = mergeChk.checked;
+  document.getElementById('compareWrap').classList.toggle('is-split', !merged);
+  laneOverlays.Bmerged.setVisible(merged);
+  laneOverlays.Bsplit.setVisible(!merged);
+  // "left A / right B" and "lane B road" legend items only apply to the merged map
+  for(const el of document.querySelectorAll('.legend-merged')) el.hidden = !merged;
+  renderMaps(); // map A's distance badges count lane B only while merged
+}
+mergeChk.addEventListener('change', applyMerge);
+applyMerge();
 
 // First run: compute both lanes and draw everything
 recompute();
 render();
-laneOverlays.A.draw();
-laneOverlays.B.draw();
+allOverlays.forEach(o => o.draw());
+distanceLayers.forEach(d => d.draw());
+
+/* ===================== GUIDE: formulas + figures ===================== */
+// Every <span class="tex"> holds LaTeX; .tex-display renders as a centred block
+for(const el of document.querySelectorAll('#tabGuide .tex')){
+  katex.render(el.textContent, el, { throwOnError: false, displayMode: el.classList.contains('tex-display') });
+}
+// A GIF that fails to load becomes a "pending" box naming its spec
+for(const fig of document.querySelectorAll('#tabGuide .guide-figure')){
+  const img = fig.querySelector('img');
+  const showMissing = () => {
+    const box = document.createElement('div');
+    box.className = 'guide-figure-missing';
+    box.textContent = img.alt + ' — GIF pending (' + fig.dataset.spec + ')';
+    img.replaceWith(box);
+  };
+  if(img.complete && img.naturalWidth === 0 && img.currentSrc) showMissing();
+  else img.addEventListener('error', showMissing, { once: true });
+}
+// Contents list: highlight the section currently being read (the one crossing
+// the upper part of the screen)
+{
+  const navLinks = new Map([...document.querySelectorAll('#tabGuide .guide-nav a')]
+    .map(a => [a.getAttribute('href').slice(1), a]));
+  const markActive = id => navLinks.forEach((a, key) => {
+    a.classList.toggle('active', key === id);
+    if(key === id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+  });
+  const observer = new IntersectionObserver(entries => {
+    for(const e of entries) if(e.isIntersecting) markActive(e.target.id);
+  }, { rootMargin: '0px 0px -70% 0px' });
+  document.querySelectorAll('#tabGuide .guide-section').forEach(sec => observer.observe(sec));
+}
+
+/* ===================== DAY / NIGHT =====================
+   Only the page background changes (CSS --page-shade). Starts from the
+   system setting; the toggle saves an explicit choice (index.html applies a
+   saved choice before first paint). */
+const themeToggle = document.getElementById('themeToggle');
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+const isNight = () => (document.documentElement.dataset.theme || (systemDark.matches ? 'night' : 'day')) === 'night';
+function renderThemeToggle(){
+  const night = isNight();
+  themeToggle.textContent = night ? '☀' : '☾'; // shows the theme it switches to
+  themeToggle.setAttribute('aria-label', night ? 'Switch to day' : 'Switch to night');
+  themeToggle.title = themeToggle.getAttribute('aria-label');
+}
+themeToggle.addEventListener('click', () => {
+  const next = isNight() ? 'day' : 'night';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('theme', next); } catch(e){ /* private mode: choice lasts this visit only */ }
+  renderThemeToggle();
+  // Secret: 5 day/night switches this visit reveal the bread button (hidden again after refresh)
+  if(++themeSwitches === BREAD_UNLOCK_SWITCHES){
+    const breadBtn = document.getElementById('breadBtn');
+    breadBtn.hidden = false;
+    breadBtn.classList.add('reveal');
+    breadBtn.addEventListener('animationend', () => breadBtn.classList.remove('reveal'), { once: true });
+  }
+});
+const BREAD_UNLOCK_SWITCHES = 5;
+let themeSwitches = 0;
+systemDark.addEventListener('change', renderThemeToggle); // system switch while no choice is saved
+renderThemeToggle();
+
+/* ===================== BREAD BUTTON (just for fun) =====================
+   Plays the full-screen "GET BREAD" animation once (CSS .play); clicks while
+   it's playing are ignored; it cleans up when the overlay's fade ends. */
+const breadOverlay = document.getElementById('breadOverlay');
+document.getElementById('breadBtn').addEventListener('click', () => {
+  if(breadOverlay.classList.contains('play')) return;
+  breadOverlay.classList.add('play');
+});
+breadOverlay.addEventListener('animationend', e => {
+  if(e.target === breadOverlay) breadOverlay.classList.remove('play'); // ignore the bread/text animations
+});
+
+/* ===================== DUCK (just for fun) =====================
+   Each click: a synthesized quack (no sound file) and a hop. It gets more
+   annoyed as you click (higher quack, bigger hop); on the 10th click it lets
+   out a long quack and rolls off the right edge of the screen. It's back
+   after a page refresh. The audio context is created on the first click, as
+   browsers require. */
+const DUCK_PATIENCE = 10;
+let quackCtx = null;
+// pitch: 1 = normal; length: seconds
+function quack(pitch = 1, length = 0.22){
+  quackCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  const ctx = quackCtx, t = ctx.currentTime;
+  // nasal buzz (sawtooth) that drops in pitch, shaped by a "beak" band-pass filter
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(420 * pitch, t);
+  osc.frequency.exponentialRampToValueAtTime(260 * pitch, t + length * 0.8);
+  const beak = ctx.createBiquadFilter();
+  beak.type = 'bandpass';
+  beak.frequency.setValueAtTime(1300 * pitch, t);
+  beak.frequency.exponentialRampToValueAtTime(800 * pitch, t + length * 0.8);
+  beak.Q.value = 4;
+  const amp = ctx.createGain();
+  amp.gain.setValueAtTime(0.0001, t);
+  amp.gain.exponentialRampToValueAtTime(0.6, t + 0.015);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  osc.connect(beak).connect(amp).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + length + 0.03);
+}
+const duckBtn = document.getElementById('duckBtn');
+let duckClicks = 0, duckGone = false;
+duckBtn.addEventListener('click', () => {
+  if(duckGone) return;
+  duckClicks++;
+  if(duckClicks >= DUCK_PATIENCE){ duckRollAway(); return; }
+  const annoyance = duckClicks / DUCK_PATIENCE;            // 0.1 .. 0.9
+  quack(1 + annoyance * 0.6);                              // quack rises in pitch
+  duckBtn.style.setProperty('--hop', (-12 - annoyance * 28) + 'px'); // hop grows
+  duckBtn.classList.remove('hop');
+  void duckBtn.offsetWidth; // restart the hop animation on rapid clicks
+  duckBtn.classList.add('hop');
+});
+duckBtn.addEventListener('animationend', () => duckBtn.classList.remove('hop'));
+
+// Fed up: switch to the lying-down duck sprite, lift it out of the (scrolling,
+// clipped) cards box onto the screen at the same spot, then roll it right while
+// it fades away (~1s) and remove it.
+const DUCK_ROLLED_SRC = 'assets/duck-rolled.png'; // 53x36 sprite
+new Image().src = DUCK_ROLLED_SRC; // preload so the swap is instant
+function duckRollAway(){
+  duckGone = true;
+  quack(1.6, 1.2); // one long, offended quack, lasting through the exit
+  const box = duckBtn.getBoundingClientRect();
+  duckBtn.classList.remove('hop');
+  // same pixel scale as the standing duck (48px sprite shown at box.height),
+  // sitting on the same ground line and centred where the duck stood
+  const scale = box.height / 48;
+  const w = Math.round(53 * scale), h = Math.round(36 * scale);
+  duckBtn.querySelector('img').src = DUCK_ROLLED_SRC;
+  // .map-row is a size container, which would trap position:fixed inside it;
+  // move the duck to <body> so it's positioned against the screen
+  document.body.appendChild(duckBtn);
+  Object.assign(duckBtn.style, {
+    position: 'fixed', margin: '0', zIndex: '900', width: w + 'px', height: h + 'px',
+    left: (box.left + (box.width - w) / 2) + 'px', top: (box.bottom - h) + 'px',
+  });
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const distance = window.innerWidth - box.left + w; // to fully past the right edge
+  // roll right while fading: fully visible for the first half, then fades out
+  const spin = Math.round(distance / w) * 90;
+  const frames = reduceMotion
+    ? [{ opacity: 1 }, { opacity: 0 }]
+    : [
+        { transform: 'translateX(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateX(${distance / 2}px) rotate(${spin / 2}deg)`, opacity: 1, offset: 0.5 },
+        { transform: `translateX(${distance}px) rotate(${spin}deg)`, opacity: 0 },
+      ];
+  duckBtn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
+    .finished.then(() => { duckBtn.hidden = true; });
+}
+
+/* ===================== TABS (Map | Guide) ===================== */
+const tabs = [
+  { btn: document.getElementById('tabBtnMap'), panel: document.getElementById('tabMap') },
+  { btn: document.getElementById('tabBtnGuide'), panel: document.getElementById('tabGuide') },
+];
+for(const tab of tabs){
+  tab.btn.addEventListener('click', () => {
+    for(const t of tabs){
+      const on = t === tab;
+      t.btn.classList.toggle('active', on);
+      t.btn.setAttribute('aria-selected', String(on));
+      t.panel.hidden = !on;
+    }
+  });
+}
 
 /* ===================== DEV MODE: MARKER SQUARES =====================
    Only runs when DevMode is true. Adds a plain, unstyled window with a

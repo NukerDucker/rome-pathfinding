@@ -6,118 +6,104 @@
 <title>Pathfinding Explorer</title>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Apply a saved day/night choice before first paint (no flash).
+  // No saved choice: CSS follows the system setting.
+  try { const t = localStorage.getItem('theme'); if (t === 'day' || t === 'night') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 </head>
 <body>
 
+<!-- Day / night toggle: only the page background changes (script.js sets icon + label) -->
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to night">&#9790;</button>
+<!-- Bread button (secret, just for fun): hidden until day/night is switched 5 times
+     this visit (script.js). Click: giant bread + "GET BREAD" fades up full screen, then away -->
+<button class="bread-btn" id="breadBtn" type="button" aria-label="Get bread" title="Get bread" hidden><img src="assets/bread.png" alt=""></button>
+<div class="bread-overlay" id="breadOverlay" aria-hidden="true">
+  <img class="bread-big" src="assets/bread.png" alt="">
+  <div class="bread-text">GET BREAD</div>
+</div>
+
+<div class="app-shell">
+
 <!-- ===================== 1. TITLE ===================== -->
 <div class="section title-bar">
-  <h1 id="titleText">Pathfinding Explorer</h1>
+  <h1 id="titleText"><img class="title-img" src="assets/title.png" alt="Pathfinding Explorer" width="1339" height="167"></h1>
 </div>
 
-<!-- ===================== 2. CONTROL ROW ===================== -->
-<div class="section control-row">
-  <label>FROM</label>
-  <select id="fromSelect"></select> <!-- options filled from the engine's CITIES -->
+<!-- ===================== 2. TABS ===================== -->
+<nav class="tab-bar" role="tablist" aria-label="Pages">
+  <button class="tab-btn active" role="tab" id="tabBtnMap" aria-controls="tabMap" aria-selected="true">Map</button>
+  <button class="tab-btn" role="tab" id="tabBtnGuide" aria-controls="tabGuide" aria-selected="false">Guide</button>
+</nav>
 
-  <label>TO</label>
-  <select id="toSelect"></select>
+<div id="tabMap" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnMap">
 
-  <button class="icon-btn" id="randomBtn" title="Random From/To">&#127922;</button>
-
-  <label>WITH</label>
-  <div>
-  <select id="algoASelect"></select> <!-- options filled from the engine's ALGORITHMS -->
-  <!-- Landmark control A: button collapses/expands into a dropdown in place -->
-  <div class="landmark-control" id="landmarkControlA">
-    <!-- landmark algorithms: always on (count selectable); others: optional visual overlay -->
-    <button class="landmark-btn" id="landmarkBtnA">Landmarks</button>
-    <select class="landmark-dropdown" id="landmarkDropdownA" hidden>
-      <option value="lm2">2</option><option value="lm4">4</option><option value="lm8">8</option>
-    </select>
-    <button class="landmark-close" id="landmarkCloseA" hidden title="Collapse">&#10005;</button>
-  </div>
+<!-- ===================== 3. ROUTE BOX + ALGORITHM BOX ===================== -->
+<div class="top-row">
+  <div class="section control-row route-box" role="group" aria-label="Route selection">
+    <span class="select-wrap"><select id="fromSelect" class="city-select" aria-label="Start city"></select></span> <!-- options filled from the engine's CITIES -->
+    <span class="route-arrow" aria-hidden="true">&#8594;</span>
+    <span class="select-wrap"><select id="toSelect" class="city-select" aria-label="Goal city"></select></span>
+    <button class="icon-btn" id="randomBtn" title="Random From/To">&#127922;</button>
   </div>
 
-  <span class="divider-vs">VS</span>
-
-  <div>
-  <select id="algoBSelect"></select>
-  <!-- Landmark control B: same behavior, independent state -->
-  <div class="landmark-control" id="landmarkControlB">
-    <button class="landmark-btn" id="landmarkBtnB">Landmarks</button>
-    <select class="landmark-dropdown" id="landmarkDropdownB" hidden>
-      <option value="lm2">2</option><option value="lm4">4</option><option value="lm8">8</option>
-    </select>
-    <button class="landmark-close" id="landmarkCloseB" hidden title="Collapse">&#10005;</button>
-  </div>
-  </div>
-</div>
-
-<!-- ===================== 4. BOTTOM TOOLBAR ===================== -->
-<div class="section toolbar">
-
-  <div>
-    <h3>LEGEND</h3>
-    <div class="legend-grid">
-      <!-- colours come from the --state-* tokens, shared with the map node markers -->
-      <div><span class="dot" style="background:var(--state-current);"></span>Current</div>
-      <div><span class="dot" style="background:var(--state-frontier);"></span>Frontier</div>
-      <div><span class="dot" style="background:var(--state-visited);"></span>Visited</div>
-      <div><span class="dot" style="background:var(--state-path);"></span>Path</div>
-      <div><span class="dot" style="background:var(--state-unvisited);"></span>Unvisited</div>
-      <div><span class="dot dot-hollow" style="border-color:var(--marker-start);"></span>Start</div>
-      <div><span class="dot dot-hollow" style="border-color:var(--marker-goal);"></span>Goal</div>
-    </div>
-  </div>
-
-  <div>
-    <h3>OVERLAYS</h3>
-    <div class="overlay-item"><input type="checkbox" id="straightLineChk"><img src="assets/icon-straightline.png" class="overlay-icon" alt=""><label for="straightLineChk">Straight Line</label></div>
-    <div class="overlay-item"><input type="checkbox" id="heatmapChk"><img src="assets/icon-heatmap.png" class="overlay-icon" alt=""><label for="heatmapChk" title="ALT h-value per city: red = near goal, blue = far">Heatmap</label></div>
-  </div>
-
-  <div>
-    <h3>TOOL</h3>
-    <button class="small-btn" id="toolToggle" style="width:100%;" title="Click nodes on the map to add/remove that map's custom landmarks">Landmarks: OFF</button>
-  </div>
-
-  <div class="playback-box">
-    <h3>PLAYBACK</h3>
-    <div class="playback-row">
-      <button id="prevBtn" title="Previous">&#9664;&#9664;</button>
-      <button id="playBtn" title="Start">&#9654;</button>
-      <button id="nextBtn" title="Next">&#9654;&#9654;</button>
-      <button id="restartBtn" title="Restart"></button>
-    </div>
-    <div class="speed-row">
-      <span>Slow</span>
-      <!-- value = speed (right = faster); script.js converts it to a step delay -->
-      <input type="range" id="speedSlider" min="0" max="1500" value="900">
-      <span>Fast</span>
-    </div>
-  </div>
-
-</div>
-
-<!-- ===================== 3. COMPARISON PANELS ===================== -->
-<div class="section plain-section" style="padding:14px; position:relative;">
-  <!-- Label frames: one independent frame per side, above its map frame -->
-  <div class="algo-label-row">
-    <div class="algo-label-frame">
-      <div class="algo-header">
-        <div class="algo-badge">A</div>
-        <strong id="algoALabel">UCS</strong>
+  <div class="section control-row algo-box" role="group" aria-label="Algorithm selection">
+    <div class="lane-pill">
+      <img class="lane-sign" src="assets/NavigationBar/A sign.png" alt="A">
+      <span class="select-wrap"><select id="algoASelect" class="algo-select" aria-label="Algorithm for lane A"></select></span> <!-- options filled from the engine's ALGORITHMS -->
+      <!-- Landmark dropdown: 2/4/8 for algorithms that need landmarks; Off/2/4/8 (visual overlay only)
+           for the others; "Custom (n)" appears while map-picked landmarks are active. Options set by script.js -->
+      <div class="landmark-control" id="landmarkControlA">
+        <span class="select-wrap"><select class="landmark-dropdown" id="landmarkDropdownA" aria-label="Landmarks for lane A"></select></span>
+        <span class="lm-label" aria-hidden="true">LM</span>
       </div>
     </div>
-    <div class="algo-label-frame">
-      <div class="algo-header">
-        <div class="algo-badge">B</div>
-        <strong id="algoBLabel">A* (LP+ALT)</strong>
+
+    <span class="divider-vs">VS</span>
+
+    <div class="lane-pill">
+      <img class="lane-sign" src="assets/NavigationBar/B sign.png" alt="B">
+      <span class="select-wrap"><select id="algoBSelect" class="algo-select" aria-label="Algorithm for lane B"></select></span>
+      <!-- Landmark dropdown: 2/4/8 for algorithms that need landmarks; Off/2/4/8 (visual overlay only)
+           for the others; "Custom (n)" appears while map-picked landmarks are active. Options set by script.js -->
+      <div class="landmark-control" id="landmarkControlB">
+        <span class="select-wrap"><select class="landmark-dropdown" id="landmarkDropdownB" aria-label="Landmarks for lane B"></select></span>
+        <span class="lm-label" aria-hidden="true">LM</span>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="compare-wrap">
+<!-- ===================== 4. TOOLS BAR =====================
+     Overlay toggles are checkboxes styled as buttons (ids unchanged for script.js). -->
+<div class="section tools-bar" role="toolbar" aria-label="Tools">
+  <label class="tool-toggle"><input type="checkbox" id="straightLineChk"><img src="assets/icon-straightline.png" class="overlay-icon" alt="">Straight Line</label>
+  <label class="tool-toggle" title="ALT h-value per city: red = near goal, blue = far"><input type="checkbox" id="heatmapChk"><img src="assets/icon-heatmap.png" class="overlay-icon" alt="">Heatmap</label>
+  <label class="tool-toggle" title="Road distance (km) on every road"><input type="checkbox" id="distanceChk" checked>Distances</label>
+  <label class="tool-toggle" title="On: one merged map. Off: map A and map B side by side"><input type="checkbox" id="mergeChk" checked>Merge</label>
+  <span class="tools-sep" aria-hidden="true"></span>
+  <button class="tool-toggle" id="toolToggle" title="Click nodes on the map to add/remove that map's custom landmarks">Landmarks: OFF</button>
+</div>
+
+<!-- ===================== 5. MAP PANEL + COMPARISON SIDEBAR ===================== -->
+<div class="map-row">
+<div class="section map-panel">
+  <!-- Merge on: "A name VS B name" in one line. Merge off: VS hidden, each
+       lane's name sits right above its own map (CSS) -->
+  <div class="map-panel-head">
+    <span class="head-lane">
+      <img class="lane-sign" src="assets/NavigationBar/A sign.png" alt="A">
+      <strong id="algoALabel">UCS</strong>
+    </span>
+    <span class="divider-vs">VS</span>
+    <span class="head-lane">
+      <img class="lane-sign" src="assets/NavigationBar/B sign.png" alt="B">
+      <strong id="algoBLabel">A* (LP+ALT)</strong>
+    </span>
+  </div>
+
+  <div class="compare-wrap" id="compareWrap">
     <div class="algo-panel">
       <div class="algo-canvas">
         <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm A" class="map-img" draggable="false"></div>
@@ -129,9 +115,11 @@
       </div>
     </div>
 
-    <div class="vs-circle">VS</div>
+    <!-- VS badge between the two maps: shown only with Merge off (CSS) -->
+    <img class="vs-badge" src="assets/vs-badge.png" alt="" aria-hidden="true">
 
-    <div class="algo-panel">
+    <!-- Map B: hidden while Merge is on (lane B draws on map A); shown side by side when off -->
+    <div class="algo-panel algo-panel-hidden">
       <div class="algo-canvas">
         <div class="map-stage"><img src="assets/island-map.png" alt="Island map - Algorithm B" class="map-img" draggable="false"></div>
         <div class="map-hud">
@@ -142,41 +130,464 @@
       </div>
     </div>
   </div>
+
+  <!-- colours come from the --state-* tokens, shared with the map node markers -->
+  <div class="legend-bar" aria-label="Legend">
+    <span><span class="dot" style="background:var(--state-current);"></span>Current</span>
+    <span><span class="dot" style="background:var(--state-frontier);"></span>Frontier</span>
+    <span><span class="dot" style="background:var(--state-visited);"></span>Visited</span>
+    <span><span class="dot" style="background:var(--state-path);"></span>Path</span>
+    <span><span class="dot" style="background:var(--state-unvisited);"></span>Unvisited</span>
+    <span><span class="dot dot-hollow" style="border-color:var(--marker-start);"></span>Start</span>
+    <span><span class="dot dot-hollow" style="border-color:var(--marker-goal);"></span>Goal</span>
+    <!-- merged map only (script.js hides these when Merge is off) -->
+    <span class="legend-merged"><span class="dot dot-split" aria-hidden="true"></span>Left A / right B</span>
+    <span class="legend-merged"><span class="road-dash" aria-hidden="true"></span>Lane B road</span>
+  </div>
+
+  <div class="playback-bar" role="group" aria-label="Playback">
+    <div class="playback-row">
+      <button id="restartBtn" title="Restart"></button>
+      <button id="prevBtn" title="Previous">&#9664;&#9664;</button>
+      <button id="playBtn" title="Start">&#9654;</button>
+      <button id="nextBtn" title="Next">&#9654;&#9654;</button>
+    </div>
+    <div class="speed-row">
+      <span class="speed-end">Slow<br><small>1500ms</small></span>
+      <div class="speed-track">
+        <!-- value = speed (right = faster); script.js converts it to a step delay -->
+        <!-- pixel-art slider: Unfill.png track, Fill.png up to the handle (--frac set by script.js), Handle.png thumb -->
+        <div class="pixel-slider" id="speedSliderWrap">
+          <div class="ps-fill" aria-hidden="true"></div>
+          <input type="range" id="speedSlider" min="0" max="1500" value="900" aria-label="Step delay">
+        </div>
+        <span class="speed-value" id="speedValue" aria-hidden="true">600ms</span> <!-- current step delay, set by script.js -->
+      </div>
+      <span class="speed-end">Fast<br><small>0ms</small></span>
+    </div>
+  </div>
 </div>
 
-<!-- ===================== 5. FULL COMPARISON TABLE ===================== -->
-<div class="section">
-  <h2 style="text-align:center; margin:0 0 4px; font-size:18px;">Algorithm Comparison</h2>
-  <p style="text-align:center; margin:0 0 12px; color:var(--text-soft);" id="routeLabel">Arad &#8594; Bucharest</p>
-  <!-- Swap target: style the scrollbar track/thumb with your pixel art slider assets -->
-  <div class="table-scroll">
-  <table>
-    <tr>
-      <th>Algorithm</th><th>Step</th><th>Current</th><th>Visited</th><th>Frontier</th>
-      <th>Generated</th><th>Path</th><th>Time (<span class="no-caps">&micro;s</span>)</th><th>Peak Memory</th><th>Cost</th>
-      <th>Hops</th><th>T(n)</th><th>S(n)</th><th>Optimal</th><th>Complete</th>
-      <th colspan="3">Landmarks&nbsp;&nbsp;&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;8</th>
-    </tr>
-    <tr>
-      <td id="rowA">A &middot; UCS</td><td id="fullStepA">0/0</td><td id="fullCurA">-</td>
-      <td id="fullVisA">0</td><td id="fullFroA">0</td><td id="fullGenA">0</td>
-      <td id="fullPathA">-</td><td id="fullTimeA">-</td><td id="fullMemA">-</td><td id="fullCostA">-</td>
-      <td id="fullHopsA">-</td><td id="fullTnA">O(b^d)</td><td id="fullSnA">O(b^d)</td>
-      <td id="fullOptA">Yes</td><td id="fullCompA">Yes</td>
-      <td id="fullLM2A">-</td><td id="fullLM4A">-</td><td id="fullLM8A">-</td>
-    </tr>
-    <tr>
-      <td id="rowB">B &middot; A* (LP+ALT)</td><td id="fullStepB">0/0</td><td id="fullCurB">-</td>
-      <td id="fullVisB">0</td><td id="fullFroB">0</td><td id="fullGenB">0</td>
-      <td id="fullPathB">-</td><td id="fullTimeB">-</td><td id="fullMemB">-</td><td id="fullCostB">-</td>
-      <td id="fullHopsB">-</td><td id="fullTnB">O(b^d)</td><td id="fullSnB">O(b^d)</td>
-      <td id="fullOptB">Yes</td><td id="fullCompB">Yes</td>
-      <td id="fullLM2B">-</td><td id="fullLM4B">-</td><td id="fullLM8B">-</td>
-    </tr>
-  </table>
+<!-- ===================== COMPARISON SIDEBAR (right of the map) =====================
+     One wood frame around the whole sidebar; A | B columns of flat cards inside.
+     Every value keeps its id (fullStepA, fullGenB, ...) so script.js fills it unchanged. -->
+<aside class="stats-sidebar section" aria-label="Algorithm comparison">
+  <!-- frame stays fixed; only this inner area scrolls when the cards are taller than the map -->
+  <div class="stats-scroll">
+    <h2 class="stats-title">Algorithm Comparison</h2>
+    <p class="stats-route" id="routeLabel">Arad &#8594; Bucharest</p>
+
+    <div class="stats-cols">
+      <div class="stats-col">
+        <div class="stats-head"><div class="algo-badge">A</div><span id="rowA">A &middot; UCS</span></div>
+        <div class="stats-card">
+          <h4>Live</h4>
+          <div class="stat-row"><span>Step</span><b id="fullStepA">0/0</b></div>
+          <div class="stat-row"><span>Current</span><b id="fullCurA">-</b></div>
+          <div class="stat-row"><span>Visited</span><b id="fullVisA">0</b></div>
+          <div class="stat-row"><span>Frontier</span><b id="fullFroA">0</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Result</h4>
+          <div class="stat-row"><span>Generated</span><b id="fullGenA">0</b></div>
+          <div class="stat-row"><span>Peak memory</span><b id="fullMemA">-</b></div>
+          <div class="stat-row stat-row-wrap"><span>Path</span><b id="fullPathA">-</b></div>
+          <div class="stat-row"><span>Cost</span><b id="fullCostA">-</b></div>
+          <div class="stat-row"><span>Hops</span><b id="fullHopsA">-</b></div>
+          <div class="stat-row"><span>Time (<span class="no-caps">&micro;s</span>)</span><b id="fullTimeA">-</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Complexity</h4>
+          <div class="stat-row stat-row-wrap"><span>T(n)</span><b id="fullTnA">O(b^d)</b></div>
+          <div class="stat-row stat-row-wrap"><span>S(n)</span><b id="fullSnA">O(b^d)</b></div>
+          <div class="stat-row"><span>Optimal</span><b id="fullOptA">Yes</b></div>
+          <div class="stat-row"><span>Complete</span><b id="fullCompA">Yes</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Landmarks</h4>
+          <div class="stat-row"><span>2</span><b id="fullLM2A">-</b></div>
+          <div class="stat-row"><span>4</span><b id="fullLM4A">-</b></div>
+          <div class="stat-row"><span>8</span><b id="fullLM8A">-</b></div>
+        </div>
+      </div>
+
+      <div class="stats-col">
+        <div class="stats-head"><div class="algo-badge">B</div><span id="rowB">B &middot; A* (LP+ALT)</span></div>
+        <div class="stats-card">
+          <h4>Live</h4>
+          <div class="stat-row"><span>Step</span><b id="fullStepB">0/0</b></div>
+          <div class="stat-row"><span>Current</span><b id="fullCurB">-</b></div>
+          <div class="stat-row"><span>Visited</span><b id="fullVisB">0</b></div>
+          <div class="stat-row"><span>Frontier</span><b id="fullFroB">0</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Result</h4>
+          <div class="stat-row"><span>Generated</span><b id="fullGenB">0</b></div>
+          <div class="stat-row"><span>Peak memory</span><b id="fullMemB">-</b></div>
+          <div class="stat-row stat-row-wrap"><span>Path</span><b id="fullPathB">-</b></div>
+          <div class="stat-row"><span>Cost</span><b id="fullCostB">-</b></div>
+          <div class="stat-row"><span>Hops</span><b id="fullHopsB">-</b></div>
+          <div class="stat-row"><span>Time (<span class="no-caps">&micro;s</span>)</span><b id="fullTimeB">-</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Complexity</h4>
+          <div class="stat-row stat-row-wrap"><span>T(n)</span><b id="fullTnB">O(b^d)</b></div>
+          <div class="stat-row stat-row-wrap"><span>S(n)</span><b id="fullSnB">O(b^d)</b></div>
+          <div class="stat-row"><span>Optimal</span><b id="fullOptB">Yes</b></div>
+          <div class="stat-row"><span>Complete</span><b id="fullCompB">Yes</b></div>
+        </div>
+        <div class="stats-card">
+          <h4>Landmarks</h4>
+          <div class="stat-row"><span>2</span><b id="fullLM2B">-</b></div>
+          <div class="stat-row"><span>4</span><b id="fullLM4B">-</b></div>
+          <div class="stat-row"><span>8</span><b id="fullLM8B">-</b></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="stats-caption">Time = mean of 400 runs (&mu;s) &middot; Peak Memory = largest frontier &middot; Landmarks 2/4/8 = nodes generated per preset &middot; live step metrics compared at final frame.</p>
+    <!-- Duck (just for fun): merged view only (CSS); click = quack (script.js) -->
+    <button class="duck-btn" id="duckBtn" type="button" aria-label="Quack" title="Quack"><img src="assets/duck.png" alt=""></button>
   </div>
-  <p class="stats-caption">Time = mean of 400 runs (&mu;s) &middot; Peak Memory = largest frontier &middot; Landmarks 2/4/8 = nodes generated per preset &middot; live step metrics compared at final frame.</p>
+</aside>
+</div><!-- /map-row -->
+
+</div><!-- /tabMap -->
+
+<!-- ===================== GUIDE TAB ===================== -->
+<div id="tabGuide" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnGuide" hidden>
+  <!-- Guide: walks from UCS, through A*, into the heuristic, how this app builds
+       one (LP + ALT), why combining them works, and whether it performs better.
+       <span class="tex"> holds LaTeX that script.js renders with KaTeX
+       (.tex-display = centred block). Figures fall back to a "pending" box if
+       the GIF in gifs/ fails to load. -->
+  <article class="section guide-page" aria-label="How the search works">
+    <div class="guide-head">
+      <span class="guide-eyebrow">Romania Pathfinding</span>
+      <h2 class="guide-title">How the search works</h2>
+    </div>
+
+    <div class="guide-body">
+      <p class="guide-lede">
+        Finding a cheapest route on this map is a <strong>search</strong>. We start with a
+        method that knows nothing about the goal (<em>uninformed</em>), watch it waste effort,
+        then upgrade it with a <em>heuristic</em>, and finally combine two heuristics into one.
+        Every number below was measured on all 380 ordered city pairs.
+      </p>
+
+      <!-- two columns: sticky contents list (left) | sections (right) -->
+      <div class="guide-layout">
+      <nav class="guide-nav" aria-label="Contents">
+        <a href="#g-ucs">1 · Uniform-Cost Search</a>
+        <a href="#g-astar">2 · A★: adding a guess</a>
+        <a href="#g-heuristic">3 · What a heuristic is</a>
+        <a href="#g-lp">4 · Our heuristic: LP (vector)</a>
+        <a href="#g-alt">5 · Our heuristic: ALT (landmarks)</a>
+        <a href="#g-ensemble">6 · The ensemble: max(LP, ALT)</a>
+        <a href="#g-perf">7 · Does it perform better?</a>
+        <a href="#g-map">8 · Reading the maps</a>
+      </nav>
+
+      <div class="guide-sections">
+
+      <!-- ── 1. UCS ── -->
+      <section class="guide-section" id="g-ucs">
+        <h3>1 · Uniform-Cost Search (UCS)</h3>
+        <p>
+          Keep a <strong>frontier</strong> of nodes to explore. Always expand the node with the
+          smallest known cost from the start, <span class="tex">g(n)</span>, the kilometres already driven.
+          Because every road cost is non-negative, the cheapest frontier node can never be
+          beaten later, so UCS is <strong>optimal</strong> and <strong>complete</strong>.
+        </p>
+        <p>
+          The catch: the frontier grows as expanding <em>cost contours</em>, rings of equal
+          <span class="tex">g</span>, that spread in <strong>every direction</strong>. UCS cannot look at the
+          map and see where Bucharest is, so it explores west, north and south just as eagerly as
+          east. Its work grows like <span class="tex">O(b^{1+\lfloor C^*/\varepsilon \rfloor})</span>.
+        </p>
+        <div class="guide-note guide-try">
+          <strong>Try it.</strong> Set lane <strong>A</strong> to <em>UCS</em>, run Arad → Bucharest,
+          and press play. Watch the visited ring sweep outward on all sides before it finally
+          reaches the goal.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-1">
+          <img src="gifs/ucs-cost-rings.gif" alt="UCS cost contours spreading outward" loading="lazy">
+          <figcaption>UCS expands in expanding cost rings, blind to the goal.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 2. A* ── -->
+      <section class="guide-section" id="g-astar">
+        <h3>2 · A★: adding a guess</h3>
+        <p>
+          A★ keeps the same <span class="tex">g(n)</span> but adds a <strong>heuristic</strong>
+          <span class="tex">h(n)</span>: our estimate of the remaining cost from <span class="tex">n</span> to the goal.
+          It expands whatever node has the smallest
+        </p>
+        <div class="guide-eq"><span class="tex tex-display">f(n) = g(n) + h(n)</span></div>
+        <p>
+          The two parts do different jobs. <span class="tex">g</span> is <em>exact</em> and keeps the result
+          optimal; <span class="tex">h</span> is a <em>guess</em> that steers the search toward the goal so it
+          wastes less time on the wrong side of the map.
+        </p>
+        <p>
+          The heuristic decides how good A★ is. With <span class="tex">h \equiv 0</span> it degenerates back
+          into UCS. With a perfect <span class="tex">h</span> it walks straight to the goal. Using <span class="tex">h</span>
+          alone and no <span class="tex">g</span> gives greedy best-first: fast, but easily fooled into a
+          non-optimal route.
+        </p>
+        <div class="guide-note">
+          <strong>Key rule.</strong> If <span class="tex">h</span> never <em>overestimates</em> the true cost,
+          A★ stays optimal. An optimistic heuristic only ever makes A★ try something that turns
+          out slightly worse; it can never hide the best route.
+        </div>
+        <div class="guide-note guide-try">
+          <strong>Try it.</strong> Set <strong>A</strong> = <em>A★ (LP+ALT)</em> and
+          <strong>B</strong> = <em>UCS</em>. Compare <em>Visited</em> and <em>Generated</em> in the
+          table: same optimal 418 km, far fewer nodes explored.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-2">
+          <img src="gifs/astar-vs-ucs.gif" alt="A* reaching the goal while UCS spreads outward" loading="lazy">
+          <figcaption>A★ uses h to head for the goal; UCS can't.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 3. Heuristic ── -->
+      <section class="guide-section" id="g-heuristic">
+        <h3>3 · What a heuristic actually is</h3>
+        <p>
+          A heuristic <span class="tex">h(n)</span> is a cheap estimate of the cost still to go, computed
+          <em>without</em> solving the rest of the search. Two properties matter:
+        </p>
+        <ul>
+          <li>
+            <strong>Admissible</strong> (optimistic): <span class="tex">h(n) \le h^{*}(n)</span>, the true
+            cheapest cost to the goal. This is what guarantees A★ optimality.
+          </li>
+          <li>
+            <strong>Consistent</strong> (monotonic):
+            <span class="tex">h(n) \le c(n,n\prime) + h(n\prime)</span> for every road
+            <span class="tex">n \to n\prime</span>. Consistency implies admissibility, and it stops A★
+            from ever reopening a node.
+          </li>
+        </ul>
+        <p>
+          Quality is about <strong>informedness</strong>. We say <span class="tex">h_2</span>
+          <strong>dominates</strong> <span class="tex">h_1</span> when
+          <span class="tex">h_2(n) \ge h_1(n)</span> for every node. A dominating (and consistent)
+          heuristic expands no more nodes; bigger guesses mean fewer surprises, as long as they
+          stay under the truth.
+        </p>
+        <div class="guide-note">
+          <strong>The twist for this assignment.</strong> The textbook heuristic is straight-line
+          distance (SLD), but the rules ban SLD and GPS. So we build our own bounds from the
+          <em>road kilometre values alone</em>. Two methods, then we combine them.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-3">
+          <img src="gifs/admissible-consistent.gif" alt="h stays below the true distance; consistency across an edge" loading="lazy">
+          <figcaption>Admissible = h never pokes above the true cost. Consistent = it can only rise by as much as a road costs.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 4. LP ── -->
+      <section class="guide-section" id="g-lp">
+        <h3>4 · Our first bound: LP vector-decomposition</h3>
+        <p>
+          Draw each road as a little arrow (a vector) whose length is its real kilometre value,
+          laid out using the map's schematic pixel coordinates. To get from <span class="tex">a</span> to
+          <span class="tex">b</span> you must cross the <strong>chord</strong> between them. A road route is a
+          chain of these arrows, so its arrows must add up to that chord. The shortest any route
+          can possibly be is therefore the cheapest combination of arrows that still adds up to
+          the chord: a small <strong>linear program</strong>:
+        </p>
+        <div class="guide-eq"><span class="tex tex-display">h_{LP}(a,b) = \min \textstyle\sum_i \alpha_i\, km_i \;\; \text{s.t.} \; \textstyle\sum_i \alpha_i\, \vec{v}_i = \vec{chord}_{ab},\;\; 0 \le \alpha_i \le 1</span></div>
+        <p>
+          Why it is admissible: the LP <em>relaxes</em> the real problem; it allows fractional
+          use of roads and ignores connectivity, so its optimum can only be
+          <strong>lower</strong> than any actual route. A lower bound is exactly what we want.
+          Two neighbouring cities come out exact (e.g. <span class="tex">h_{LP}(\text{Arad},\text{Sibiu}) = 140</span>).
+          It is solved offline with scipy/HiGHS and read from a lookup table at runtime. No SLD,
+          no GPS, only the PDF's metre/kilometre data.
+        </p>
+        <div class="guide-note guide-try">
+          Measured alone, LP is a valid but <em>loose</em> bound: mean <span class="tex">h/\text{road} \approx 0.68</span>.
+          Useful, but we can do better.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-4">
+          <img src="gifs/lp-vector-decomposition.gif" alt="The chord decomposed into road vectors" loading="lazy">
+          <figcaption>The chord a→b rewritten as a combination of road vectors; the LP prices that combination.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 5. ALT ── -->
+      <section class="guide-section" id="g-alt">
+        <h3>5 · Our second bound: ALT (landmarks)</h3>
+        <p>
+          Pick a few <strong>landmark</strong> cities <span class="tex">L</span>, far-flung corners of the map.
+          Then precompute the true shortest road distance <span class="tex">d(L,n)</span> from each landmark to
+          every node (one Dijkstra run per landmark). For any node <span class="tex">n</span> and goal:
+        </p>
+        <div class="guide-eq"><span class="tex tex-display">h_{ALT}(n, goal) = \max_{L} \;\big|\, d(L,n) - d(L, goal) \,\big|</span></div>
+        <p>
+          This is the <strong>triangle inequality</strong> doing the work. Going through
+          <span class="tex">L</span> is one (usually longer) way to get from <span class="tex">n</span> to the goal, so
+          <span class="tex">d(n, goal) \ge |d(L,n) - d(L,goal)|</span>. The right side never exceeds the
+          true distance, so it is admissible by construction, no empirical checking needed. It
+          uses only road kilometres. Taking the <span class="tex">\max</span> over landmarks keeps it a lower
+          bound while making it tighter.
+        </p>
+        <p><strong>More landmarks, tighter bound.</strong> The app ships three presets:</p>
+        <table class="guide-table">
+          <thead><tr><th>Preset</th><th>Landmarks</th><th>h/road</th></tr></thead>
+          <tbody>
+            <tr><td>lm2</td><td>Eforie, Oradea</td><td>0.87</td></tr>
+            <tr><td>lm4</td><td>+ Neamt, Giurgiu</td><td>0.97</td></tr>
+            <tr><td>lm8</td><td>+ Timisoara, Vaslui, Drobeta, Hirsova</td><td>0.99</td></tr>
+          </tbody>
+        </table>
+        <div class="guide-note">
+          <strong>Backdoor.</strong> If a landmark <span class="tex">L</span> is a dead-end (degree 1) and the
+          goal is its only neighbour, the bound becomes <em>exact</em>:
+          <span class="tex">|d(L,n) - d(L,goal)| = d(n, goal)</span>. That is why, e.g., landmark Eforie
+          gives a perfect estimate when the goal is Hirsova.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-5">
+          <img src="gifs/alt-triangle-inequality.gif" alt="Triangle inequality via a landmark" loading="lazy">
+          <figcaption>Any real route through the landmark is at least as long as the difference the landmark certifies.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 6. Ensemble ── -->
+      <section class="guide-section" id="g-ensemble">
+        <h3>6 · The ensemble: take the maximum</h3>
+        <p>
+          We have two admissible bounds that come from <em>different evidence</em>. Combine them
+          by taking whichever is larger:
+        </p>
+        <div class="guide-eq"><span class="tex tex-display">h(n, goal) = \max\big(\, h_{LP}(n, goal),\; h_{ALT}(n, goal)\,\big)</span></div>
+        <p><strong>Why this works (three reasons):</strong></p>
+        <ol>
+          <li>
+            <strong>Still admissible.</strong> Both inputs are <span class="tex">\le</span> the true cost,
+            so their maximum is too. A★ therefore stays optimal. (This is why you may only take a
+            <span class="tex">\max</span> when <em>every</em> component is admissible; one overestimating
+            component would leak straight in.)
+          </li>
+          <li>
+            <strong>Tighter than either alone.</strong> The max is
+            <span class="tex">\ge</span> both components at every node: it <em>dominates</em> each of them.
+            By the dominance rule, A★ with the ensemble expands no more nodes than A★ with either
+            bound by itself.
+          </li>
+          <li>
+            <strong>Different failure modes.</strong> LP judges by geometry and distance; ALT
+            judges by pure road metrics. Each is weak on different node pairs, so the max collects
+            the stronger certificate wherever it exists: the best of both.
+          </li>
+        </ol>
+        <div class="guide-note">
+          <strong>Admissibility is all we need.</strong> Because both bounds stay at or below the
+          true cost, the ensemble does too, and an admissible heuristic is exactly what makes
+          A★ return an <em>optimal</em> route and, on this finite map, always terminate
+          (<em>complete</em>). So the ensemble is correct by construction: it never depends on the
+          two bounds agreeing, only on each one being optimistic.
+        </div>
+        <figure class="guide-figure" data-spec="GIF-6">
+          <img src="gifs/ensemble-max.gif" alt="Two lower bounds, the larger one wins" loading="lazy">
+          <figcaption>Each bound certifies “the answer is at least this much”; the max keeps the strongest certificate.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 7. Performance ── -->
+      <section class="guide-section" id="g-perf">
+        <h3>7 · Does it perform better? (measured)</h3>
+        <p>
+          An independent evaluation re-ran everything over all 380 ordered city pairs with its
+          own Dijkstra oracle and a standard A★. Two things matter:
+          <strong>informedness</strong> (how close <span class="tex">h</span> sits to the truth, as mean
+          <span class="tex">h/\text{road}</span>) and <strong>expansions</strong> (work done).
+        </p>
+        <table class="guide-table">
+          <thead><tr><th>Heuristic</th><th>h/road</th></tr></thead>
+          <tbody>
+            <tr><td>LP only</td><td>0.683</td></tr>
+            <tr><td>ALT lm2</td><td>0.872</td></tr>
+            <tr><td>ALT lm4</td><td>0.972</td></tr>
+            <tr><td>ALT lm8</td><td>0.985</td></tr>
+            <tr><td><strong>LP + ALT (lm8)</strong></td><td><strong>0.986</strong></td></tr>
+          </tbody>
+        </table>
+        <table class="guide-table">
+          <thead><tr><th>Search</th><th>expanded</th><th>generated</th></tr></thead>
+          <tbody>
+            <tr><td>UCS (h = 0)</td><td>4180</td><td>4971</td></tr>
+            <tr><td>A★ · LP</td><td>2316</td><td>3558</td></tr>
+            <tr><td>A★ · ALT lm2</td><td>2191</td><td>3419</td></tr>
+            <tr><td>A★ · ALT lm4</td><td>1984</td><td>3335</td></tr>
+            <tr><td>A★ · ALT lm8</td><td>1924</td><td>3310</td></tr>
+            <tr><td><strong>A★ · LP+ALT</strong></td><td><strong>1922</strong></td><td><strong>3306</strong></td></tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Reading the numbers.</strong> Going from uninformed to informed is the big win
+          UCS expands 4180 nodes across the pair set; A★ with the ensemble only 1922, roughly a
+          55% cut, for the <em>same</em> optimal cost. Within informed search, tighter really is
+          cheaper: the LM ladder (0.87 → 0.97 → 0.99) walks expansions down step by step.
+        </p>
+        <p>
+          The ensemble sits at the bottom, but honestly <em>only just</em>: against ALT lm8 alone
+          it adds +0.0005 informedness and saves 2 expansions, because on this map ALT lm8
+          usually already dominates LP. Its real value is <strong>robustness</strong>: it is a
+          bound from a second, independently-derived method, so admissibility never rests on the
+          landmark choice. Zero admissibility violations and zero wrong optimal costs were
+          measured for every variant.
+        </p>
+        <figure class="guide-figure" data-spec="GIF-7">
+          <img src="gifs/ensemble-performance.gif" alt="Bars: informedness and expansions across heuristics" loading="lazy">
+          <figcaption>Informedness rises and expansions fall as the heuristic tightens; the ensemble tops it off.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ── 8. Reading the maps (describes this app's controls) ── -->
+      <section class="guide-section" id="g-map">
+        <h3>8 · Reading the maps</h3>
+        <p>
+          <strong>Two lanes.</strong> Pick any two algorithms in the algorithm box, lane
+          <strong>A</strong> and lane <strong>B</strong>, and run them on the same From → To route.
+          The <em>Algorithm Comparison</em> cards beside the map show each lane's live and final
+          numbers, and the better value of each pair is marked with a green chip.
+        </p>
+        <ul>
+          <li><strong>Node colours:</strong> current · frontier · visited · path · unvisited, with start and goal rings (legend under the map).</li>
+          <li><strong>Landmarks:</strong> each lane has a landmark dropdown. Algorithms that need landmarks choose 2 / 4 / 8; the others can pick Off / 2 / 4 / 8 to show landmarks on the map (visual only). Turn on the <em>Landmarks</em> tool and click cities to build a custom set; the dropdown then shows <em>Custom (n)</em>.</li>
+          <li><strong>Distances:</strong> each road's length in km. A badge turns purple when a lane has explored that road and red when it is on the final route.</li>
+          <li><strong>Heatmap:</strong> each city coloured by its lane's <span class="tex">h</span>-value: red near the goal, blue far away.</li>
+          <li><strong>Straight Line:</strong> the SLD arc from start to goal that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
+        </ul>
+        <p>
+          <strong>Merged map (default).</strong> With <em>Merge</em> on, both lanes share one map.
+          Every city disc is split down the middle: the <strong>left half is lane A</strong>, the
+          <strong>right half is lane B</strong>, each in the usual legend colours. Lane A's roads
+          are solid; <strong>lane B's roads are thinner and dashed</strong>, drawn on top, so you can
+          see which roads both lanes used and which only one did. Turn <em>Merge</em> off to put
+          map A and map B side by side, each showing only its own lane. With Merge on, a click with the
+          Landmarks tool sets that city for both lanes; with Merge off, click on map A or map B to
+          set it for that lane only.
+        </p>
+      </section>
+
+      </div>
+      </div><!-- /guide-layout -->
+
+      <p class="guide-foot">
+        Guide based on the search implementation in <code>src/engine/</code>. Measurements come
+        from an independent evaluation over all 380 ordered city pairs.
+      </p>
+    </div>
+  </article>
 </div>
+
+</div><!-- /app-shell -->
 
 <script type="module" src="/script.js"></script>
 
