@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { BookOpen, ChevronLeft, ChevronRight, Columns2, Dices, MapPin, Moon, Pause, Play, RotateCcw, Sparkles, Sun, Thermometer, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Columns2, Dices, MapPin, Moon, Pause, Play, RotateCcw, Sparkles, Sun, Thermometer, X } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
@@ -10,7 +10,6 @@ import {
 } from './heuristic'
 import { LANDMARK_PRESETS } from './alt'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import {
   Select,
@@ -138,27 +137,6 @@ const ALGO_OPTIONS: [string, (typeof ALGORITHMS)[string]][] = Object.entries(ALG
 // constant size (so they never reflow while live step values change); the table
 // is allowed to be wider than the viewport and scrolls horizontally instead of
 // clipping or shrinking cells.
-const ALGO_COL_PX = 190
-const DEFAULT_COL_PX = 90
-const COL_PX: Record<string, number> = {
-  Step: 96,
-  Current: 100,
-  Visited: 90,
-  Frontier: 90,
-  Generated: 110,
-  Path: 260,
-  'Time (µs)': 120,
-  'Peak memory': 130,
-  'Cost (km)': 120,
-  Hops: 70,
-  'T(n)': 200,
-  'S(n)': 200,
-  Optimal: 90,
-  Complete: 90,
-  'landmarks 2': 120,
-  4: 56,
-  8: 56,
-}
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
 type EdgeState = 'base' | 'tree' | 'path'
@@ -730,7 +708,7 @@ function ThemeToggle() {
 
 function App() {
   // Swap the comparison table's orientation below 1100px (render only one table).
-  const isCompact = useMediaQuery('(max-width: 1100px)')
+  void useMediaQuery('(max-width: 1100px)')
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -750,16 +728,15 @@ function App() {
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [pickLandmarkMode, setPickLandmarkMode] = useState(false)
   const [merged, setMerged] = useState(true)
-  // Guide sidebar: open on wide screens, collapsed on narrow ones.
-  const [sidebarOpen, setSidebarOpen] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth > 1100,
-  )
+  type AppTab = 'map' | 'guide'
+  const [tab, setTab] = useState<AppTab>('map')
 
-  // Stats go to the right sidebar only when the merged view has room (wide
-  // window); otherwise they sit below the map so the centre column stays wide.
-  const isWide = useMediaQuery('(min-width: 1500px)')
-  const statsInSidebar = merged && isWide
-  const useTall = merged || isCompact
+  // Stats always go to right sidebar in merged mode; fit-mode keeps the map
+  // from overflowing the viewport. Both collapse to column below 1100px via CSS.
+  void useMediaQuery('(min-width: 1500px)')
+  const fit = merged && tab === 'map'
+  const statsInSidebar = fit
+  void true // useTall removed — bento grid replaces table
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
@@ -907,7 +884,7 @@ function App() {
     return undefined
   }
 
-  type Col = { label: string; a: ReactNode; b: ReactNode; better?: 'a' | 'b'; wrap?: boolean }
+  type Col = { label: string; a: ReactNode; b: ReactNode; better?: 'a' | 'b'; wrap?: boolean; section?: string }
   // Mean time over BENCH_ITERS runs, shown in microseconds.
   const fmtUs = (ms: number) => `${(ms * 1000).toFixed(1)}`
   // Right-aligned mono cells: pad single-digit step totals so “/ 5” lines up
@@ -925,6 +902,7 @@ function App() {
   const cols: Col[] = [
     {
       label: 'Step',
+      section: 'Live',
       a: stepText(result.steps.length, lastIdx),
       b: stepText(result2.steps.length, lastIdx2),
     },
@@ -943,6 +921,7 @@ function App() {
     },
     {
       label: 'Generated',
+      section: 'Result',
       a: String(result.generated),
       b: String(result2.generated),
       better: betterLower(result.generated, result2.generated),
@@ -960,7 +939,7 @@ function App() {
       better: atEnd ? betterPath() : undefined,
       wrap: true,
     },
-    { label: 'Time (µs)', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
+    { label: 'Time (µs)', section: 'Performance', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
     {
       label: 'Cost (km)',
       a: benchCost(benchA),
@@ -973,12 +952,13 @@ function App() {
       b: benchB.found ? String(benchB.hops) : '—',
       better: betterLower(benchA.found ? benchA.hops : NaN, benchB.found ? benchB.hops : NaN),
     },
-    { label: 'T(n)', a: <Tex>{meta.time}</Tex>, b: <Tex>{meta2.time}</Tex> },
+    { label: 'T(n)', section: 'Complexity', a: <Tex>{meta.time}</Tex>, b: <Tex>{meta2.time}</Tex> },
     { label: 'S(n)', a: <Tex>{meta.space}</Tex>, b: <Tex>{meta2.space}</Tex> },
     { label: 'Optimal', a: meta.optimal, b: meta2.optimal, better: betterYes(meta.optimal, meta2.optimal) },
     { label: 'Complete', a: meta.complete, b: meta2.complete, better: betterYes(meta.complete, meta2.complete) },
     {
       label: 'landmarks 2',
+      section: 'Landmarks',
       a: lmValue(lmEffectA, 'lm2'),
       b: lmValue(lmEffectB, 'lm2'),
       better: lmEffectA && lmEffectB ? betterLower(lmEffectA.lm2, lmEffectB.lm2) : undefined,
@@ -1003,130 +983,104 @@ function App() {
 
   // Cell classes for the comparison tables. Numeric-ish Step cells stay on one
   // line (they can reach two digits, e.g. “10 / 12”) instead of wrapping.
-  const cellCls = (
-    label: string,
-    wrap: boolean | undefined,
-    better: 'a' | 'b' | undefined,
-    side: 'a' | 'b',
-  ) =>
-    `${wrap ? 'col-wrap' : ''}${better === side ? (side === 'a' ? ' better-a' : ' better-b') : ''}${label === 'Step' ? ' col-nowrap' : ''}`
+  const bentoSections = cols.reduce<{ title: string; rows: Col[] }[]>((acc, c) => {
+    if (c.section) acc.push({ title: c.section, rows: [] })
+    acc[acc.length - 1].rows.push(c)
+    return acc
+  }, [])
+
+  const chipBase = 'font-mono text-[11px] px-2 py-[2px] rounded-full whitespace-nowrap'
+
+  const renderKanbanCol = (side: 'a' | 'b', label: string, badgeCls: string, accentCls: string, winnerCls: string, winnerBg: string) => (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)]">
+        <span className={`lane-badge ${badgeCls}`} aria-hidden="true">{side.toUpperCase()}</span>
+        <span className={`text-xs font-semibold ${accentCls} truncate`}>{label}</span>
+      </div>
+      {bentoSections.map(({ title, rows }) => (
+        <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-ink opacity-50 mb-2">{title}</div>
+          {rows.map((c) => {
+            const val = c[side], isBetter = c.better === side
+            const isYes = val === 'Yes', isNo = val === 'No'
+            const rowCls = c.wrap
+              ? 'flex flex-col items-start gap-1 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+              : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+            return (
+              <div key={c.label} className={rowCls}>
+                <span className="text-[11px] text-ink truncate">{c.label}</span>
+                {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path font-semibold`}>{val}</span>
+                 : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
+                 : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
+                 : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
 
   // Algorithm-comparison stats. Rendered once, slotted either into the right
   // sidebar or below the map depending on STATS_IN_SIDEBAR.
   const statsPanel = (
     <section className="compare-panel" aria-labelledby="compare-title">
-      <Card>
-        <CardContent>
-          <h2 id="compare-title" className="compare-title">
-            <span>Algorithm comparison</span>
-            <span className="ct-route">{start} → {goal}</span>
-          </h2>
-          <div className="compare-scroll">
-            {useTall ? (
-            <table className="compare compare-tall">
-              <thead>
-                <tr>
-                  <th scope="col" className="tall-metric-col">Metric</th>
-                  <th scope="col" className="tall-head tall-head-a">
-                    <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-                    <span className="tall-head-label">{rowLabelA}</span>
-                  </th>
-                  <th scope="col" className="tall-head tall-head-b">
-                    <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-                    <span className="tall-head-label">{rowLabelB}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {cols.map((c) => (
-                  <tr key={c.label}>
-                    <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                    <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
-                    <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            ) : (
-            <table className="compare compare-fixed table-wide">
-              <thead>
-                <tr>
-                  <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
-                  {cols.map((c) => (
-                    <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="row-lane-a">
-                  <th scope="row">
-                    <div className="run-cell">
-                      <span className="run-label">
-                        <span className="lane-badge lane-badge-a">A</span>
-                        <span className="run-label-text">{rowLabelA}</span>
-                      </span>
-                    </div>
-                  </th>
-                  {cols.map((c) => (
-                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
-                      <div className="run-cell">{c.a}</div>
-                    </td>
-                  ))}
-                </tr>
-                <tr className="row-lane-b">
-                  <th scope="row">
-                    <div className="run-cell">
-                      <span className="run-label">
-                        <span className="lane-badge lane-badge-b">B</span>
-                        <span className="run-label-text">{rowLabelB}</span>
-                      </span>
-                    </div>
-                  </th>
-                  {cols.map((c) => (
-                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
-                      <div className="run-cell">{c.b}</div>
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-            )}
-          </div>
-          <ul className="footnotes">
-            {[
-              `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
-              'live step metrics (Visited/Frontier/Path) compared only at the final frame',
-              ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
-              ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
-            ].filter(Boolean).map((t) => <li key={t}>{t}</li>)}
-          </ul>
-        </CardContent>
-      </Card>
+      <h2 id="compare-title" className="compare-title">
+        <span>Algorithm comparison</span>
+        <span className="ct-route">{start} → {goal}</span>
+      </h2>
+      <div className="grid grid-cols-2 gap-3 p-3">
+        {renderKanbanCol('a', rowLabelA, 'lane-badge-a', 'text-map-accent', 'text-map-accent', 'bg-map-accent/15')}
+        {renderKanbanCol('b', rowLabelB, 'lane-badge-b', 'text-lane-b', 'text-lane-b', 'bg-lane-b/15')}
+      </div>
+      <ul className="footnotes">
+        {[
+          `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
+          'live step metrics (Visited/Frontier/Path) compared only at the final frame',
+          ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
+          ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
+        ].filter(Boolean).map((t) => <li key={t}>{t}</li>)}
+      </ul>
     </section>
   )
 
   return (
-    <div className={`app-shell${statsInSidebar ? ' app-shell-fit' : ''}`}>
-    <Guide open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className={`app-shell${fit ? ' app-shell-fit' : ''}`}>
     <div className="app-main">
     <h1 className="app-title">
-      <button
-        className="sidebar-toggle"
-        aria-label={sidebarOpen ? 'Hide the guide' : 'Show the guide'}
-        aria-pressed={sidebarOpen}
-        title={sidebarOpen ? 'Hide guide' : 'Show guide'}
-        onClick={() => setSidebarOpen((v) => !v)}
-      >
-        <BookOpen aria-hidden="true" />
-      </button>
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
       <ThemeToggle />
     </h1>
+
+      <div className="tab-bar" role="tablist">
+        <button
+          role="tab"
+          id="tab-map"
+          aria-controls="tabpanel-map"
+          className={`tab-btn${tab === 'map' ? ' tab-btn-active' : ''}`}
+          aria-selected={tab === 'map'}
+          onClick={() => setTab('map')}
+        >Map</button>
+        <button
+          role="tab"
+          id="tab-guide"
+          aria-controls="tabpanel-guide"
+          className={`tab-btn${tab === 'guide' ? ' tab-btn-active' : ''}`}
+          aria-selected={tab === 'guide'}
+          onClick={() => setTab('guide')}
+        >Guide</button>
+      </div>
+
+      {tab === 'guide' && (
+        <div id="tabpanel-guide" role="tabpanel" aria-labelledby="tab-guide" className="guide-page-wrap">
+          <Guide />
+        </div>
+      )}
+
+      {tab === 'map' && <>
       <div className="query-bar" role="toolbar" aria-label="Search configuration">
-        {/* Row 1: route */}
-        <div className="query-row">
           <Select
             value={start}
             onValueChange={(v) => v && handleStartChange(v as NodeId)}
@@ -1168,9 +1122,7 @@ function App() {
           >
             <Dices aria-hidden="true" />
           </Button>
-        </div>
-        {/* Row 2: algorithm comparison */}
-        <div className="query-row">
+          <span className="query-sep" aria-hidden="true" />
           <div className="query-algo query-algo-a">
             <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
             <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
@@ -1218,26 +1170,12 @@ function App() {
               onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
             />
           </div>
-        </div>
       </div>
 
-      <div className={`workspace${statsInSidebar ? ' workspace-fit' : ''}`}>
+      <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className={`workspace${fit ? ' workspace-fit' : ''}`}>
       <main className="app">
         {/* Toolbar — above the map */}
         <div className="toolbar flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg)] flex-wrap" role="toolbar" aria-label="Visualizer controls">
-
-          {/* Legend */}
-          <ul className="legend" aria-label="Node state colors">
-            <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-            <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-            <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-            <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-            <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-            <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-            <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-          </ul>
-
-          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
 
           {/* Overlays */}
           <Button
@@ -1275,91 +1213,93 @@ function App() {
             <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
           </Button>
 
-          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
-
-          {/* Playback */}
-          <div className="transport">
-            <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
-              <RotateCcw aria-hidden="true" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
-              <ChevronLeft aria-hidden="true" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
-              {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
-              <ChevronRight aria-hidden="true" />
-            </Button>
-          </div>
-
-          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
-
-          {/* Speed */}
-          <div className="speed toolbar-group-speed">
-            <span className="speed-labels">
-              <span>Slow</span>
-              <span className="speed-value">{delay}ms</span>
-              <span>Fast</span>
-            </span>
-            <Slider
-              min={MIN_DELAY} max={MAX_DELAY} step={50}
-              value={MAX_DELAY - delay}
-              onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
-              aria-label="Animation speed"
-            />
-          </div>
-
         </div>
 
         <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
           {/* Lane A */}
-          <section className="lane lane-a" aria-label="Lane A">
-            <div className="lane-header">
-              <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-              <span className="lane-algo-name">{meta.label}</span>
-            </div>
-            <div className="map-wrap">
-              <SVGMap
-                algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
-                result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                heatmapValues={heatA}
-                landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
-                onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
-              />
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
-            </div>
-          </section>
+          <div className="lanes-container">
+            <section className="lane lane-a" aria-label="Lane A">
+              <div className="lane-header">
+                <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+                <span className="lane-algo-name">{meta.label}</span>
+              </div>
+              <div className="map-wrap">
+                <SVGMap
+                  algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
+                  result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                  heatmapValues={heatA}
+                  landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
+                  onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
+                />
+                <span className="heatmap-legend" aria-label="Heatmap scale"
+                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                  <span className="heatmap-legend-label">Near</span>
+                  <span className="heatmap-legend-bar" aria-hidden="true" />
+                  <span className="heatmap-legend-label">Far</span>
+                </span>
+              </div>
+              <div className="map-frame-bar">
+                <ul className="legend" aria-label="Node state colors">
+                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+                </ul>
+              </div>
+            </section>
 
-          <div className="lane-vs" aria-hidden="true">vs</div>
+            <div className="lane-vs" aria-hidden="true">vs</div>
 
-          {/* Lane B */}
-          <section className="lane lane-b" aria-label="Lane B">
-            <div className="lane-header">
-              <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-              <span className="lane-algo-name">{meta2.label}</span>
+            <div className="playback-controls">
+              <div className="transport">
+                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
+                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
+              </div>
+              <div className="speed toolbar-group-speed">
+                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
+                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
+              </div>
             </div>
-            <div className="map-wrap">
-              <SVGMap
-                algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
-                result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                heatmapValues={heatB}
-                landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
-                onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
-              />
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
-            </div>
-          </section>
+
+            {/* Lane B */}
+            <section className="lane lane-b" aria-label="Lane B">
+              <div className="lane-header">
+                <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+                <span className="lane-algo-name">{meta2.label}</span>
+              </div>
+              <div className="map-wrap">
+                <SVGMap
+                  algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
+                  result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                  heatmapValues={heatB}
+                  landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
+                  onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
+                />
+                <span className="heatmap-legend" aria-label="Heatmap scale"
+                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                  <span className="heatmap-legend-label">Near</span>
+                  <span className="heatmap-legend-bar" aria-hidden="true" />
+                  <span className="heatmap-legend-label">Far</span>
+                </span>
+              </div>
+              <div className="map-frame-bar">
+                <ul className="legend" aria-label="Node state colors">
+                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+                </ul>
+              </div>
+            </section>
+          </div>
 
           {/* Merged single-map view — shown only when “Merge maps” is toggled on */}
           <section className="lane lane-merged" aria-label="Merged map (lane A and B)">
@@ -1391,6 +1331,31 @@ function App() {
                 <span className="heatmap-legend-label">Far</span>
               </span>
             </div>
+            <div className="map-frame-bar">
+              <ul className="legend" aria-label="Node state colors">
+                <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+              </ul>
+              <span className="map-frame-sep" aria-hidden="true" />
+              <div className="flex-row">
+              <div className="transport">
+                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
+                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
+              </div>
+              <span className="map-frame-sep" aria-hidden="true" />
+              <div className="speed toolbar-group-speed">
+                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
+                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
+              </div>
+              </div>
+            </div>
           </section>
         </div>
 
@@ -1403,6 +1368,7 @@ function App() {
         </aside>
       )}
       </div>
+      </>}
     </div>
     </div>
   )
