@@ -1,0 +1,793 @@
+/* game.css — ported from origin/ui-game:style.css (784 lines).
+   Every selector scoped under .game-root (transform v4, comma-safe, depth-aware);
+   document-level rules remapped by hand (:root -> .game-root, html/body overflow
+   folded into .game-root, body.picking-landmarks -> .game-root.picking-landmarks).
+   Import LAST in App.tsx (specificity ties with :root are order-resolved). */
+
+/* --- Reset restoration: two teams' CSS in one document. Tailwind preflight +
+   index.css globals would otherwise strip list markers, hijack heading/code
+   fonts and block-centre figures. :where() keeps specificity 0 so every rule
+   below still wins. --- */
+.game-root, .game-root *{ box-sizing: border-box; }
+.game-root :where(ol, ul, menu){ list-style: revert; padding-inline-start: 40px; }
+.game-root :where(h1, h2, h3, h4){ font-family: inherit; font-size: inherit; font-weight: inherit; color: inherit; letter-spacing: inherit; }
+.game-root :where(code){ font-family: inherit; font-size: inherit; color: inherit; display: inline; background: none; padding: 0; border-radius: 0; }
+.game-root :where(img){ display: inline-block; }
+.game-root :where(p){ margin-block: 1em; }
+
+.game-root{
+--bg:#f1f1f1; --panel:#ffffff; --border:#333; --border-soft:#999;
+--text:#111; --text-soft:#555; --header-bg:#e2e2e2;
+/* Search node states: shared by the legend dots and the map node discs.
+   Palette: Okabe-Ito (colour-blind safe), spread from light to dark so the
+   states differ in brightness as well as hue:
+   frontier (light) > visited > current > path > unvisited (dark). */
+--state-current:#CC79A7; --state-frontier:#F0E442; --state-visited:#56B4E9;
+--state-path:#D55E00; --state-unvisited:#1a1a1a;
+--marker-start:#E69F00; --marker-goal:#0072B2; --marker-landmark:#ffd43b;
+--road-tree:#CC79A7; --road-path:#D55E00; --arc:#E69F00;
+--better:#1f7a35; /* comparison table: winning value */
+--disc-opacity:1; /* every node disc on the map, whatever its state */
+}
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/assets/text/MinecraftDefault-Regular.ttf') format('truetype');
+}
+.game-root, .game-root *{box-sizing:border-box;}
+/* ===================== APP SHELL =====================
+   Single column: title, tabs, then the active tab's boxes. */
+.game-root .app-shell{ max-width:1600px; margin:0 auto; }
+.game-root button, .game-root select, .game-root input{ font-family: inherit; } /* form elements ignore body font by default in most browsers */
+.game-root{
+height:100dvh; overflow-y:auto; /* was html{height:100%;overflow:hidden} + body{height:100%;overflow-y:auto} */
+font-size:16px; line-height:1.5; letter-spacing:normal; /* undo index.css :root font:18px/145% + .18px */
+margin:0; font-family:'Minecraft', monospace; color:var(--text);
+padding:16px; padding-top:calc(16px + env(safe-area-inset-top,0px));
+background-color:#1c2a44; /* behind the sky photo while it loads */
+background-image:var(--page-bg);
+background-size:cover; background-position:center; background-repeat:no-repeat;
+background-attachment:fixed;
+}
+/* ===================== NIGHT THEME =====================
+	Only the page background changes: day sky photo -> night sky with the moon.
+	Boxes, frames, buttons and the map keep their look. Night = chosen with the
+	toggle (data-theme="night"), or the system's dark setting when no choice is saved. */
+.game-root{ --page-bg:url('/assets/page-bg.jpg'); }
+.game-root[data-theme="night"]{ --page-bg:url('/assets/page-bg-night.jpg'); }
+@media (prefers-color-scheme: dark){
+.game-root:not([data-theme="day"]){ --page-bg:url('/assets/page-bg-night.jpg'); }
+}
+/* Day / night toggle, fixed top-right; shows the theme it switches to */
+.game-root .theme-toggle{
+position:fixed; top:12px; right:20px; z-index:50; /* right:20px keeps clear of the page scrollbar */
+width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+font-size:20px; line-height:1; cursor:pointer;
+color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+/* Pixel art skin: every top-level box uses the vine-wood 9-slice frame.
+	Numbers below are measured from assets/panel-frame.png (410x388 source):
+	slice = top 131 / right 143 / bottom 136 / left 147.
+	--frame = drawn thickness of the frame (pieces are 32px; 16px = half size). */
+.game-root{ --frame:16px; }
+.game-root .section:not(.title-bar){
+background-color:#FED788;
+background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat-x,repeat-x,repeat-y,repeat-y;
+background-image:
+	url('/assets/pieces/corner-tl.png'),
+	url('/assets/pieces/corner-tr.png'),
+	url('/assets/pieces/corner-bl.png'),
+	url('/assets/pieces/corner-br.png'),
+	url('/assets/pieces/edge-top.png'),
+	url('/assets/pieces/edge-bottom.png'),
+	url('/assets/pieces/edge-left.png'),
+	url('/assets/pieces/edge-right.png');
+background-position:
+	left top, right top, left bottom, right bottom,
+	var(--frame) top, var(--frame) bottom, left var(--frame), right var(--frame);
+background-size:var(--frame) var(--frame);
+padding:calc(var(--frame) + 8px); margin-bottom:12px; border:none;
+image-rendering:pixelated;
+}
+
+
+/* ===================== 1. TITLE =====================
+	Wooden-letter title art (assets/title.png, 1339x167) straight on the sky
+	background: 560px wide on desktop, shrinks with the screen, keeps its shape.
+	The <h1> keeps the text as the image's alt for screen readers. */
+.game-root .title-bar{ text-align:center; margin:0 auto 10px; padding:0; }
+.game-root .title-bar h1{ margin:0; line-height:0; }
+.game-root .title-img{ width:560px; max-width:100%; height:auto; image-rendering:pixelated; }
+
+/* ===================== BREAD BUTTON (just for fun) =====================
+	Under the day/night toggle. Click: the page dims, the bread grows from small
+	to full screen, "GET BREAD" pops in, then everything fades away (~4.5s,
+	slow ~1.1s fade in and ~1.6s fade out).
+	script.js adds .play to the overlay and removes it when the animation ends. */
+.game-root .bread-btn{
+position:fixed; top:60px; right:20px; z-index:50; /* right under .theme-toggle */
+width:40px; height:40px; padding:4px; cursor:pointer;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .bread-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .bread-btn[hidden]{ display:none; } /* secret until unlocked */
+.game-root .bread-btn.reveal{ animation:bread-reveal .45s cubic-bezier(.34,1.56,.64,1); } /* pop in with a bounce */
+@keyframes bread-reveal{ 0%{ transform:scale(0); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+.game-root .bread-overlay{
+display:none; position:fixed; inset:0; z-index:1000; pointer-events:none; overflow:hidden;
+align-items:center; justify-content:center; flex-direction:column;
+background:rgba(0,0,0,.6);
+}
+.game-root .bread-overlay.play{ display:flex; animation:bread-fade 4.5s ease both; }
+/* The whole slice fills the screen: the bread itself is 31 of the sprite's
+   48px (x 10-40, y 17-47), so the sprite is drawn at 142vmin to make the
+   bread ~92% of the smaller screen side. Its centre (sprite pixel 25.5 x 32.5
+   = 53.1% / 67.7%) is pinned to the screen centre, and it grows from there. */
+.game-root .bread-big{
+position:absolute; left:50%; top:50%;
+width:142vmin; height:auto; max-width:none; image-rendering:pixelated;
+transform-origin:53.1% 67.7%;
+animation:bread-grow 4.5s cubic-bezier(.2,.8,.2,1) both;
+}
+.game-root .bread-text{
+position:absolute; bottom:12vh; left:0; right:0; text-align:center; /* below the eyes */
+font-family:'Minecraft', monospace; font-size:clamp(32px, 8vw, 96px);
+color:#FFE9B8; letter-spacing:4px;
+text-shadow:4px 4px 0 #4a3a20, -2px -2px 0 #4a3a20, 2px -2px 0 #4a3a20, -2px 2px 0 #4a3a20;
+animation:bread-pop 4.5s ease both;
+}
+@keyframes bread-fade{ 0%{ opacity:0; } 25%{ opacity:1; } 65%{ opacity:1; } 100%{ opacity:0; } }
+@keyframes bread-grow{
+0%{ transform:translate(-53.1%, -67.7%) scale(.04); }
+40%{ transform:translate(-53.1%, -67.7%) scale(1); }
+100%{ transform:translate(-53.1%, -67.7%) scale(1.06); }
+}
+@keyframes bread-pop{ 0%, 30%{ transform:scale(0); } 40%{ transform:scale(1.15); } 47%, 100%{ transform:scale(1); } }
+
+/* ===================== DUCK (just for fun) =====================
+	Bottom of the Algorithm Comparison box, merged view only. Click: quack
+	(synthesized in script.js) and a hop that grows with each click (--hop);
+	the 10th click rolls it off the screen (script.js). */
+.game-root .duck-btn{
+display:block; margin:10px auto 0; padding:0; width:64px; height:64px;
+background:none; border:none; cursor:pointer;
+}
+.game-root .duck-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; } /* keeps the wide lying-down sprite in proportion, on the same ground line */
+.game-root .duck-btn:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .duck-btn.hop{ animation:duck-hop .35s ease-out; }
+@keyframes duck-hop{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(var(--hop, -12px)) rotate(-6deg); } }
+.game-root .map-row:has(.compare-wrap.is-split) .duck-btn{ display:none; } /* split view: no duck */
+/* While the duck is on its way to a home, the empty home keeps the duck's
+   footprint so script.js can tell when it's on screen and roll the duck in.
+   The Map home only counts in merged view (the duck isn't shown in split). */
+.game-root .duck-home-waiting{ height:74px; }
+/* Guide perches: fixed slots along the top edge of the intro card (--slot =
+   centre, % of the card width), so the animals stay evenly spread at any
+   width. Each slot keeps an animal-sized footprint even while empty, so
+   script.js can tell when it's on screen. Animals stand on the card's frame. */
+.game-root .guide-perch{
+position:absolute; left:var(--slot); bottom:calc(100% - 10px); transform:translateX(-50%);
+width:80px; height:80px; z-index:40;
+display:flex; align-items:flex-end; justify-content:center; pointer-events:none;
+}
+.game-root .guide-perch > *{ pointer-events:auto; }
+.game-root .guide-perch .duck-btn{ margin:0; }
+.game-root .perch-bread{ width:56px; height:56px; padding:0; background:none; border:none; cursor:pointer; }
+.game-root .perch-bread[hidden]{ display:none; }
+.game-root .perch-bread img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .perch-bread:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .perch-whale{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
+.game-root .perch-whale[hidden]{ display:none; }
+.game-root .perch-whale img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
+.game-root .perch-whale:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .perch-capy{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
+.game-root .perch-capy[hidden]{ display:none; }
+.game-root .perch-capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
+.game-root .perch-capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+/* bird / cat once settled in a slot: normal flow inside the slot */
+.game-root .bird.in-slot, .game-root .cat-stand.in-slot{ position:static; pointer-events:auto; }
+.game-root .map-row:has(.compare-wrap.is-split) .duck-home-waiting{ display:none; }
+.game-root .duck-btn[hidden]{ display:none; } /* rolled away */
+
+/* ===================== PEEKING CAT (just for fun) =====================
+	Sits on the bottom edge of a map (inside .algo-canvas, which clips it), so
+	only the head shows when script.js slides it up; the body stays below the
+	edge. Above the map art and HUD; click = meow. */
+.game-root .peek-cat{
+position:absolute; bottom:0; z-index:22; width:96px; height:96px; padding:0;
+background:none; border:none; cursor:pointer; transform:translateY(100%);
+}
+.game-root .peek-cat[hidden]{ display:none; }
+.game-root .peek-cat img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .peek-cat:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; }
+
+/* Standing cat: on top of the A vs B algorithm box, near its right end, after
+   the peeking cat goes unclicked. script.js pops it in and runs it off. */
+.game-root .algo-box{ position:relative; }
+.game-root .cat-stand{
+position:absolute; bottom:calc(100% - 10px); right:60px; z-index:40;
+width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer;
+}
+.game-root .cat-stand[hidden]{ display:none; }
+.game-root .cat-stand img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .cat-stand:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+
+/* ===================== CAPYBARA (just for fun) =====================
+	Stands on the top edge of the map box (near its right end) after rising out
+	of it; script.js turns it into pixel dust (canvas) and rebuilds it on its
+	Guide slot. */
+.game-root .map-panel{ position:relative; }
+.game-root .capy{
+position:absolute; bottom:calc(100% - 10px); right:80px; z-index:40;
+width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer;
+}
+.game-root .capy[hidden]{ display:none; }
+.game-root .capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+/* full-screen canvas the dust particles are drawn on (added/removed by script.js) */
+.game-root .capy-dust{ position:fixed; inset:0; z-index:970; pointer-events:none; }
+
+/* ===================== BIRD (just for fun) =====================
+	Flies in (script.js, position:fixed while flying) and perches standing on
+	the top edge of a box: the route box above the Random button, or the
+	Guide intro card. While perched it sits inside that box (.bird-perched). */
+.game-root .route-box, .game-root .guide-intro{ position:relative; } /* perch anchors */
+.game-root .bird{
+position:fixed; left:0; top:0; z-index:950; width:64px; height:64px; padding:0;
+background:none; border:none; cursor:pointer; pointer-events:none;
+}
+.game-root .bird[hidden]{ display:none; }
+.game-root .bird img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; }
+.game-root .bird.bird-perched{ position:absolute; top:auto; bottom:calc(100% - 10px); z-index:40; pointer-events:auto; }
+.game-root .bird:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+
+/* ===================== TABS (Map | Guide) ===================== */
+.game-root .tab-bar{ display:flex; justify-content:center; gap:6px; margin:0 0 12px; }
+.game-root .tab-btn{
+padding:6px 18px; font-size:12px; letter-spacing:1px; cursor:pointer;
+background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .tab-btn.active{ background:#c9893f; color:#fff; }
+.game-root .tab-panel[hidden]{ display:none; }
+
+/* ===================== GUIDE PAGE =====================
+	Separate wood-framed boxes: an intro box (full width), then two columns,
+	a sticky topic-list box (left, current topic highlighted by script.js) and
+	one box per topic (right). Everything uses the app's pixel font (formulas
+	keep KaTeX's math font). */
+.game-root .guide-page{ display:block; }
+.game-root .guide-head{ margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #c9893f; }
+.game-root .guide-eyebrow{ display:block; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
+.game-root .guide-title{ margin:4px 0 0; font-size:26px; color:#4a3a20; }
+.game-root .guide-body{
+font-family:'Minecraft', monospace; /* same pixel font as the rest of the app */
+font-size:17px; line-height:1.75; color:#2e2414;
+}
+.game-root .guide-lede{ font-size:18px; margin:0; }
+.game-root .guide-layout{ display:grid; grid-template-columns:290px minmax(0,1fr); gap:12px; align-items:start; } /* list box wide enough for the bigger list text */
+.game-root .guide-nav{
+font-family:'Minecraft', monospace; font-size:17px; line-height:1.4;
+display:flex; flex-direction:column; gap:2px;
+position:sticky; top:12px; /* the list box follows you down the page */
+}
+.game-root .guide-nav a{ color:#4a3a20; text-decoration:none; padding:5px 8px; border-radius:4px; }
+.game-root .guide-nav a:hover, .game-root .guide-nav a:focus-visible{ text-decoration:underline; }
+.game-root .guide-nav a.active{ background:#FFE9B8; box-shadow:inset 3px 0 0 #c9893f; font-weight:bold; } /* topic being read */
+.game-root .guide-sections{ min-width:0; }
+.game-root .guide-section{ scroll-margin-top:12px; }
+.game-root .guide-section > :last-child{ margin-bottom:0; }
+.game-root .guide-section h3{
+font-family:'Minecraft', monospace; font-size:24px; color:#4a3a20;
+margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid #c9893f;
+}
+.game-root .guide-section p, .game-root .guide-section ul, .game-root .guide-section ol{ margin:0 0 12px; }
+.game-root .guide-section li{ margin-bottom:6px; }
+.game-root .guide-note{
+margin:0 0 12px; padding:10px 14px;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
+.game-root .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:4px; }
+.game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:16px; }
+.game-root .guide-table th{
+font-family:'Minecraft', monospace; font-size:13px; font-weight:normal; text-transform:uppercase;
+letter-spacing:1px; color:var(--text-soft); text-align:left;
+}
+.game-root .guide-table th, .game-root .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
+.game-root .guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
+.game-root .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:4px; background:#fff; }
+.game-root .guide-figure figcaption{ font-size:15px; color:var(--text-soft); margin-top:6px; }
+.game-root .guide-figure-missing{
+padding:28px 14px; font-size:13px; color:var(--text-soft);
+border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
+}
+.game-root .guide-foot{ font-size:14px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
+.game-root .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:3px; }
+
+/* ===================== 2. CONTROL ROW =====================
+	Swap targets: Button/Start button.png (behind selects), Random button */
+.game-root .control-row{
+display:flex; align-items:center; justify-content: center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
+}
+.game-root .control-row label{ font-size:clamp(10px, 2.3vw, 12px); font-weight:bold; color:var(--text-soft); }
+/* Pixel art skin: every <select> on the page sits on the vine plank
+	(Button/Start button.png, 326x102). It is drawn with border-image so only the
+	plank's middle stretches: the vine ends (72px of the source each side) keep
+	their shape at any width. The arrow lives on .select-wrap (below): the plank's
+	border-image fill paints over a select's own background, hiding anything there. */
+.game-root select{
+appearance:none; -webkit-appearance:none;
+border:0 solid transparent;
+border-image-source:url('/assets/Button/Start button.png');
+border-image-slice:0 72 fill;
+border-image-width:0 28px; /* 72px of the 102px-tall source at the 40px dropdown height */
+border-image-repeat:stretch;
+background:transparent;
+padding:10px 30px 10px 16px; min-width:110px;
+font-weight:bold; color:#4a3a20;
+image-rendering:pixelated; cursor:pointer;
+}
+/* Wrapper around every <select>: draws the pixel arrow on top of the plank.
+	Clicks pass through the arrow to the select. */
+.game-root .select-wrap{ position:relative; display:inline-flex; }
+.game-root .select-wrap::after{
+content:''; position:absolute; right:12px; top:50%; width:10px; height:6px;
+transform:translateY(-50%); pointer-events:none;
+background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath fill='%234a3a20' d='M0 0h10v2H8v2H6v2H4V4H2V2H0z'/%3E%3C/svg%3E") center / 10px 6px no-repeat;
+}
+.game-root .control-row input[type=number]{
+padding:8px 10px; border:2px solid var(--border); background:#fff; font-size:clamp(12px, 3vw, 14px);
+}
+.game-root .icon-btn{
+width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:16px;
+}
+/* Pixel art skin: Random button uses the dice icon asset, text glyph hidden */
+.game-root #randomBtn{
+border:none; background-color:transparent;
+background-image:url('/assets/Button/Random button.png');
+background-repeat:no-repeat; background-size:100% 100%;
+font-size:0; image-rendering:pixelated;
+}
+.game-root .divider-vs{ font-weight:bold; padding:0 6px; color:var(--text-soft); }
+.game-root .small-btn{
+padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:12px;
+}
+.game-root .small-btn.active{ background:#333; color:#fff; }
+
+/* ===================== LANDMARK CONTROL =====================
+	One dropdown per lane (same plank skin as every select); options come from script.js. */
+.game-root .landmark-control{ display:inline-flex; align-items:center; gap:4px; }
+.game-root .lm-label{ font-size:10px; color:var(--text-soft); }
+
+/* ===================== ROUTE BOX + ALGORITHM BOX =====================
+	Two separate wood boxes on one row: [From → To 🎲]  [A pill  VS  B pill].
+	Placed after the landmark rules so the smaller sizes here win over their
+	min-width/height. */
+.game-root .top-row{ display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; }
+.game-root .top-row > .section{ margin-bottom:12px; }
+.game-root .control-row{ gap:8px; }
+.game-root .route-box{ flex:none; }
+.game-root .algo-box{ flex:1; }
+.game-root .lane-pill{
+display:flex; align-items:center; gap:6px; padding:3px 6px 3px 4px;
+border-radius:4px; background:#FED788;
+}
+.game-root .lane-sign{ height:32px; width:auto; image-rendering:pixelated; display:block; }
+.game-root .route-arrow{ font-size:12px; color:var(--text-soft); }
+.game-root .control-row select{ height:40px; padding:4px 30px 4px 14px; font-size:13px; text-indent:0 !important; } /* matches the 40px Random button */
+.game-root .control-row .city-select{ min-width:0; width:140px; }
+.game-root .control-row .algo-select{ min-width:0; width:160px; }
+.game-root .control-row .landmark-dropdown{ min-width:0; width:120px; }
+.game-root .control-row .icon-btn{ width:40px; height:40px; flex:none; }
+.game-root .control-row .divider-vs{ padding:0 2px; font-size:12px; }
+
+/* ===================== TOOLS BAR =====================
+	[Straight Line] [Heatmap] [Merge] | [Landmarks: OFF]. The overlay toggles are
+	real checkboxes (hidden) inside a label, so the label looks like a button and
+	reads "pressed" while checked. */
+.game-root .tools-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.game-root .tool-toggle{
+display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px;
+font:inherit; font-size:11px; color:#4a3a20; cursor:pointer; user-select:none;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .tool-toggle input{ position:absolute; opacity:0; width:0; height:0; margin:0; }
+.game-root .tool-toggle:has(input:checked), .game-root .tool-toggle.active{ background:#c9893f; color:#fff; }
+.game-root .tool-toggle:has(input:focus-visible), .game-root .tool-toggle:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; }
+.game-root .tools-sep{ width:2px; height:22px; background:#c9893f; margin:0 4px; }
+
+/* ===================== MAP PANEL =====================
+	Header (A vs B), map(s), legend bar, playback bar. */
+.game-root .map-panel{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+.game-root .map-panel-head{ display:flex; align-items:center; gap:8px; font-size:14px; }
+.game-root .map-panel-head .lane-sign{ height:22px; }
+.game-root .head-lane{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
+/* Merge off: no VS; two columns with the same gap as the maps, so B sits right above map B */
+.game-root .map-panel:has(.compare-wrap.is-split) .map-panel-head{ display:grid; grid-template-columns:1fr 1fr; column-gap:12px; }
+.game-root .map-panel:has(.compare-wrap.is-split) .map-panel-head .divider-vs{ display:none; }
+.game-root .compare-wrap{ display:flex; gap:12px; align-items:stretch; position:relative; }
+.game-root .algo-panel{ flex:1; display:flex; flex-direction:column; min-width:0; margin-bottom:0; }
+/* Merge on (default): panel B stays in the DOM (so mapViewports[1] and the
+   DevMode code keep working) but renders invisibly over panel A; lane B draws
+   on map A. Merge off (.is-split): panel B shows beside A with lane B on it. */
+.game-root .algo-panel-hidden{
+  position:absolute; inset:0; visibility:hidden; pointer-events:none; z-index:-1;
+}
+.game-root .compare-wrap.is-split > .algo-panel-hidden{
+  position:static; visibility:visible; pointer-events:auto; z-index:auto;
+}
+/* VS badge: centred over the gap between map A and map B with Merge off;
+   hidden with Merge on. Only the badge itself takes clicks (whale jump), so
+   the maps beside it stay draggable. */
+.game-root .vs-badge{
+  display:none; position:absolute; left:50%; top:50%; z-index:25;
+  width:56px; height:56px; padding:0; transform:translate(-50%, -50%);
+  background:none; border:none; cursor:pointer; transition:filter .12s ease;
+}
+.game-root .vs-badge img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
+.game-root .vs-badge:hover, .game-root .vs-badge:focus-visible{ filter:brightness(1.12); }
+.game-root .vs-badge:active{ filter:brightness(.9); }
+.game-root .vs-badge:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:50%; }
+.game-root .compare-wrap.is-split > .vs-badge{ display:block; }
+/* Whale (just for fun): leaps from the bottom of one map (random) over the VS
+   badge and splashes down at the bottom of the other. script.js moves it; above everything. */
+.game-root .whale{
+  position:absolute; left:0; top:0; z-index:30; width:96px; height:96px;
+  image-rendering:pixelated; pointer-events:none;
+}
+.game-root .whale[hidden]{ display:none; }
+/* Pixel splash: a ring of small square droplets that burst out and fade */
+.game-root .whale-splash{
+  position:absolute; left:0; top:0; z-index:29; width:8px; height:8px; pointer-events:none;
+  background:#fff; transform:translate(-50%, -50%);
+  box-shadow:
+    -24px -6px 0 #fff, 24px -6px 0 #fff, -14px -20px 0 #cfefff, 14px -20px 0 #cfefff,
+    0 -28px 0 #fff, -32px 6px 0 #cfefff, 32px 6px 0 #cfefff, -8px -12px 0 #cfefff, 8px -12px 0 #cfefff;
+  animation:whale-splash .6s ease-out forwards;
+}
+@keyframes whale-splash{
+  0%{ opacity:1; transform:translate(-50%, -50%) scale(.3); }
+  100%{ opacity:0; transform:translate(-50%, -80%) scale(1.4); }
+}
+/* Merge on: the merged map is exactly as wide as ONE map in split view, and
+   the map box shrinks to hug it (the card sidebar moves in beside it; the row
+   is centred). --split-map is computed from the row's width (.map-row is a
+   size container), so both modes match at any window size:
+   (row - sidebar - row gap - map box padding - gap between the two maps) / 2.
+   Height stays the same as split view (.map-panel .algo-canvas min-height). */
+.game-root .map-row{ container-type:inline-size; }
+.game-root .map-row{ --split-map:calc((100cqw - 520px - 12px - 2 * (var(--frame) + 8px) - 12px) / 2); }
+/* the cards box fills the rest of the row (merged only), and each lane's four
+   cards sit two per row so numbers stay close to their labels */
+.game-root .map-row:has(.compare-wrap:not(.is-split)){ grid-template-columns:auto minmax(520px, 1fr); }
+.game-root .map-row:has(.compare-wrap:not(.is-split)) .stats-col{
+display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start;
+}
+.game-root .map-row:has(.compare-wrap:not(.is-split)) .stats-head{ grid-column:1 / -1; }
+.game-root .compare-wrap:not(.is-split) > .algo-panel:first-child{ flex:none; width:var(--split-map); }
+/* pin the box to the map's width so the legend / playback rows wrap instead of widening it */
+.game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:calc(var(--split-map) + 2 * (var(--frame) + 8px)); }
+.game-root .legend-bar{
+display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:11px;
+padding:6px 10px; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .legend-bar .dot{
+width:11px; height:11px; border-radius:50%; display:inline-block; margin-right:5px;
+border:1px solid #333; vertical-align:middle;
+}
+.game-root .legend-bar .dot-hollow{ background:#fff; border-width:2px; }
+.game-root .legend-bar .dot-split{ background:linear-gradient(90deg, var(--state-frontier) 50%, var(--state-visited) 50%); }
+.game-root .legend-bar .road-dash{
+display:inline-block; width:20px; margin-right:5px; vertical-align:middle;
+border-top:3px dashed var(--road-path);
+}
+.game-root .legend-merged[hidden]{ display:none; }
+
+/* Merged map: tell the lanes apart. Each city disc is split down the middle
+	(left half = lane A's state, right half = lane B's, same legend colours);
+	lane B's roads draw thinner and dashed on top of lane A's solid roads.
+	Negative insets keep the landmark outline that sits outside the disc. */
+.game-root .compare-wrap:not(.is-split) .lane-A .node-disc{ clip-path:inset(-8px 50% -8px -8px); }
+.game-root .compare-wrap:not(.is-split) .lane-B .node-disc{ clip-path:inset(-8px -8px -8px 50%); }
+.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-tree,.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:4px; stroke-dasharray:10 7; }
+.game-root .playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:nowrap; } /* buttons + slider on one line, centred; the slider shrinks to fit */
+.game-root .playback-bar .playback-row{ margin:0; }
+.game-root .playback-bar .speed-row{ flex:0 1 auto; min-width:0; }
+/* Split view: same width as in merged view (one map wide, --split-map), centred,
+   so the buttons and speed slider look identical in both modes */
+.game-root .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:var(--split-map); max-width:100%; margin:0 auto; }
+.game-root .algo-canvas{
+flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
+color:var(--text-soft); font-size:14px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
+border-radius:8px; /* slightly rounded map corners (overflow:hidden clips the map to them) */
+position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
+user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
+}
+.game-root .algo-canvas img, .game-root .algo-canvas canvas, .game-root .algo-canvas svg{ -webkit-user-drag:none; } /* ...or draggable as an image */
+/* Zoom/pan target: script.js sets its transform; origin top-left keeps the math simple */
+.game-root .map-stage{
+flex:1; align-self:stretch; display:flex; align-items:center; justify-content:center;
+position:relative; /* containing block for DevMode marker squares */
+transform-origin:0 0; will-change:transform; cursor:grab;
+}
+.game-root .map-stage.dragging{ cursor:grabbing; }
+/* Sprites placed on the map (castles, ...): positioned by script.js in stage coords */
+.game-root .map-entity-layer{ position:absolute; z-index:1; pointer-events:none; overflow:visible; contain:layout; }
+/* ---- search-state overlays (script.js: makeLaneOverlay) ---- */
+.game-root .map-svg-layer{ position:absolute; z-index:2; pointer-events:none; overflow:visible; }
+.game-root .map-svg-layer .road-tree{ stroke:var(--road-tree); stroke-linecap:round; stroke-width: 9px; opacity:1; }
+.game-root .map-svg-layer .road-path{ stroke:var(--road-path); stroke-linecap:round; stroke-width: 10px; opacity:1; }
+.game-root .map-svg-layer .arc{ fill:none; stroke:var(--arc); stroke-linecap:round; }
+.game-root .map-svg-layer .arc-chord{ stroke:var(--arc); stroke-dasharray:6 8; opacity: 1;; }
+.game-root .map-svg-layer .heat{ opacity:.6; }
+/* Node disc: oval on each city's road junction; fill = state, ring = start/goal */
+.game-root .node-disc{
+position:absolute; left:0; top:0; z-index: 3; box-sizing:border-box; border-radius:50%;
+border:2px solid #222; background:var(--state-unvisited);
+box-shadow:0 0 0 2px #fff; /* white ring so every state colour pops off the green/blue map */
+opacity:var(--disc-opacity); /* one transparency for all states (colours themselves are solid) */
+}
+.game-root .node-disc.state-current{ background:var(--state-current); }
+.game-root .node-disc.state-frontier{ background:var(--state-frontier); }
+.game-root .node-disc.state-visited{ background:var(--state-visited); }
+.game-root .node-disc.state-path{ background:var(--state-path); }
+.game-root .node-disc.is-start{ background:var(--marker-start); }
+.game-root .node-disc.is-goal{ background:var(--marker-goal); }
+.game-root .node-disc.is-landmark{ outline:2px dashed var(--marker-landmark); outline-offset:3px; }
+.game-root .node-label{
+position:absolute; left:0; top:0; white-space:nowrap; pointer-events:none;
+color:#fff; letter-spacing:.5px;
+/* --label-font is set per frame from zoom (script.js); initials show larger */
+font-size:calc(var(--label-font, 13px) * 1.6);
+text-shadow:1px 0 #222, -1px 0 #222, 0 1px #222, 0 -1px #222;
+}
+.game-root .node-label.full{ font-size:var(--label-font, 13px); } /* hovered / tapped: full city name */
+/* Distance badges: one km chip per road at its midpoint (script.js:
+	makeDistanceLayer). Text grows with zoom via --km-font. Explored roads use
+	the road-tree colour, final-path roads the road-path colour. */
+.game-root .km-layer[hidden]{ display:none; }
+.game-root .km-badge{
+position:absolute; left:0; top:0; pointer-events:none; white-space:nowrap;
+font-size:var(--km-font, 10px); line-height:1; padding:.2em .4em;
+color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:3px;
+font-variant-numeric:tabular-nums;
+}
+.game-root .km-badge.km-tree{ background:var(--road-tree); border-color:var(--road-tree); color:#1a1a1a; } /* dark text: readable on the light pink-purple */
+.game-root .km-badge.km-path{ background:var(--road-path); border-color:var(--road-path); color:#fff; }
+.game-root.picking-landmarks .map-stage{ cursor:crosshair; } /* Tool on: click castles */
+
+.game-root .dev-square-layer{ z-index:10; } /* DevMode squares above every sprite layer (those use z 1..9) */
+.game-root .map-entity{
+position:absolute; left:0; top:0; pointer-events:none; user-select:none;
+image-rendering:auto; /* smooth resampling from the 512px source at every zoom */
+}
+.game-root .map-entity.pixelated{ image-rendering:pixelated; } /* low-res sprites (resScale < 1): keep hard pixels */
+.game-root .map-img{
+max-width:100%; max-height:100%; width:auto; height:auto; image-rendering:pixelated;
+user-select:none; -webkit-user-select:none; pointer-events:none;
+}
+/* Top-right HUD: live coordinate/scale readout + RESET button */
+.game-root .map-hud{
+position:absolute; top:8px; right:8px; z-index:20;
+display:flex; align-items:center; gap:6px; pointer-events:none;
+}
+.game-root .map-hud > *{ pointer-events:auto; }
+.game-root .map-readout{
+padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
+font-size:10px; white-space:nowrap; pointer-events:none !important;
+font-variant-numeric:tabular-nums; transition:opacity .25s;
+}
+.game-root .map-readout.hidden{ opacity:0; } /* only visible once the view leaves its resting position/scale */
+.game-root .map-reset{
+padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
+font-size:10px; cursor:pointer; transition:opacity .2s;
+}
+.game-root .map-reset:hover{ background:#eee; }
+.game-root .map-reset.at-home{ opacity:.45; } /* already at default view */
+/* Usage hint along the bottom of each map; fades out for good once either map is moved */
+.game-root .map-hint{
+position:absolute; left:0; right:0; bottom:10px; z-index:20; margin:0; padding:0 12px;
+text-align:center; font-size:14px; color:#555; opacity:.75;
+pointer-events:none; transition:opacity .6s ease;
+}
+.game-root .map-hint.hidden{ opacity:0; }
+
+/* ===================== PLAYBACK BUTTONS =====================
+	Swap targets: playback icon buttons, slider-track/handle */
+.game-root .overlay-icon{ width:16px; height:16px; object-fit:contain; image-rendering:pixelated; }
+.game-root .playback-row{ display:flex; gap:6px; justify-content:center; margin-bottom:10px; }
+.game-root .playback-row button{
+width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer;
+}
+.game-root .playback-row button.playing{ background:#333; color:#fff; }
+
+/* Pixel art skin: Play and Previous use the wood-framed square icon assets.
+	Text content (the arrow glyphs) is hidden since the art already shows the icon. */
+.game-root #playBtn, .game-root #prevBtn{
+width:40px; height:40px; border:none; background-color:transparent;
+background-repeat:no-repeat; background-size:100% 100%;
+font-size:0; image-rendering:pixelated;
+}
+/* "Start" (play/pause logic unchanged) sits on the vine plank asset (326x102
+   source). 96px wide to leave the speed slider room; drawn with border-image
+   like the dropdowns, so only the plank's middle narrows and the vine ends
+   (72px of the source each side = 28px at 40px tall) keep their shape. */
+.game-root #playBtn{
+width:96px; height:40px; padding:0;
+font-size:12px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
+background-image:none;
+border:0 solid transparent;
+border-image:url('/assets/Button/Start button.png') 0 72 fill / 0 28px stretch;
+}
+.game-root #prevBtn{ background-image:url('/assets/Button/Back button.png'); }
+.game-root #playBtn.playing{ filter:brightness(0.75); } /* darken when active, matches our earlier "darken for pressed state" approach */
+
+/* Pixel art skin: Restart uses its own circular-arrow icon asset (it was
+	wrongly wearing the "START" pill before, even though it always restarted). */
+.game-root #restartBtn{
+width:40px; height:40px; border:none; background-color:transparent;
+background-image:url('/assets/Button/Restart button.png');
+background-repeat:no-repeat; background-size:100% 100%;
+font-size:0; image-rendering:pixelated; cursor:pointer;
+}
+
+/* Pixel art skin: Next now uses the forward-triangle art (reassigned from Play) */
+.game-root #nextBtn{
+width:40px; height:40px; border:none; background-color:transparent;
+background-image:url('/assets/Button/Foward button.png');
+background-repeat:no-repeat; background-size:100% 100%;
+font-size:0; image-rendering:pixelated; cursor:pointer;
+}
+.game-root .speed-row{ display:flex; align-items:center; gap:6px; font-size:11px; }
+/* Ends show the limits (Slow 1500ms / Fast 0ms); the live delay sits under the slider */
+.game-root .speed-end{ text-align:center; line-height:1.3; }
+.game-root .speed-end small{ font-size:9px; color:var(--text-soft); }
+.game-root .speed-track{ flex:0 1 220px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:70px; } /* slider at most 220px long, shrinks to fit the row */
+.game-root .speed-track .pixel-slider{ width:100%; flex:none; min-width:0; }
+.game-root .speed-value{ font-size:11px; font-variant-numeric:tabular-nums; }
+
+/* Pixel-art slider. Track and fill use border-image so only the bar's middle
+	stretches and the rounded ends stay crisp (slice 14px of the 417x42 source).
+	The fill is clipped at the thumb's position (--frac 0..1, set by script.js);
+	the handle covers its cut edge. */
+.game-root .pixel-slider{
+--track-h:14px; --thumb:24px;
+position:relative; flex:1; height:var(--thumb); min-width:120px;
+}
+.game-root .pixel-slider::before, .game-root .ps-fill{
+content:''; position:absolute; left:0; right:0; top:50%; height:var(--track-h);
+transform:translateY(-50%); box-sizing:border-box;
+border-style:solid; border-width:0 5px; image-rendering:pixelated; pointer-events:none;
+}
+.game-root .pixel-slider::before{ border-image:url('/assets/Slider/Unfill.png') 0 14 fill / 0 5px stretch; }
+.game-root .ps-fill{
+border-image:url('/assets/Slider/Fill.png') 0 14 fill / 0 5px stretch;
+/* the fill's visible end follows the thumb centre, which travels thumb/2 .. width - thumb/2 */
+clip-path:inset(0 calc(100% - (var(--thumb) / 2 + (100% - var(--thumb)) * var(--frac, .5))) 0 0);
+}
+.game-root .pixel-slider input[type=range]{
+position:absolute; inset:0; width:100%; height:100%; margin:0;
+appearance:none; -webkit-appearance:none; background:transparent; cursor:pointer;
+}
+.game-root .pixel-slider input[type=range]::-webkit-slider-runnable-track{ background:transparent; height:100%; }
+.game-root .pixel-slider input[type=range]::-moz-range-track{ background:transparent; }
+.game-root .pixel-slider input[type=range]::-webkit-slider-thumb{
+-webkit-appearance:none; width:var(--thumb); height:var(--thumb); border:none;
+background:url('/assets/Slider/Handle.png') center / 100% 100% no-repeat; image-rendering:pixelated;
+}
+.game-root .pixel-slider input[type=range]::-moz-range-thumb{
+width:var(--thumb); height:var(--thumb); border:none; border-radius:0;
+background:url('/assets/Slider/Handle.png') center / 100% 100% no-repeat; image-rendering:pixelated;
+}
+.game-root .pixel-slider input[type=range]:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; }
+
+/* ===================== 5. MAP ROW + COMPARISON SIDEBAR =====================
+	Map on the left, wood-framed stats sidebar on the right. Inside the frame,
+	A | B columns of flat cards (header pill, Live, Result, Complexity, Landmarks). */
+.game-root .map-row{ display:grid; grid-template-columns:minmax(0,1fr) 520px; gap:12px; align-items:stretch; }
+.game-root .map-panel .algo-canvas{ min-height:420px; }
+/* Sidebar matches the map panel's height: contain:size stops its content from
+   growing the row, and anything taller scrolls inside the frame. */
+.game-root .stats-sidebar{ contain:size; overflow:hidden; display:flex; flex-direction:column; }
+/* The wood frame stays whole: scrolling happens on this inner area, so the
+   scrollbar sits inside the frame instead of over its right edge */
+.game-root .stats-scroll{
+flex:1; min-height:0; overflow-y:auto; padding-right:6px;
+scrollbar-width:thin; scrollbar-color:#c9893f rgba(255,255,255,.35); /* track: white, 35% opacity */
+}
+.game-root .stats-scroll::-webkit-scrollbar{ width:8px; }
+.game-root .stats-scroll::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
+.game-root .stats-scroll::-webkit-scrollbar-track{ background:rgba(255,255,255,.35); border-radius:4px; }
+/* Whole page: <body> scrolls instead of the browser window, so its scrollbar
+   sits over the sky background (the window's own scrollbar strip is painted
+   by the browser and can't be see-through). Same thin brown handle as the
+   cards, transparent track. script.js listens for scroll in the capture phase. */
+.game-root{ scrollbar-width:thin; scrollbar-color:#c9893f transparent; }
+.game-root::-webkit-scrollbar{ width:8px; }
+.game-root::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
+.game-root::-webkit-scrollbar-track{ background:transparent; }
+.game-root .stats-title{ text-align:center; margin:0 0 4px; font-size:22px; }
+.game-root .stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:15px; }
+.game-root .stats-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.game-root .stats-col{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+.game-root .stats-head{
+display:flex; align-items:center; gap:8px; padding:6px 8px; min-width:0;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:16px; color:#4a3a20;
+}
+.game-root .stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
+.game-root .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
+/* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
+.game-root .stats-card h4{
+margin:0 0 6px; padding-bottom:4px; font-size:15px; letter-spacing:1px; text-transform:uppercase;
+color:#4a3a20; font-weight:bold; border-bottom:2px solid #c9893f;
+}
+.game-root .stat-row{
+display:flex; align-items:center; justify-content:space-between; gap:6px;
+padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
+}
+.game-root .stat-row:last-child{ border-bottom:none; }
+.game-root .stat-row > span{ color:#5a4630; white-space:nowrap; } /* label: darker than --text-soft for readability */
+.game-root .stat-row > b{ font-weight:bold; color:#111; text-align:right; white-space:nowrap; padding:1px 6px; border-radius:999px; }
+/* Long values (path, KaTeX complexity) go under their label instead of overflowing */
+.game-root .stat-row-wrap{ flex-direction:column; align-items:flex-start; gap:2px; }
+.game-root .stat-row-wrap > b{ white-space:normal; text-align:left; padding-left:0; overflow-wrap:anywhere; }
+.game-root .stat-row > b.better{ color:#fff; background:var(--better); padding-left:6px; } /* winning value chip */
+.game-root .no-caps{ text-transform:none; } /* keep µ from uppercasing into a Greek capital mu */
+.game-root .stat-row .katex{ font-size:1em; }
+.game-root .stats-caption{ font-size:12px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
+@media (max-width:1200px){
+.game-root .map-row{ grid-template-columns:1fr; } /* not enough width for map + sidebar: stack */
+.game-root .map-row{ --split-map:calc((100cqw - 2 * (var(--frame) + 8px) - 12px) / 2); }
+.game-root .map-row:has(.compare-wrap:not(.is-split)){ grid-template-columns:1fr; justify-items:center; }
+.game-root .map-row:has(.compare-wrap:not(.is-split)) > .stats-sidebar{ justify-self:stretch; }
+.game-root .stats-sidebar{ contain:none; overflow:visible; }
+.game-root .stats-scroll{ overflow:visible; padding-right:0; }
+}
+
+/* ===================== MOBILE BREAKPOINT =====================
+	Under 600px: stack the two maps (Merge off) and the playback bar, full-width title. */
+@media (max-width: 800px){
+.game-root .guide-layout{ grid-template-columns:1fr; gap:0; } /* list box above the topic boxes */
+.game-root .guide-nav{ position:static; }
+}
+@media (max-width: 600px){
+.game-root{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
+
+.game-root .compare-wrap{ flex-direction:column; }
+.game-root .algo-canvas{ min-height:200px; font-size:12px; text-align:center; padding:10px; }
+.game-root .map-panel .algo-canvas{ min-height:260px; }
+.game-root .map-row:has(.compare-wrap:not(.is-split)){ justify-items:stretch; }
+.game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:auto; }
+.game-root .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:auto; } /* phones: full width in both modes */
+.game-root .playback-bar{ flex-wrap:wrap; } /* phones: slider may drop under the buttons */
+.game-root .map-panel:has(.compare-wrap.is-split) .map-panel-head{ display:flex; }
+.game-root .map-panel:has(.compare-wrap.is-split) .map-panel-head .divider-vs{ display:inline; }
+.game-root .compare-wrap:not(.is-split) > .algo-panel:first-child{ width:auto; flex:1; }
+.game-root .map-row:has(.compare-wrap:not(.is-split)) .stats-col{ display:flex; }
+
+.game-root .algo-box{ justify-content:center; } /* A pill / VS / B pill stack on phones */
+.game-root .control-row .select-wrap, .game-root .control-row input[type=number]{ flex:1; min-width:90px; }
+.game-root .control-row .select-wrap select{ width:100%; }
+}
+
+/* ===================== BUTTON HOVER / PRESS / FOCUS =====================
+	Every button: lifts 2px and brightens on hover, presses back down and
+	darkens on click. Keyboard focus gets the same lift plus a brown outline. */
+.game-root #randomBtn, .game-root .select-wrap, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset, .game-root .theme-toggle, .game-root .bread-btn{
+transition:transform .12s ease, filter .12s ease, opacity .2s;
+}
+.game-root #randomBtn:hover, .game-root .select-wrap:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover, .game-root .theme-toggle:hover, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:hover, .game-root .bread-btn:focus-visible,.game-root #randomBtn:focus-visible, .game-root .select-wrap:has(select:focus-visible), .game-root .tool-toggle:focus-visible,.game-root .tool-toggle:has(input:focus-visible), .game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible{
+transform:translateY(-2px); filter:brightness(1.1);
+}
+.game-root #randomBtn:active, .game-root .select-wrap:active, .game-root .tool-toggle:active,.game-root .playback-row button:active, .game-root .tab-btn:active, .game-root .map-reset:active, .game-root .theme-toggle:active, .game-root .bread-btn:active{
+transform:translateY(0); filter:brightness(.9);
+}
+.game-root #randomBtn:focus-visible, .game-root select:focus-visible,.game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:focus-visible{
+outline:2px solid #4a3a20; outline-offset:2px;
+}
+/* Start/Pause while playing is already darkened: keep it darker than idle on hover */
+.game-root #playBtn.playing:hover, .game-root #playBtn.playing:focus-visible{ filter:brightness(.85); }
+.game-root #playBtn.playing:active{ filter:brightness(.7); }
+@media (prefers-reduced-motion: reduce){
+.game-root #randomBtn, .game-root .select-wrap, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset{ transition:none; }
+.game-root #randomBtn:hover, .game-root .select-wrap:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover{ transform:none; }
+}
