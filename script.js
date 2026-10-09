@@ -13,7 +13,7 @@ import ROAD_POSITIONS from './assets/MapElements/Coordinates/path_positions.json
 // Internal developer flag. When true, a plain dev window is added to the page
 // for placing marker squares on the maps (positions exported as JSON).
 // Turn off before shipping.
-const DevMode = true;
+const DevMode = false;
 
 /* ===================== ENGINE GLUE =====================
    The pathfinding engine lives in src/engine/ (TypeScript, copied unchanged
