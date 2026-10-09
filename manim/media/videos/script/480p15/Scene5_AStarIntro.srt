@@ -1,8 +1,0 @@
-1
-00:00:00,000 --> 00:00:02,500
-A* combines g (cost driven) and h (estimated remainder)
-
-2
-00:00:03,000 --> 00:00:06,000
-h must never overestimate — admissible. What replaces the straight line?
-
