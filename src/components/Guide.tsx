@@ -32,7 +32,7 @@ function Figure({ src, alt, caption, spec }: { src: string; alt: string; caption
 
 const NAV: { id: string; label: string }[] = [
   { id: 'g-ucs', label: '1 · Uniform-Cost Search' },
-  { id: 'g-astar', label: '2 · A★ — adding a guess' },
+  { id: 'g-astar', label: '2 · A★: adding a guess' },
   { id: 'g-heuristic', label: '3 · What a heuristic is' },
   { id: 'g-lp', label: '4 · Our heuristic: LP (vector)' },
   { id: 'g-alt', label: '5 · Our heuristic: ALT (landmarks)' },
@@ -41,23 +41,22 @@ const NAV: { id: string; label: string }[] = [
   { id: 'g-map', label: '8 · Reading the maps' },
 ]
 
-export function Guide({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function Guide() {
   return (
-    <aside
-      className={`guide${open ? ' guide-open' : ''}`}
-      aria-hidden={!open}
+    <article
+      className="guide-page"
       aria-label="How the search works"
     >
       <div className="guide-head">
+        <span className="guide-eyebrow">Romania Pathfinding</span>
         <span className="guide-title">How the search works</span>
-        <button className="guide-close" onClick={onClose} aria-label="Hide guide">✕</button>
       </div>
 
       <div className="guide-body">
         <p className="guide-lede">
           Finding a cheapest route on this map is a <strong>search</strong>. We start with a
           method that knows nothing about the goal (<em>uninformed</em>), watch it waste effort,
-          then upgrade it with a <em>heuristic</em> — and finally combine two heuristics into one.
+          then upgrade it with a <em>heuristic</em>, and finally combine two heuristics into one.
           Every number below was measured on all 380 ordered city pairs.
         </p>
 
@@ -67,18 +66,20 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
           ))}
         </nav>
 
+        <div className="guide-sections">
+
         {/* ── 1. UCS ─────────────────────────────────────────────────── */}
         <section className="guide-section" id="g-ucs">
           <h3>1 · Uniform-Cost Search (UCS)</h3>
           <p>
             Keep a <strong>frontier</strong> of nodes to explore. Always expand the node with the
-            smallest known cost from the start, <Tex>g(n)</Tex> — the kilometres already driven.
+            smallest known cost from the start, <Tex>g(n)</Tex>, the kilometres already driven.
             Because every road cost is non-negative, the cheapest frontier node can never be
             beaten later, so UCS is <strong>optimal</strong> and <strong>complete</strong>.
           </p>
           <p>
-            The catch: the frontier grows as expanding <em>cost contours</em> — rings of equal{' '}
-            <Tex>g</Tex> — that spread in <strong>every direction</strong>. UCS cannot look at the
+            The catch: the frontier grows as expanding <em>cost contours</em>, rings of equal{' '}
+            <Tex>g</Tex>, that spread in <strong>every direction</strong>. UCS cannot look at the
             map and see where Bucharest is, so it explores west, north and south just as eagerly as
             east. Its work grows like <Tex>{'O(b^{1+\\lfloor C^*/\\varepsilon \\rfloor})'}</Tex>.
           </p>
@@ -90,14 +91,14 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
           <Figure
             src="/gifs/ucs-cost-rings.gif"
             alt="UCS cost contours spreading outward"
-            caption="UCS expands in expanding cost rings — blind to the goal."
+            caption="UCS expands in expanding cost rings, blind to the goal."
             spec="GIF-1"
           />
         </section>
 
         {/* ── 2. A* ──────────────────────────────────────────────────── */}
         <section className="guide-section" id="g-astar">
-          <h3>2 · A★ — adding a guess</h3>
+          <h3>2 · A★: adding a guess</h3>
           <p>
             A★ keeps the same <Tex>g(n)</Tex> but adds a <strong>heuristic</strong>{' '}
             <Tex>h(n)</Tex>: our estimate of the remaining cost from <Tex>n</Tex> to the goal.
@@ -114,13 +115,13 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
           <p>
             The heuristic decides how good A★ is. With <Tex>h \equiv 0</Tex> it degenerates back
             into UCS. With a perfect <Tex>h</Tex> it walks straight to the goal. Using <Tex>h</Tex>{' '}
-            alone and no <Tex>g</Tex> gives greedy best-first — fast, but easily fooled into a
+            alone and no <Tex>g</Tex> gives greedy best-first: fast, but easily fooled into a
             non-optimal route.
           </p>
           <div className="guide-note">
             <strong>Key rule.</strong> If <Tex>h</Tex> never <em>overestimates</em> the true cost,
             A★ stays optimal. An optimistic heuristic only ever makes A★ try something that turns
-            out slightly worse — it can never hide the best route.
+            out slightly worse; it can never hide the best route.
           </div>
           <div className="guide-note guide-try">
             <strong>Try it.</strong> Set <strong>A</strong> = <em>A★ (LP+ALT)</em> and{' '}
@@ -158,13 +159,13 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
             Quality is about <strong>informedness</strong>. We say <Tex>h_2</Tex>{' '}
             <strong>dominates</strong> <Tex>h_1</Tex> when{' '}
             <Tex>{'h_2(n) \\ge h_1(n)'}</Tex> for every node. A dominating (and consistent)
-            heuristic expands no more nodes — bigger guesses mean fewer surprises, as long as they
+            heuristic expands no more nodes; bigger guesses mean fewer surprises, as long as they
             stay under the truth.
           </p>
           <div className="guide-note">
             <strong>The twist for this assignment.</strong> The textbook heuristic is straight-line
             distance (SLD), but the rules ban SLD and GPS. So we build our own bounds from the{' '}
-            <em>road kilometre values alone</em> — two different methods, then we combine them.
+            <em>road kilometre values alone</em>. Two methods, then we combine them.
           </div>
           <Figure
             src="/gifs/admissible-consistent.gif"
@@ -183,17 +184,17 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
             <Tex>b</Tex> you must cross the <strong>chord</strong> between them. A road route is a
             chain of these arrows, so its arrows must add up to that chord. The shortest any route
             can possibly be is therefore the cheapest combination of arrows that still adds up to
-            the chord — a small <strong>linear program</strong>:
+            the chord: a small <strong>linear program</strong>:
           </p>
           <div className="guide-eq">
             <Tex>{'h_{LP}(a,b) = \\min \\textstyle\\sum_i \\alpha_i\\, km_i \\;\\; \\text{s.t.} \\; \\textstyle\\sum_i \\alpha_i\\, \\vec{v}_i = \\vec{chord}_{ab},\\;\\; 0 \\le \\alpha_i \\le 1'}</Tex>
           </div>
           <p>
-            Why it is admissible: the LP <em>relaxes</em> the real problem — it allows fractional
-            use of roads and ignores connectivity — so its optimum can only be{' '}
+            Why it is admissible: the LP <em>relaxes</em> the real problem; it allows fractional
+            use of roads and ignores connectivity, so its optimum can only be{' '}
             <strong>lower</strong> than any actual route. A lower bound is exactly what we want.
             Two neighbouring cities come out exact (e.g. <Tex>{'h_{LP}(\\text{Arad},\\text{Sibiu}) = 140'}</Tex>).
-            It is solved offline with scipy/HiGHS and read from a lookup table at runtime — no SLD,
+            It is solved offline with scipy/HiGHS and read from a lookup table at runtime. No SLD,
             no GPS, only the PDF's metre/kilometre data.
           </p>
           <div className="guide-note guide-try">
@@ -212,7 +213,7 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
         <section className="guide-section" id="g-alt">
           <h3>5 · Our second bound: ALT (landmarks)</h3>
           <p>
-            Pick a few <strong>landmark</strong> cities <Tex>L</Tex> — far-flung corners of the map.
+            Pick a few <strong>landmark</strong> cities <Tex>L</Tex>, far-flung corners of the map.
             Then precompute the true shortest road distance <Tex>d(L,n)</Tex> from each landmark to
             every node (one Dijkstra run per landmark). For any node <Tex>n</Tex> and goal:
           </p>
@@ -223,7 +224,7 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
             This is the <strong>triangle inequality</strong> doing the work. Going through{' '}
             <Tex>L</Tex> is one (usually longer) way to get from <Tex>n</Tex> to the goal, so{' '}
             <Tex>{'d(n, goal) \\ge |d(L,n) - d(L,goal)|'}</Tex>. The right side never exceeds the
-            true distance — so it is admissible by construction, no empirical checking needed. It
+            true distance, so it is admissible by construction, no empirical checking needed. It
             uses only road kilometres. Taking the <Tex>\max</Tex> over landmarks keeps it a lower
             bound while making it tighter.
           </p>
@@ -264,12 +265,12 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="guide-eq">
             <Tex>{'h(n, goal) = \\max\\big(\\, h_{LP}(n, goal),\\; h_{ALT}(n, goal)\\,\\big)'}</Tex>
           </div>
-          <p><strong>Why this works — three reasons:</strong></p>
+          <p><strong>Why this works (three reasons):</strong></p>
           <ol>
             <li>
               <strong>Still admissible.</strong> Both inputs are <Tex>{'\\le'}</Tex> the true cost,
               so their maximum is too. A★ therefore stays optimal. (This is why you may only take a{' '}
-              <Tex>\max</Tex> when <em>every</em> component is admissible — one overestimating
+              <Tex>\max</Tex> when <em>every</em> component is admissible; one overestimating
               component would leak straight in.)
             </li>
             <li>
@@ -281,12 +282,12 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
             <li>
               <strong>Different failure modes.</strong> LP judges by geometry and distance; ALT
               judges by pure road metrics. Each is weak on different node pairs, so the max collects
-              the stronger certificate wherever it exists — the best of both.
+              the stronger certificate wherever it exists: the best of both.
             </li>
           </ol>
           <div className="guide-note">
             <strong>Admissibility is all we need.</strong> Because both bounds stay at or below the
-            true cost, the ensemble does too — and an admissible heuristic is exactly what makes
+            true cost, the ensemble does too, and an admissible heuristic is exactly what makes
             A★ return an <em>optimal</em> route and, on this finite map, always terminate
             (<em>complete</em>). So the ensemble is correct by construction: it never depends on the
             two bounds agreeing, only on each one being optimistic.
@@ -335,13 +336,13 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
           </table>
           <p>
             <strong>Reading the numbers.</strong> Going from uninformed to informed is the big win
-            — UCS expands 4180 nodes across the pair set, A★ with the ensemble only 1922, roughly a{' '}
+            UCS expands 4180 nodes across the pair set; A★ with the ensemble only 1922, roughly a{' '}
             55% cut, for the <em>same</em> optimal cost. Within informed search, tighter really is
             cheaper: the LM ladder (0.87 → 0.97 → 0.99) walks expansions down step by step.
           </p>
           <p>
             The ensemble sits at the bottom, but honestly <em>only just</em>: against ALT lm8 alone
-            it adds +0.0005 informedness and saves 2 expansions — because on this map ALT lm8
+            it adds +0.0005 informedness and saves 2 expansions, because on this map ALT lm8
             usually already dominates LP. Its real value is <strong>robustness</strong>: it is a
             bound from a second, independently-derived method, so admissibility never rests on the
             landmark choice. Zero admissibility violations and zero wrong optimal costs were
@@ -359,14 +360,14 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
         <section className="guide-section" id="g-map">
           <h3>8 · Reading the maps</h3>
           <p>
-            <strong>Two lanes.</strong> Pick any two algorithms — A (purple) and B (teal) — and run
+            <strong>Two lanes.</strong> Pick any two algorithms, A (purple) and B (teal), and run
             them on the same start/goal. The comparison table rates each metric and highlights the
             better value.
           </p>
           <ul>
             <li><strong>Node colours:</strong> current · frontier · visited · path (legend in the toolbar).</li>
             <li><strong>★ Landmarks:</strong> choose 2 / 4 / 8 per lane, or use the ★ tool to click cities and build a custom set.</li>
-            <li><strong>Heatmap:</strong> each lane's <Tex>h</Tex>-values — red near the goal, blue far away.</li>
+            <li><strong>Heatmap:</strong> each lane's <Tex>h</Tex>-values: red near the goal, blue far away.</li>
             <li><strong>Straight line:</strong> the SLD that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
           </ul>
           <p>
@@ -375,17 +376,19 @@ export function Guide({ open, onClose }: { open: boolean; onClose: () => void })
             <span className="swatch swatch-lm-b" /> <strong>teal is lane B</strong>. Every road is
             drawn as two coloured strands separated by a thin seam, so you can see at a glance which
             algorithm claimed each road. Node discs split into a left (A) and right (B) half, and
-            landmark rings split the same way — a purple half means A picked that city, a teal half
+            landmark rings split the same way: a purple half means A picked that city, a teal half
             means B did. Use the ⬓ <em>Merged map</em> toggle to switch back to the side-by-side
             split view.
           </p>
         </section>
+
+        </div>{/* /guide-sections */}
 
         <p className="guide-foot">
           Guide based on the implementation in <code>src/</code>. Measurements: see{' '}
           <code>eval/independent-eval.ts</code>.
         </p>
       </div>
-    </aside>
+    </article>
   )
 }

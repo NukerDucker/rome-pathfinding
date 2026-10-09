@@ -2,13 +2,17 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/cinzel/400.css";
+@import "@fontsource/cinzel/600.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fff;
+  --bg: #ffffff;
+  --page-bg: #f0efe9;
   --border: oklch(0.922 0 0);
   --code-bg: #f4f3ec;
   --accent: oklch(0.97 0 0);
@@ -20,7 +24,7 @@
 
   --sans: 'Geist Variable', system-ui, sans-serif;
   --heading: 'Geist Variable', system-ui, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --mono: 'JetBrains Mono Variable', ui-monospace, Consolas, monospace;
   --serif: Georgia, 'Times New Roman', serif;
 
   font: 18px/145% var(--sans);
@@ -79,7 +83,7 @@
 
   --chart-5: oklch(0.269 0 0);
 
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
   --sidebar: oklch(0.985 0 0);
 
@@ -102,6 +106,7 @@
   --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
+    --page-bg: #0c0d11;
     --border: #2e303a;
     --code-bg: #1f2028;
     --accent: #c084fc;
@@ -132,16 +137,10 @@
     color-scheme: dark;
 }
 
-.dark #social .button-icon {
-  filter: invert(1) brightness(2);
-}
 
 #root {
-  width: 90%;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
+  background: var(--bg);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -150,6 +149,7 @@
 
 body {
   margin: 0;
+  background: var(--bg);
 }
 
 h1,
@@ -181,8 +181,7 @@ p {
   margin: 0;
 }
 
-code,
-.counter {
+code {
   font-family: var(--mono);
   display: inline-flex;
   border-radius: 4px;
@@ -230,6 +229,13 @@ code {
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-map-accent: var(--map-accent);
+  --color-lane-b: var(--lane-b);
+  --color-ink: var(--text);
+  --color-ink-bold: var(--text-h);
+  --color-state-path: var(--state-path);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

@@ -1,0 +1,838 @@
+/* ── Theme layer ─────────────────────────────────────────────────────
+   Ported verbatim from branch `feat/more-themes` (@ fb85189), which added
+   this block additively on top of bdcc241. It is kept in its own file,
+   imported AFTER App.css, so the theme tokens override the base ones and
+   the non-theme (light/dark) look is untouched.
+
+   Regenerate with:
+     git --no-pager diff bdcc241..feat/more-themes -- src/App.css | grep '^+' | grep -vE '^\+\+\+|^\\' | cut -c2-
+   ─────────────────────────────────────────────────────────────────── */
+/* ── Additional themes (cycled from the masthead button) ─────────────
+   `.dark` (above) is the dark theme. `.dnd` is the mushroom-flavoured fantasy
+   theme (the one that shows the illustrated map). `.space` is a cockpit-style
+   deep-space theme built on the dark tokens. */
+
+/* ── Space theme (cockpit deep-space) ──────────────────────────────── */
+:root.space {
+  /* shadcn surfaces */
+  --background: #060814;
+  --foreground: #e6edff;
+  --card: #0b1022;
+  --card-foreground: #e6edff;
+  --popover: #0b1022;
+  --popover-foreground: #e6edff;
+  --primary: #38e1ff;
+  --primary-foreground: #04121a;
+  --secondary: #131a33;
+  --secondary-foreground: #cfe0ff;
+  --muted: #131a33;
+  --muted-foreground: #93a3c8;
+  --accent: #141c38;
+  --accent-foreground: #dce8ff;
+  --input: #1c2544;
+  --ring: #38e1ff;
+  /* app tokens */
+  --bg: #060814;
+  --text: #9fb0d6;
+  --text-h: #eaf1ff;
+  --border: #1e2745;
+  --code-bg: #0a1020;
+  --surface: #0b1022;
+  --dock-bg: rgba(8, 12, 26, 0.82);
+  --map-accent: #38e1ff;
+  --lane-b: #b07bff;
+  --state-frontier: #ffb454;
+  --state-current: #38e1ff;
+  --state-visited: #56628c;
+  --state-path: #2ee6a8;
+  --marker-start: #2ee6a8;
+  --marker-goal: #ff5f7e;
+  --map-road: #2a3357;
+  --ink-on-frontier: #241300;
+  --ink-on-current: #03171f;
+  --ink-on-visited: #eaf1ff;
+  --ink-on-path: #04241a;
+  --node-current-ring: #eaf1ff;
+  color-scheme: dark;
+  /* Nebula backdrop on <html> so the starfield canvas (a child of <body>)
+     paints over it instead of being hidden behind an opaque body. */
+  background:
+    radial-gradient(1200px 800px at 12% -12%, rgba(84, 60, 220, 0.42), transparent 60%),
+    radial-gradient(1000px 760px at 92% 6%, rgba(20, 130, 210, 0.34), transparent 56%),
+    radial-gradient(1000px 900px at 50% 122%, rgba(190, 60, 170, 0.24), transparent 62%),
+    linear-gradient(180deg, #05060f, #0a1024 58%, #06080f);
+  background-attachment: fixed;
+}
+:root.space body { background: transparent; }
+/* The app layout paints an opaque fill on #root; clear it in themed views so the
+   html backdrop and the ambient layer (a child of the shell, z-index:-1) show. */
+:root.space #root { background: transparent; }
+
+/* ── D&D theme (rainbow-mushroom fantasy) ──────────────────────────── */
+:root.dnd {
+  --bg: #f4ecff;
+  --text: #6a5a86;
+  --text-h: #34244e;
+  --border: #e3d6f6;
+  --code-bg: #efe4fb;
+  /* shadcn surfaces */
+  --background: #f7f1ff;
+  --foreground: #34244e;
+  --card: #fbf7ff;
+  --card-foreground: #34244e;
+  --popover: #fbf7ff;
+  --popover-foreground: #34244e;
+  --primary: #a95fd0;
+  --primary-foreground: #ffffff;
+  --secondary: #efe4fb;
+  --secondary-foreground: #4a3768;
+  --muted: #efe4fb;
+  --muted-foreground: #7a6a95;
+  --accent: #f0e3ff;
+  --accent-foreground: #4a3768;
+  --input: #e3d6f6;
+  --ring: #c39be6;
+  /* app tokens */
+  --surface: #fbf7ff;
+  --dock-bg: rgba(251, 247, 255, 0.9);
+  --map-accent: #a95fd0;
+  --lane-b: #2fa79a;
+  --state-frontier: #e0892e;
+  --state-current: #a95fd0;
+  --state-visited: #b6a5cf;
+  --state-path: #3fae74;
+  --marker-start: #3fae74;
+  --marker-goal: #e0567a;
+  --map-road: #dccdf0;
+  --ink-on-frontier: #2a1c00;
+  --ink-on-current: #ffffff;
+  --ink-on-visited: #322646;
+  --ink-on-path: #ffffff;
+  --node-current-ring: #ffffff;
+  --heading: 'Cinzel', Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+  /* Background lives on <html> so the aurora layer (a child of <body>) paints
+     over it instead of being hidden behind an opaque body. */
+  background:
+    radial-gradient(900px 700px at 50% -25%, #f4e9ff 0%, transparent 62%),
+    linear-gradient(180deg, #f7f1ff, #edeeff);
+  background-attachment: fixed;
+}
+
+:root.dnd body {
+  background: transparent;
+}
+:root.dnd #root { background: transparent; }
+
+/* ── D&D flourishes (mushroom-kingdom storybook look) ──────────────── */
+/* Ornate rule under the masthead */
+:root.dnd .app-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 168px;
+  height: 3px;
+  border-radius: 3px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--map-accent), var(--lane-b), transparent);
+  opacity: 0.75;
+}
+
+/* Warm parchment sheen on the big panels */
+:root.dnd .lane,
+:root.dnd .compare-panel,
+:root.dnd .stats-panel,
+:root.dnd .guide {
+  background-image: radial-gradient(150% 120% at 0% 0%, rgba(255, 255, 255, 0.65), transparent 55%);
+}
+
+/* Frosted, colour-lit docks and panels (the living background shows through) */
+:root.dnd .lane,
+:root.dnd .query-bar,
+:root.dnd .toolbar,
+:root.dnd .stats-panel {
+  background-color: color-mix(in srgb, var(--surface) 56%, transparent);
+  backdrop-filter: blur(9px) saturate(1.2);
+  -webkit-backdrop-filter: blur(9px) saturate(1.2);
+}
+
+/* Candy-round, jewel-edged controls */
+:root.dnd .theme-toggle,
+:root.dnd .mute-toggle,
+:root.dnd .lm-toggle,
+:root.dnd .query-lm-custom {
+  border-radius: 10px;
+}
+:root.dnd .theme-toggle:hover,
+:root.dnd .mute-toggle:hover {
+  background: color-mix(in srgb, var(--map-accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--map-accent) 45%, var(--border));
+}
+
+/* Storybook headings */
+:root.dnd .compare-panel h2,
+:root.dnd .compare-title {
+  font-family: var(--heading);
+  letter-spacing: 0.02em;
+}
+
+/* Jewel-sheen legend swatches */
+:root.dnd .swatch {
+  box-shadow: 0 1px 2px rgba(90, 60, 140, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ── D&D living background ─────────────────────────────────────────── */
+/* Colour blobs that drift in straight lines and bounce off the viewport edges
+   (classic screensaver style), plus a soft blob that trails the cursor. The
+   motion is driven in JavaScript (see DndAurora) so it always runs; this layer
+   sits behind the frosted panels and is purely decorative. */
+.dnd-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  animation: aurora-in 0.5s ease both;
+}
+@keyframes aurora-in { from { opacity: 0; } to { opacity: 1; } }
+.aurora-blobs {
+  position: absolute;
+  inset: 0;
+}
+.aurora-blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  filter: blur(46px) saturate(1.25);
+  opacity: 0.9;
+  will-change: transform;
+}
+.aurora-1 { width: 28vmax; height: 28vmax; background: radial-gradient(circle at 50% 50%, rgba(255, 110, 190, 0.95), transparent 68%); }
+.aurora-2 { width: 32vmax; height: 32vmax; background: radial-gradient(circle at 50% 50%, rgba(90, 170, 255, 0.95), transparent 68%); }
+.aurora-3 { width: 26vmax; height: 26vmax; background: radial-gradient(circle at 50% 50%, rgba(90, 230, 150, 0.9), transparent 68%); }
+.aurora-4 { width: 30vmax; height: 30vmax; background: radial-gradient(circle at 50% 50%, rgba(255, 195, 80, 0.95), transparent 68%); }
+.aurora-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30vmax;
+  height: 30vmax;
+  margin: -15vmax 0 0 -15vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 140, 225, 0.78), rgba(160, 130, 255, 0.44) 45%, transparent 72%);
+  filter: blur(34px);
+  will-change: transform;
+}
+
+/* ── Space flourishes (cockpit) ────────────────────────────────────── */
+/* Starfield canvas behind everything */
+.space-field {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: space-in 0.6s ease both;
+}
+@keyframes space-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Frosted cockpit glass over the panels */
+:root.space .lane,
+:root.space .query-bar,
+:root.space .toolbar,
+:root.space .stats-panel {
+  background-color: color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+
+/* Masthead glow + light rule */
+:root.space .app-title {
+  text-shadow: 0 0 20px color-mix(in srgb, var(--map-accent) 45%, transparent);
+}
+:root.space .app-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 200px;
+  height: 2px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--map-accent), var(--lane-b), transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--map-accent) 60%, transparent);
+}
+
+/* Cockpit screen above each map — as wide as the map, planet off to one side */
+.planet-window {
+  position: relative;
+  width: 100%;
+  height: 134px;
+  margin: 6px 0 4px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #05070f;
+  border: 1px solid rgba(120, 200, 255, 0.35);
+  box-shadow:
+    inset 0 0 0 3px rgba(8, 14, 30, 0.85),
+    inset 0 0 22px rgba(56, 225, 255, 0.18),
+    0 0 18px rgba(56, 225, 255, 0.2);
+}
+.planet-a { --pw-focus: calc(5% + 44px); }
+.planet-b { --pw-focus: calc(95% - 44px); }
+.planet-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent 34%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 3px);
+}
+.pw-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 24px 34px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 76px 84px, rgba(200, 230, 255, 0.8), transparent),
+    radial-gradient(1.2px 1.2px at 138px 46px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 96px 22px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 182px 92px, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 220px 120px;
+  animation: pw-twinkle 4s ease-in-out infinite;
+}
+@keyframes pw-twinkle { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+.pw-planet {
+  position: absolute;
+  top: 50%;
+  width: 88px;
+  height: 88px;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 18px rgba(120, 200, 255, 0.3));
+}
+.planet-a .pw-planet { left: 5%; }
+.planet-b .pw-planet { right: 5%; }
+
+/* Spacetime stretch: the whole scene zooms and smears during a jump */
+.pw-scene {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+.pw-jumping { animation: pw-stretch 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes pw-stretch {
+  0% { transform: scale(1); filter: blur(0) brightness(1) saturate(1); }
+  18% { transform: scale(1.26, 1.12); filter: blur(2px) brightness(1.7) saturate(1.5); }
+  50% { transform: scale(1.06, 1.02); filter: blur(0.6px) brightness(1.2) saturate(1.15); }
+  100% { transform: scale(1); filter: blur(0) brightness(1) saturate(1); }
+}
+.pw-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(226, 248, 255, 0.9), rgba(140, 200, 255, 0.25) 34%, transparent 70%);
+  animation: pw-flash 0.6s ease-out both;
+}
+@keyframes pw-flash {
+  0% { opacity: 0; transform: scale(0.6); }
+  22% { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* FTL light-drag: a starburst centred in each window — one per ship, so the
+   two cockpits each get their own burst. */
+.pw-warp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  mix-blend-mode: screen;
+  overflow: hidden;
+}
+.pw-warp i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80%;
+  height: 2px;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(190, 240, 255, 0.95), rgba(190, 240, 255, 0));
+  transform-origin: 0 50%;
+  transform: rotate(var(--a)) translateX(var(--b)) scaleX(0);
+  animation: pw-warp-line 0.5s ease-out both;
+}
+@keyframes pw-warp-line {
+  0% { transform: rotate(var(--a)) translateX(var(--b)) scaleX(0); opacity: 0; }
+  30% { opacity: 0.95; }
+  100% { transform: rotate(var(--a)) translateX(var(--b)) scaleX(1); opacity: 0; }
+}
+
+/* 45° call-out from the planet to its namecard */
+.pw-callout {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 2px;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(150, 230, 255, 0.9), rgba(150, 230, 255, 0.25));
+}
+.planet-a .pw-callout { left: var(--pw-focus); transform-origin: 0 50%; transform: rotate(-45deg); }
+.planet-b .pw-callout { left: calc(var(--pw-focus) - 44px); transform-origin: 100% 50%; transform: rotate(45deg); }
+.pw-namecard {
+  position: absolute;
+  top: 15px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #eaf6ff;
+  background: rgba(8, 16, 32, 0.72);
+  border: 1px solid rgba(120, 200, 255, 0.45);
+  box-shadow: 0 0 12px rgba(56, 225, 255, 0.25);
+  white-space: nowrap;
+}
+.pw-namecard::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--map-accent);
+  box-shadow: 0 0 8px var(--map-accent);
+}
+.planet-a .pw-namecard { left: calc(var(--pw-focus) + 30px); }
+.planet-b .pw-namecard { right: calc(100% - var(--pw-focus) + 30px); }
+.planet-windows {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.planet-windows .planet-window { flex: 1 1 0; min-width: 0; margin: 0; }
+.pw-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.12) 0%, transparent 32%),
+    linear-gradient(180deg, rgba(120, 215, 255, 0.10), transparent 30%);
+}
+
+/* The map reads as a navigation screen: HUD corner brackets over the plot */
+:root.space .map-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 3;
+  pointer-events: none;
+  --hud: color-mix(in srgb, var(--map-accent) 55%, transparent);
+  background:
+    linear-gradient(var(--hud), var(--hud)) 0 0 / 26px 2px,
+    linear-gradient(var(--hud), var(--hud)) 0 0 / 2px 26px,
+    linear-gradient(var(--hud), var(--hud)) 100% 0 / 26px 2px,
+    linear-gradient(var(--hud), var(--hud)) 100% 0 / 2px 26px,
+    linear-gradient(var(--hud), var(--hud)) 0 100% / 26px 2px,
+    linear-gradient(var(--hud), var(--hud)) 0 100% / 2px 26px,
+    linear-gradient(var(--hud), var(--hud)) 100% 100% / 26px 2px,
+    linear-gradient(var(--hud), var(--hud)) 100% 100% / 2px 26px;
+  background-repeat: no-repeat;
+}
+
+/* Each city is a unique planet on the map */
+:root.space .node-space .node-disc { fill: var(--planet, #2a3357); }
+:root.space .node-space .node-orbit {
+  fill: none;
+  stroke: color-mix(in srgb, var(--map-accent) 55%, transparent);
+  stroke-width: 5;
+  opacity: 0.5;
+}
+:root.space .node-space text {
+  fill: #f2f8ff;
+  stroke: rgba(2, 8, 20, 0.6);
+  stroke-width: 3;
+  paint-order: stroke;
+}
+:root.space .node-space.node-current .node-disc {
+  stroke: var(--node-current-ring);
+  stroke-width: 9;
+}
+
+/* Each city is a unique planet on the map */
+/* ── Theme roll (gacha-style transition) ───────────────────────────── */
+.theme-toggle:disabled { cursor: default; }
+.theme-toggle-busy { opacity: 0.65; }
+
+/* Cross-fade the whole page while a theme swap is in flight. */
+:root.theme-anim body,
+:root.theme-anim .app-title,
+:root.theme-anim .query-bar,
+:root.theme-anim .toolbar,
+:root.theme-anim .lane,
+:root.theme-anim .compare-panel,
+:root.theme-anim .stats-panel,
+:root.theme-anim .guide {
+  transition: background-color 0.45s ease, color 0.45s ease, border-color 0.45s ease;
+}
+
+.theme-roll {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 90;
+  pointer-events: none;
+}
+
+.roll-card {
+  position: relative;
+  width: 224px;
+  height: 262px;
+  border-radius: 26px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44));
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 26px 70px rgba(30, 16, 60, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  animation:
+    roll-in 0.55s cubic-bezier(0.16, 0.9, 0.3, 1.32) both,
+    roll-out 0.45s ease 1.15s both;
+}
+.roll-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    inset 0 -46px 60px rgba(24, 12, 48, 0.18);
+}
+
+/* rotating sunburst behind the scene */
+.roll-rays {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 420px;
+  height: 420px;
+  margin: -210px 0 0 -210px;
+  z-index: 2;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.7) 0deg 3deg, transparent 3deg 11deg);
+  -webkit-mask: radial-gradient(closest-side, #000 0 26%, transparent 72%);
+  mask: radial-gradient(closest-side, #000 0 26%, transparent 72%);
+  mix-blend-mode: screen;
+  opacity: 0.3;
+  pointer-events: none;
+  animation: roll-spin 14s linear infinite;
+}
+
+.roll-scene {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+.roll-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* one-off light sweep across the card */
+.roll-shine {
+  position: absolute;
+  inset: -30% -20%;
+  z-index: 5;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%);
+  transform: translateX(-70%);
+  pointer-events: none;
+  animation: roll-shine 0.9s ease 0.4s both;
+}
+
+/* caption */
+.roll-caption {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 9px 12px 15px;
+}
+.roll-kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(52, 36, 78, 0.66);
+  animation: roll-kicker-in 0.4s ease 0.36s both;
+}
+.roll-name {
+  font-family: var(--heading);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.08;
+  text-align: center;
+  color: #34244e;
+  transform-origin: center;
+  animation: roll-name-in 0.55s cubic-bezier(0.16, 0.9, 0.3, 1.4) 0.26s both;
+}
+
+/* sparkle burst */
+.roll-spark {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95);
+  opacity: 0;
+  z-index: 7;
+  pointer-events: none;
+  animation: spark-burst 0.95s ease-out both;
+  animation-delay: calc(200ms + var(--i) * 30ms);
+}
+
+/* per-theme surfaces + caption ink */
+.roll-card.roll-light {
+  background: linear-gradient(180deg, rgba(255, 247, 236, 0.82), rgba(255, 255, 255, 0.5));
+  box-shadow: 0 26px 70px rgba(255, 170, 60, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+.roll-card.roll-dark {
+  background: linear-gradient(180deg, rgba(24, 26, 40, 0.8), rgba(14, 16, 26, 0.62));
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 26px 70px rgba(90, 110, 200, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.roll-card.roll-dnd {
+  background: linear-gradient(180deg, rgba(58, 38, 86, 0.82), rgba(38, 24, 62, 0.64));
+  border-color: rgba(233, 208, 255, 0.4);
+  box-shadow: 0 26px 70px rgba(180, 110, 210, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.roll-card.roll-space {
+  background: linear-gradient(180deg, rgba(10, 16, 36, 0.84), rgba(6, 9, 22, 0.66));
+  border-color: rgba(140, 200, 255, 0.3);
+  box-shadow: 0 26px 70px rgba(80, 170, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.roll-dark .roll-kicker,
+.roll-dnd .roll-kicker,
+.roll-space .roll-kicker { color: rgba(233, 224, 255, 0.7); }
+.roll-dark .roll-name,
+.roll-dnd .roll-name,
+.roll-space .roll-name { color: #f4ecff; }
+
+@keyframes roll-in {
+  0% { opacity: 0; transform: translateY(84px) scale(0.42) rotate(-4deg); }
+  60% { opacity: 1; transform: translateY(-8px) scale(1.05) rotate(1deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+@keyframes roll-out { to { opacity: 0; transform: translateY(-18px) scale(0.88); } }
+@keyframes roll-spin { to { transform: rotate(360deg); } }
+@keyframes roll-shine {
+  from { transform: translateX(-80%); opacity: 0; }
+  25% { opacity: 1; }
+  to { transform: translateX(80%); opacity: 0; }
+}
+@keyframes roll-kicker-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes roll-name-in {
+  0% { opacity: 0; transform: scale(0.7) translateY(6px); }
+  70% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes spark-burst {
+  0% { opacity: 0; transform: rotate(calc(var(--i) * 30deg)) translateY(0) scale(0.4); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 30deg)) translateY(96px) scale(1); }
+}
+
+/* scene animations (SVG groups) */
+.roll-art .rs-sun,
+.roll-art .rs-moon {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: rs-rise 0.95s cubic-bezier(0.2, 0.8, 0.3, 1) 0.1s both;
+}
+.roll-art .rs-witch {
+  transform-box: fill-box;
+  animation: rs-fly 1.45s cubic-bezier(0.45, 0.05, 0.3, 1) 0.15s both;
+}
+.roll-art .rs-ship {
+  transform-box: fill-box;
+  /* accelerate (ease-in): slow ignition, then it climbs away */
+  animation: rs-launch 1.3s cubic-bezier(0.55, 0, 0.85, 0.2) 0.15s both;
+}
+.roll-art .rs-craft {
+  transform-box: fill-box;
+  animation: rs-quiver 0.09s linear 0.15s infinite;
+}
+.roll-art .rs-fire {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: rs-thrust 1.3s ease-in 0.15s both;
+}
+.roll-art .rs-flame {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: rs-flicker 0.18s ease-in-out infinite;
+}
+.roll-art .rs-flame2 {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: rs-flicker 0.13s ease-in-out infinite;
+}
+.roll-art .rs-shoot { animation: rs-shoot 1.1s ease-out 0.25s both; }
+.roll-art .tw { animation: rs-twinkle 1.6s ease-in-out infinite; }
+.roll-art .tw:nth-of-type(2n) { animation-delay: 0.5s; }
+.roll-art .tw:nth-of-type(3n) { animation-delay: 0.9s; }
+.roll-art .rs-birds { animation: rs-bob 2.2s ease-in-out infinite; }
+.roll-art .rs-dust { animation: rs-twinkle 1.1s ease-in-out infinite; }
+
+@keyframes rs-rise {
+  from { transform: translateY(46px) scale(0.9); opacity: 0; }
+  28% { opacity: 1; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes rs-fly {
+  0% { transform: translate(-88px, 6px) rotate(-8deg); opacity: 0; }
+  16% { opacity: 1; }
+  100% { transform: translate(88px, -7px) rotate(8deg); opacity: 1; }
+}
+@keyframes rs-launch {
+  0% { transform: translate(-20px, 62px) rotate(-4deg); opacity: 0; }
+  14% { opacity: 1; }
+  100% { transform: translate(8px, -30px) rotate(2deg); opacity: 1; }
+}
+@keyframes rs-quiver {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(0.7px, -0.4px); }
+}
+@keyframes rs-thrust {
+  0% { transform: scaleY(0.55); opacity: 0.65; }
+  100% { transform: scaleY(1.25); opacity: 1; }
+}
+@keyframes rs-flicker {
+  0%, 100% { transform: scaleY(1); opacity: 0.95; }
+  50% { transform: scaleY(1.35); opacity: 0.7; }
+}
+@keyframes rs-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+@keyframes rs-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes rs-shoot {
+  0% { transform: translate(-42px, 28px); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 0.9; }
+  100% { transform: translate(42px, -28px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roll-card,
+  .roll-rays,
+  .roll-shine,
+  .roll-art .rs-sun,
+  .roll-art .rs-moon,
+  .roll-art .rs-witch,
+  .roll-art .rs-ship,
+  .roll-art .rs-craft,
+  .roll-art .rs-fire,
+  .roll-art .rs-shoot,
+  .roll-art .tw,
+  .roll-art .rs-birds,
+  .roll-art .rs-dust,
+  .roll-art .rs-flame,
+  .roll-art .rs-flame2,
+  .roll-spark,
+  .roll-kicker,
+  .roll-name { animation: none; }
+}
+
+/* Mute toggle, sits just left of the theme toggle */
+.mute-toggle {
+  position: absolute;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mute-toggle:hover {
+  background: color-mix(in srgb, var(--text-h) 8%, transparent);
+}
+.mute-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+@media (max-width: 768px) {
+  .mute-toggle { right: 54px; width: 30px; height: 30px; }
+  .mute-toggle svg { width: 16px; height: 16px; }
+}
+
+/* ── D&D map surface: wooden board-game tabletop ─────────────────────── */
+/* Only tokens with NO legend counterpart are scoped to the graph. Anything the
+   legend also shows (path green, lane colours, start marker) keeps the dnd
+   defaults, so the swatches match the graph exactly — scoping them made the
+   map read darker than its own legend. */
+:root.dnd .map {
+  --map-bg: #986b46;   /* wood base colour, consumed by the grain pattern */
+  --map-road: #f3dfb7; /* cream roads read against the grain */
+  --node-current-ring: #fff3df;
+}
+
+:root.dnd .map-wood { pointer-events: none; }
+
+:root.dnd .map-wood-rim {
+  fill: none;
+  stroke: #493021;
+  stroke-width: 10;
+}
+
+/* Neutral pills and unvisited discs become opaque parchment; active states keep
+   their own fills, so the legend still describes the encoding. */
+:root.dnd .map .edge-label-base rect { fill: #fff2d8; stroke: #493021; }
+:root.dnd .map .edge-label-base text { fill: #302018; }
+:root.dnd .map .node-unvisited .node-disc { fill: #fff2d8; }
+
+/* Frontier / visited / path discs get a cream rim to lift them off the brown. */
+:root.dnd .map .node-frontier .node-disc,
+:root.dnd .map .node-visited .node-disc,
+:root.dnd .map .node-path .node-disc { stroke: #fff2d8; }
+
+/* Merged map's centre seam becomes a dark groove, not lavender. */
+:root.dnd .map .mroad-seam { stroke: #493021; }
+

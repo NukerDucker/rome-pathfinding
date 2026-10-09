@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { BookOpen, ChevronLeft, ChevronRight, Dices, Moon, Pause, Play, RotateCcw, Sun } from 'lucide-react'
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { ChevronLeft, ChevronRight, Columns2, Dices, MapPin, Pause, Play, RotateCcw, Sparkles, Thermometer, Volume2, VolumeX, X } from 'lucide-react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from './romania'
 import { ALGORITHMS, pathCost, type Step, type AlgoMeta, type SearchResult } from './search'
 import {
@@ -10,7 +10,6 @@ import {
 } from './heuristic'
 import { LANDMARK_PRESETS } from './alt'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import {
   Select,
@@ -21,7 +20,19 @@ import {
 } from '@/components/ui/select'
 import { Guide } from '@/components/Guide'
 import { Tex } from '@/components/Tex'
+import {
+  THEME_ORDER, ThemeControl, ThemeRoll, DndAurora,
+  SpaceField, PlanetWindow, planetFor, applyTheme, initialTheme,
+  type Theme, type PlanetInfo,
+} from './theme'
+import {
+  ensureAudio, setMuted,
+  playDice, playExpand, playVictory,
+  playCrow, playOwl, playGlitter, playWhoosh, playLaser,
+  startCeltic, stopCeltic, startSpaceHum, stopSpaceHum,
+} from './audio'
 import './App.css'
+import './themes.css'
 
 const ALGO_FOOTNOTES: Record<string, string> = {
   bfs: 'Yes* = only when step costs are equal.',
@@ -92,7 +103,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
         className="lm-toggle"
         title={`Show landmark overlay for ${lane} (visual only — algorithm unchanged)`}
         onClick={() => setOverlay(true)}
-      >✦ Landmarks</button>
+      ><Sparkles size={12} aria-hidden="true" /> Landmarks</button>
     )
   }
   return (
@@ -102,7 +113,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
           className="query-lm-custom"
           title={`Custom landmarks active (${customCount}). Click to clear and return to the preset.`}
           onClick={onClearCustom}
-        >★ Custom ({customCount})</button>
+        ><MapPin size={12} aria-hidden="true" /> Custom ({customCount})</button>
       ) : (
         <>
           <Select value={count} onValueChange={(v) => v && onCount(v as LandmarkCount)}>
@@ -115,7 +126,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
               ))}
             </SelectContent>
           </Select>
-          <span className="query-word query-word-lm">Landmark</span>
+          <span className="query-word query-word-lm">LM</span>
         </>
       )}
       {!usesLandmarks && (
@@ -124,7 +135,7 @@ function LandmarkPicker(props: LandmarkPickerProps) {
           aria-label={`Hide landmark overlay for ${lane}`}
           title="Hide landmark overlay"
           onClick={() => setOverlay(false)}
-        >✕</button>
+        ><X size={12} aria-hidden="true" /></button>
       )}
     </div>
   )
@@ -138,27 +149,6 @@ const ALGO_OPTIONS: [string, (typeof ALGORITHMS)[string]][] = Object.entries(ALG
 // constant size (so they never reflow while live step values change); the table
 // is allowed to be wider than the viewport and scrolls horizontally instead of
 // clipping or shrinking cells.
-const ALGO_COL_PX = 190
-const DEFAULT_COL_PX = 90
-const COL_PX: Record<string, number> = {
-  Step: 96,
-  Current: 100,
-  Visited: 90,
-  Frontier: 90,
-  Generated: 110,
-  Path: 260,
-  'Time (µs)': 120,
-  'Peak memory': 130,
-  'Cost (km)': 120,
-  Hops: 70,
-  'T(n)': 200,
-  'S(n)': 200,
-  Optimal: 90,
-  Complete: 90,
-  'landmarks 2': 120,
-  4: 56,
-  8: 56,
-}
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
 type EdgeState = 'base' | 'tree' | 'path'
@@ -365,6 +355,160 @@ function heatmapFor(goal: NodeId, preset: LandmarkPreset, custom: NodeId[]): Rec
   return vals
 }
 
+// ── D&D theme: wooden board-game tabletop ──────────────────────────────
+// The map panel doubles as the table the graph sits on. Drawn as an in-SVG
+// <pattern> (userSpaceOnUse) so the grain/seams stay locked to graph coordinates
+// under `preserveAspectRatio="…meet"` letterboxing, and cost no image request.
+// `ns` (from useId) keeps the defs unique per mounted map. Deterministic.
+const WOOD_PANEL = { x: 625, y: 325, width: 2750, height: 1850, rx: 80 } as const
+
+function WoodDefs({ ns }: { ns: string }) {
+  return (
+    <>
+      <pattern
+        id={`${ns}-wood`}
+        x={WOOD_PANEL.x}
+        y={WOOD_PANEL.y}
+        width={1100}
+        height={460}
+        patternUnits="userSpaceOnUse"
+        patternContentUnits="userSpaceOnUse"
+      >
+        <rect width={1100} height={460} fill="var(--map-bg)" />
+        <rect width={1100} height={230} fill="#ffe0aa" opacity={0.045} />
+
+        {/* Grain curves meet at the tile boundary, so the repeat is seamless. */}
+        <g fill="none" stroke="#3e2418" strokeWidth={2} opacity={0.12}>
+          <path d="M0 40 C180 40 240 66 440 48 S880 40 1100 40" />
+          <path d="M0 92 C160 92 300 72 520 99 S900 92 1100 92" />
+          <path d="M0 157 C240 157 280 181 550 163 S900 157 1100 157" />
+          <path d="M0 205 C200 205 360 188 620 211 S930 205 1100 205" />
+          <path d="M0 274 C190 274 300 300 510 281 S900 274 1100 274" />
+          <path d="M0 333 C200 333 390 310 600 340 S920 333 1100 333" />
+          <path d="M0 399 C210 399 320 420 580 405 S920 399 1100 399" />
+          <path d="M0 439 C180 439 330 425 590 445 S940 439 1100 439" />
+          <ellipse cx={740} cy={136} rx={75} ry={14} />
+          <ellipse cx={740} cy={136} rx={39} ry={6} />
+        </g>
+
+        <g fill="none" stroke="#ffe6bc" strokeWidth={2} opacity={0.1}>
+          <path d="M0 61 C200 61 360 82 600 65 S930 61 1100 61" />
+          <path d="M0 184 C230 184 370 167 630 189 S950 184 1100 184" />
+          <path d="M0 304 C190 304 350 325 610 309 S940 304 1100 304" />
+          <path d="M0 422 C230 422 350 402 600 426 S950 422 1100 422" />
+        </g>
+
+        {/* Long planks with staggered end joints. */}
+        <path d="M0 1 H1100 M0 231 H1100 M350 0 V230 M900 230 V460"
+          fill="none" stroke="#352018" strokeWidth={4} opacity={0.32} />
+        <path d="M0 5 H1100 M0 235 H1100 M354 5 V228 M904 235 V458"
+          fill="none" stroke="#ffe1af" strokeWidth={2} opacity={0.14} />
+
+        {/* Sparse worn varnish marks, not noise. */}
+        <path d="M128 119 l83 -3 M165 126 l42 -2 M815 369 l112 4"
+          fill="none" stroke="#ffe8c6" strokeWidth={2} strokeLinecap="round" opacity={0.12} />
+      </pattern>
+
+      <radialGradient id={`${ns}-varnish`} cx="43%" cy="35%" r="75%">
+        <stop offset="0%" stopColor="#ffe3b0" stopOpacity={0.1} />
+        <stop offset="55%" stopColor="#ffe3b0" stopOpacity={0} />
+        <stop offset="100%" stopColor="#24150e" stopOpacity={0.2} />
+      </radialGradient>
+    </>
+  )
+}
+
+function WoodSurface({ ns }: { ns: string }) {
+  return (
+    <g className="map-wood" aria-hidden="true" pointerEvents="none">
+      <rect {...WOOD_PANEL} fill={`url(#${ns}-wood)`} />
+      <rect {...WOOD_PANEL} fill={`url(#${ns}-varnish)`} />
+      <rect {...WOOD_PANEL} className="map-wood-rim" />
+    </g>
+  )
+}
+
+// ── Space theme: node planets ────────────────────────────────────────────
+// The planet model itself lives in theme.tsx (shared with the cockpit window).
+function PlanetDefs({ ns }: { ns: string }) {
+  return (
+    <>
+      <radialGradient id={`${ns}shade`} cx="0.7" cy="0.72" r="0.72">
+        <stop offset="35%" stopColor="rgba(2,6,16,0)" />
+        <stop offset="100%" stopColor="rgba(2,6,16,0.82)" />
+      </radialGradient>
+      {CITIES.flatMap((city) => {
+        const p = planetFor(city, ns)
+        const c = ROMANIA[city]
+        return [
+          <radialGradient key={`${city}-g`} id={p.id} cx="0.36" cy="0.3" r="0.75">
+            <stop offset="0%" stopColor={p.light} />
+            <stop offset="46%" stopColor={p.mid} />
+            <stop offset="100%" stopColor={p.deep} />
+          </radialGradient>,
+          <clipPath key={`${city}-c`} id={p.clipId}>
+            <circle cx={c.x} cy={c.y} r={NODE_R} />
+          </clipPath>,
+        ]
+      })}
+    </>
+  )
+}
+
+// Surface detail for a node planet — bands, craters or continents picked from
+// the city hash, so a given city always looks the same (never changes as the
+// search navigates). Clipped to the node circle.
+function planetSurface(coord: { x: number; y: number }, p: PlanetInfo, shadeId: string): ReactNode {
+  const { x, y } = coord
+  const r = NODE_R
+  const s = (fill: string, opacity?: number): CSSProperties => ({ fill, stroke: 'none', opacity })
+  return (
+    <g className="node-surface" clipPath={`url(#${p.clipId})`} style={{ pointerEvents: 'none' }}>
+      {p.pattern === 'bands' ? (
+        <g style={{ opacity: 0.5 }}>
+          <ellipse cx={x} cy={y - r * 0.52} rx={r} ry={r * 0.14} style={s(p.light)} />
+          <ellipse cx={x} cy={y - r * 0.12} rx={r} ry={r * 0.12} style={s(p.deep)} />
+          <ellipse cx={x} cy={y + r * 0.3} rx={r} ry={r * 0.16} style={s(p.light, 0.8)} />
+          <ellipse cx={x} cy={y + r * 0.64} rx={r} ry={r * 0.12} style={s(p.deep)} />
+        </g>
+      ) : p.pattern === 'craters' ? (
+        <g style={{ opacity: 0.5 }}>
+          <circle cx={x - r * 0.3} cy={y - r * 0.25} r={r * 0.22} style={s(p.deep)} />
+          <circle cx={x + r * 0.25} cy={y + r * 0.22} r={r * 0.28} style={s(p.deep)} />
+          <circle cx={x + r * 0.34} cy={y - r * 0.34} r={r * 0.16} style={s(p.deep)} />
+        </g>
+      ) : p.pattern === 'cracks' ? (
+        <g style={{ opacity: 0.6 }}>
+          <path d={`M${x - r} ${y} L${x - r * 0.2} ${y - r * 0.2} L${x + r * 0.3} ${y + r * 0.1} L${x + r} ${y - r * 0.1}`} fill="none" style={{ stroke: p.deep, strokeWidth: r * 0.16, strokeLinecap: 'round' }} />
+          <path d={`M${x - r * 0.5} ${y - r * 0.5} L${x} ${y - r * 0.1} L${x + r * 0.5} ${y - r * 0.55}`} fill="none" style={{ stroke: p.deep, strokeWidth: r * 0.12, strokeLinecap: 'round' }} />
+        </g>
+      ) : (
+        <g style={{ opacity: 0.6 }}>
+          <ellipse cx={x - r * 0.18} cy={y - r * 0.14} rx={r * 0.5} ry={r * 0.3} transform={`rotate(-16 ${x} ${y})`} style={s(p.light)} />
+          <ellipse cx={x + r * 0.28} cy={y + r * 0.3} rx={r * 0.38} ry={r * 0.22} transform={`rotate(14 ${x} ${y})`} style={s(p.light)} />
+        </g>
+      )}
+      <circle cx={x} cy={y} r={r} style={s(`url(#${shadeId})`)} />
+      <ellipse cx={x - r * 0.32} cy={y - r * 0.34} rx={r * 0.3} ry={r * 0.19} transform={`rotate(-28 ${x} ${y})`} style={s('rgba(255,255,255,0.22)')} />
+    </g>
+  )
+}
+
+// Real city changes up to (and including) `upto` — a pure function of the step
+// list, so the FTL burst counters stay safe under StrictMode/concurrent
+// rendering (no render-phase ref mutation). A parked ship stops incrementing.
+function countMoves(steps: Step[], upto: number, start: NodeId): number {
+  if (upto <= 0) return 0
+  let count = 0
+  let prev: NodeId = steps[0]?.current ?? start
+  for (let i = 1; i <= upto; i++) {
+    const cur = steps[i]?.current
+    if (cur !== undefined && cur !== prev) count++
+    prev = cur ?? prev
+  }
+  return count
+}
+
 type SVGMapParams = {
   algoKey: string
   stepIdx: number
@@ -378,9 +522,12 @@ type SVGMapParams = {
   landmarks?: readonly NodeId[]
   onCityClick?: (city: NodeId) => void
   pickLandmarkMode?: boolean
+  showMapBg?: boolean
+  spaceTheme?: boolean
 }
 
-function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showLine, heatmapValues, landmarks, onCityClick, pickLandmarkMode }: SVGMapParams) {
+function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, showLine, heatmapValues, landmarks, onCityClick, pickLandmarkMode, showMapBg, spaceTheme }: SVGMapParams) {
+  const planetNs = useId().replace(/:/g, '')
   const step: Step = result.steps[Math.min(stepIdx, lastIdx)]
   const isFinalFrame: boolean = stepIdx >= lastIdx
   const edgeViews: EdgeView[] = buildEdgeViews(
@@ -397,7 +544,13 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
       role="img"
       aria-label={`Romania road map — ${ALGORITHMS[algoKey]?.label ?? algoKey} visualizer`}
     >
+      <defs>
+        {spaceTheme && <PlanetDefs ns={planetNs} />}
+        {showMapBg && <WoodDefs ns={planetNs} />}
+      </defs>
+
       <rect className="map-bg" x={625} y={325} width={2750} height={1850} rx={80} />
+      {showMapBg && <WoodSurface ns={planetNs} />}
 
       {edgeViews.map((edge) => (
         <line
@@ -429,14 +582,12 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
             const norm = heatmapValues[city]
             if (norm === undefined) return null
             const coord = ROMANIA[city]
-            const hue = Math.round(norm * 240)
             return (
               <circle
                 key={`heat-${city}`}
                 cx={coord.x} cy={coord.y}
                 r={NODE_R + 14}
-                fill={`hsl(${hue}, 85%, 55%)`}
-                opacity={0.75}
+                style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * norm }}
               />
             )
           })}
@@ -450,10 +601,11 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
         const isStart = city === start && !isFinalFrame
         const isGoal = city === goal && !isFinalFrame
         const isLandmark = landmarks?.includes(city) ?? false
+        const planet = spaceTheme ? planetFor(city, planetNs) : null
         return (
           <g
             key={city}
-            className={`node node-${state}${isHovered ? ' node-hover' : ''}${pickLandmarkMode ? ' node-clickable' : ''}`}
+            className={`node node-${state}${spaceTheme ? ' node-space' : ''}${isHovered ? ' node-hover' : ''}${pickLandmarkMode ? ' node-clickable' : ''}`}
             onClick={() => onCityClick?.(city)}
           >
             <title>{city}{isLandmark ? ' ★ landmark' : ''}</title>
@@ -461,7 +613,13 @@ function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, goal, s
             {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
             {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
             {isLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
-            <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+            {planet?.ring && (
+              <ellipse className="node-orbit" cx={coord.x} cy={coord.y} rx={NODE_R + 24} ry={NODE_R * 0.45}
+                transform={`rotate(${planet.ringRot} ${coord.x} ${coord.y})`} />
+            )}
+            <circle className="node-disc" cx={coord.x} cy={coord.y} r={NODE_R}
+              style={planet ? ({ ['--planet']: `url(#${planet.id})` } as CSSProperties) : undefined} />
+            {planet && planetSurface(coord, planet, `${planetNs}shade`)}
             <text x={coord.x} y={coord.y} dominantBaseline="central">{cityCode(city)}</text>
           </g>
         )
@@ -501,12 +659,15 @@ type MergedMapParams = {
   landmarksB?: readonly NodeId[]
   onCityClick?: (city: NodeId) => void
   pickLandmarkMode?: boolean
+  showMapBg?: boolean
+  spaceTheme?: boolean
 }
 
 function MergedSVGMap({
   stepIdx, lastIdx, lastIdx2, result, result2, hoveredCity, start, goal,
-  showLine, heatA, heatB, landmarksA, landmarksB, onCityClick, pickLandmarkMode,
+  showLine, heatA, heatB, landmarksA, landmarksB, onCityClick, pickLandmarkMode, showMapBg, spaceTheme,
 }: MergedMapParams) {
+  const planetNs = useId().replace(/:/g, '')
   const stepA: Step | undefined = result.steps[Math.min(stepIdx, lastIdx)]
   const stepB: Step | undefined = result2.steps[Math.min(stepIdx, lastIdx2)]
   const finalA: boolean = stepIdx >= lastIdx
@@ -532,6 +693,8 @@ function MergedSVGMap({
       aria-label="Merged Romania road map — lane A vs lane B"
     >
       <defs>
+        {spaceTheme && <PlanetDefs ns={planetNs} />}
+        {showMapBg && <WoodDefs ns={planetNs} />}
         {CITIES.map((city) => {
           const code = cityCode(city)
           const c = ROMANIA[city]
@@ -549,6 +712,7 @@ function MergedSVGMap({
       </defs>
 
       <rect className="map-bg" x={625} y={325} width={2750} height={1850} rx={80} />
+      {showMapBg && <WoodSurface ns={planetNs} />}
 
       {/* Roads — two parallel strands, split down the middle */}
       {BASE_EDGES.map((edge) => {
@@ -614,12 +778,12 @@ function MergedSVGMap({
               <g key={`mheat-${city}`}>
                 {nA !== undefined && (
                   <g clipPath={`url(#mclipL-${code})`}>
-                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nA * 240)}, 85%, 55%)`} opacity={0.75} />
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * nA }} />
                   </g>
                 )}
                 {nB !== undefined && (
                   <g clipPath={`url(#mclipR-${code})`}>
-                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} fill={`hsl(${Math.round(nB * 240)}, 85%, 55%)`} opacity={0.75} />
+                    <circle cx={c.x} cy={c.y} r={NODE_R + 14} style={{ fill: 'var(--marker-goal)', fillOpacity: 0.85 - 0.77 * nB }} />
                   </g>
                 )}
               </g>
@@ -634,6 +798,7 @@ function MergedSVGMap({
         const code = cityCode(city)
         const cA = stepA ? nodeState(city, stepA, finalA, result.found, result.path) : 'unvisited'
         const cB = stepB ? nodeState(city, stepB, finalB, result2.found, result2.path) : 'unvisited'
+        const planet = spaceTheme ? planetFor(city, planetNs) : null
         const isHovered = city === hoveredCity
         const isStart = city === start && searching
         const isGoal = city === goal && searching
@@ -658,14 +823,28 @@ function MergedSVGMap({
                 <circle className="marker-ring marker-lm-b" cx={coord.x} cy={coord.y} r={70} />
               </g>
             )}
-            <g clipPath={`url(#mclipL-${code})`} className={`mhalf node node-${cA}`}>
-              <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+            <g clipPath={`url(#mclipL-${code})`} className={`mhalf node node-${cA}${spaceTheme ? ' node-space' : ''}`}>
+              <circle className="node-disc" cx={coord.x} cy={coord.y} r={NODE_R}
+                style={planet ? ({ ['--planet']: `url(#${planet.id})` } as CSSProperties) : undefined} />
+              {planet && planetSurface(coord, planet, `${planetNs}shade`)}
               <text x={coord.x} y={coord.y} dominantBaseline="central">{code}</text>
             </g>
-            <g clipPath={`url(#mclipR-${code})`} className={`mhalf node node-${cB}`}>
-              <circle cx={coord.x} cy={coord.y} r={NODE_R} />
+            <g clipPath={`url(#mclipR-${code})`} className={`mhalf node node-${cB}${spaceTheme ? ' node-space' : ''}`}>
+              <circle className="node-disc" cx={coord.x} cy={coord.y} r={NODE_R}
+                style={planet ? ({ ['--planet']: `url(#${planet.id})` } as CSSProperties) : undefined} />
+              {planet && planetSurface(coord, planet, `${planetNs}shade`)}
               <text x={coord.x} y={coord.y} dominantBaseline="central">{code}</text>
             </g>
+            {stepA && stepA.current === city && !finalA && (
+              <g clipPath={`url(#mclipL-${code})`}>
+                <circle key={`pa-${stepIdx}`} className="cur-ping" style={{ stroke: 'var(--map-accent)' }} cx={coord.x} cy={coord.y} r={NODE_R} />
+              </g>
+            )}
+            {stepB && stepB.current === city && !finalB && (
+              <g clipPath={`url(#mclipR-${code})`}>
+                <circle key={`pb-${stepIdx}`} className="cur-ping" style={{ stroke: 'var(--lane-b)' }} cx={coord.x} cy={coord.y} r={NODE_R} />
+              </g>
+            )}
           </g>
         )
       })}
@@ -689,42 +868,9 @@ function useMediaQuery(query: string): boolean {
   return matches
 }
 
-// Sun/Moon theme toggle. Applies a `.dark` class on <html> and matches the
-// native color scheme so the app's CSS variables (now keyed to `.dark`) switch.
-function ThemeToggle() {
-  const [dark, setDark] = useState(() => {
-    const prefersDark =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-    const initial = document.documentElement.classList.contains('dark') || prefersDark
-    document.documentElement.classList.toggle('dark', initial)
-    document.documentElement.style.colorScheme = initial ? 'dark' : 'light'
-    return initial
-  })
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-  }, [dark])
-  return (
-    <button
-      type="button"
-      className="theme-toggle"
-      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-      title={dark ? 'Light theme' : 'Dark theme'}
-      onClick={() => {
-        // Animate the theme change, then drop the class so normal transitions resume.
-        document.documentElement.classList.add('theme-anim')
-        window.setTimeout(() => document.documentElement.classList.remove('theme-anim'), 450)
-        setDark((d) => !d)
-      }}
-    >
-      {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
-    </button>
-  )
-}
-
 function App() {
   // Swap the comparison table's orientation below 1100px (render only one table).
-  const isCompact = useMediaQuery('(max-width: 1100px)')
+  void useMediaQuery('(max-width: 1100px)')
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -744,16 +890,33 @@ function App() {
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [pickLandmarkMode, setPickLandmarkMode] = useState(false)
   const [merged, setMerged] = useState(true)
-  // Guide sidebar: open on wide screens, collapsed on narrow ones.
-  const [sidebarOpen, setSidebarOpen] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth > 1100,
-  )
+  type AppTab = 'map' | 'guide'
+  const [tab, setTab] = useState<AppTab>('map')
 
-  // Stats go to the right sidebar only when the merged view has room (wide
-  // window); otherwise they sit below the map so the centre column stays wide.
-  const isWide = useMediaQuery('(min-width: 1500px)')
-  const statsInSidebar = merged && isWide
-  const useTall = merged || isCompact
+  // ── Theme system ──────────────────────────────────────────────────────
+  // Four themes cycled from the masthead. `applyTheme` runs in the initializer so
+  // the classes land before first paint (no flash); the effect below persists it.
+  const [theme, setTheme] = useState<Theme>(() => {
+    const t = initialTheme()
+    applyTheme(t)
+    return t
+  })
+  const [roll, setRoll] = useState<{ theme: Theme; nonce: number } | null>(null)
+  const rollNonce = useRef(0)
+  const [muted, setMutedFlag] = useState<boolean>(() => {
+    try { return window.localStorage.getItem('muted') === '1' } catch { return false }
+  })
+  const [audioReady, setAudioReady] = useState(false)
+  const victoryPlayed = useRef(false)
+  const themeRef = useRef(theme)
+  themeRef.current = theme
+
+  // Stats always go to right sidebar in merged mode; fit-mode keeps the map
+  // from overflowing the viewport. Both collapse to column below 1100px via CSS.
+  void useMediaQuery('(min-width: 1500px)')
+  const fit = merged && tab === 'map'
+  const statsInSidebar = fit
+  void true // useTall removed — bento grid replaces table
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
@@ -801,6 +964,31 @@ function App() {
   const lastIdx2 = result2.steps.length - 1
   const largerLastIdx = Math.max(lastIdx, lastIdx2)
 
+  // The planet each ship is currently at (the node being expanded) — drives the
+  // cockpit window, so it changes as the search jumps between systems.
+  const currentCityA = result.steps[Math.min(stepIdx, lastIdx)]?.current ?? start
+  const currentCityB = result2.steps[Math.min(stepIdx, lastIdx2)]?.current ?? start
+
+  // FTL burst counters: how many times each ship has actually moved. Pure
+  // derivations of the step list (safe under StrictMode/concurrent rendering), so
+  // a ship that has reached its goal (parked) goes quiet — no render mutations.
+  const warpA = useMemo(() => countMoves(result.steps, Math.min(stepIdx, lastIdx), start), [result, stepIdx, lastIdx, start])
+  const warpB = useMemo(() => countMoves(result2.steps, Math.min(stepIdx, lastIdx2), start), [result2, stepIdx, lastIdx2, start])
+
+  // A laser fires when a ship actually jumps to a new planet (space theme).
+  const prevWarpA = useRef(warpA)
+  useEffect(() => {
+    if (warpA === prevWarpA.current) return
+    prevWarpA.current = warpA
+    if (themeRef.current === 'space') playLaser()
+  }, [warpA])
+  const prevWarpB = useRef(warpB)
+  useEffect(() => {
+    if (warpB === prevWarpB.current) return
+    prevWarpB.current = warpB
+    if (themeRef.current === 'space') playLaser()
+  }, [warpB])
+
   useEffect(() => {
     if (!playing || stepIdx >= largerLastIdx) return
     const id = setTimeout(() => {
@@ -809,6 +997,91 @@ function App() {
     }, delay)
     return () => clearTimeout(id)
   }, [playing, stepIdx, delay, largerLastIdx])
+
+  // Re-arm the victory fanfare when a new run is computed (its inputs change),
+  // then fire it once as the animation first reaches the final frame.
+  useEffect(() => { victoryPlayed.current = false }, [result, result2, largerLastIdx])
+  useEffect(() => {
+    if (victoryPlayed.current || largerLastIdx <= 0) return
+    if (stepIdx >= largerLastIdx) {
+      victoryPlayed.current = true
+      if (themeRef.current === 'dnd') playVictory()
+    }
+  }, [stepIdx, largerLastIdx])
+
+  // Each frame expands one node: a short wooden "dup" as the frontier advances
+  // (the D&D sound set), throttled so fast playback doesn't machine-gun it.
+  const lastStepRef = useRef(stepIdx)
+  const lastDupAt = useRef(0)
+  useEffect(() => {
+    const prev = lastStepRef.current
+    lastStepRef.current = stepIdx
+    if (stepIdx <= prev) return
+    const now = performance.now()
+    if (now - lastDupAt.current >= 70) {
+      lastDupAt.current = now
+      if (themeRef.current === 'dnd') playExpand()
+    }
+  }, [stepIdx])
+
+  useEffect(() => {
+    applyTheme(theme)
+    try { window.localStorage.setItem('theme', theme) } catch { /* ignore */ }
+  }, [theme])
+
+  // Audio: unlock the context on the first gesture (pointer OR keyboard) — browsers
+  // keep it suspended until then, so the roll sounds and Celtic loop depend on it.
+  useEffect(() => {
+    const unlock = () => {
+      ensureAudio(); setAudioReady(true)
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('keydown', unlock)
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  // Keep the engine in sync with the mute toggle, and remember the choice.
+  useEffect(() => {
+    setMuted(muted)
+    try { window.localStorage.setItem('muted', muted ? '1' : '0') } catch { /* ignore */ }
+  }, [muted])
+
+  // The D&D theme gets its own Celtic jig; the space theme gets a warp-core hum
+  // with scattered electrical sparks. Every other theme is silent.
+  useEffect(() => {
+    if (theme === 'dnd' && audioReady) startCeltic(); else stopCeltic()
+    return () => { if (theme === 'dnd') stopCeltic() }
+  }, [theme, audioReady])
+
+  useEffect(() => {
+    if (theme === 'space' && audioReady) startSpaceHum(); else stopSpaceHum()
+    return () => { if (theme === 'space') stopSpaceHum() }
+  }, [theme, audioReady])
+
+  // Cycle with a gacha-style roll: the reveal card plays, the theme switches
+  // mid-animation, then the card fades out. Each theme opens with its own sound.
+  function cycleTheme() {
+    if (roll) return
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length]
+    if (next === 'light') playCrow()
+    else if (next === 'dark') playOwl()
+    else if (next === 'dnd') playGlitter()
+    else playWhoosh()
+    const nonce = ++rollNonce.current
+    setRoll({ theme: next, nonce })
+    window.setTimeout(() => {
+      const el = document.documentElement
+      el.classList.add('theme-anim')
+      window.setTimeout(() => el.classList.remove('theme-anim'), 500)
+      setTheme(next)
+    }, 780)
+    window.setTimeout(() => setRoll((r) => (r && r.nonce === nonce ? null : r)), 1700)
+  }
 
   function handleAlgoChange(next: string) { setAlgo(next); setStepIdx(0); setPlaying(false) }
   function handleAlgoChange2(next: string) { setAlgo2(next); setStepIdx(0); setPlaying(false) }
@@ -856,7 +1129,11 @@ function App() {
   function handleStepBack() { setPlaying(false); setStepIdx((i) => Math.max(0, i - 1)) }
   function handleStepForward() { setPlaying(false); setStepIdx((i) => Math.min(largerLastIdx, i + 1)) }
   function handlePlayPause() {
-    if (stepIdx >= largerLastIdx) { setStepIdx(0); setPlaying(true); return }
+    // The wooden dice roll belongs to the D&D sound set: play it when the run
+    // starts or restarts (not on pause).
+    const dice = () => { if (themeRef.current === 'dnd') playDice() }
+    if (stepIdx >= largerLastIdx) { dice(); setStepIdx(0); setPlaying(true); return }
+    if (!playing) dice()
     setPlaying((p) => !p)
   }
 
@@ -901,7 +1178,7 @@ function App() {
     return undefined
   }
 
-  type Col = { label: string; a: ReactNode; b: ReactNode; better?: 'a' | 'b'; wrap?: boolean }
+  type Col = { label: string; a: ReactNode; b: ReactNode; better?: 'a' | 'b'; wrap?: boolean; section?: string }
   // Mean time over BENCH_ITERS runs, shown in microseconds.
   const fmtUs = (ms: number) => `${(ms * 1000).toFixed(1)}`
   // Right-aligned mono cells: pad single-digit step totals so “/ 5” lines up
@@ -919,6 +1196,7 @@ function App() {
   const cols: Col[] = [
     {
       label: 'Step',
+      section: 'Live',
       a: stepText(result.steps.length, lastIdx),
       b: stepText(result2.steps.length, lastIdx2),
     },
@@ -937,9 +1215,16 @@ function App() {
     },
     {
       label: 'Generated',
+      section: 'Result',
       a: String(result.generated),
       b: String(result2.generated),
       better: betterLower(result.generated, result2.generated),
+    },
+    {
+      label: 'Peak memory',
+      a: String(benchA.peakFrontier),
+      b: String(benchB.peakFrontier),
+      better: betterLower(benchA.peakFrontier, benchB.peakFrontier),
     },
     {
       label: 'Path',
@@ -948,13 +1233,7 @@ function App() {
       better: atEnd ? betterPath() : undefined,
       wrap: true,
     },
-    { label: 'Time (µs)', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
-    {
-      label: 'Peak memory',
-      a: String(benchA.peakFrontier),
-      b: String(benchB.peakFrontier),
-      better: betterLower(benchA.peakFrontier, benchB.peakFrontier),
-    },
+    { label: 'Time (µs)', section: 'Performance', a: fmtUs(benchA.ms), b: fmtUs(benchB.ms), better: betterLower(benchA.ms, benchB.ms) },
     {
       label: 'Cost (km)',
       a: benchCost(benchA),
@@ -967,12 +1246,13 @@ function App() {
       b: benchB.found ? String(benchB.hops) : '—',
       better: betterLower(benchA.found ? benchA.hops : NaN, benchB.found ? benchB.hops : NaN),
     },
-    { label: 'T(n)', a: <Tex>{meta.time}</Tex>, b: <Tex>{meta2.time}</Tex> },
+    { label: 'T(n)', section: 'Complexity', a: <Tex>{meta.time}</Tex>, b: <Tex>{meta2.time}</Tex> },
     { label: 'S(n)', a: <Tex>{meta.space}</Tex>, b: <Tex>{meta2.space}</Tex> },
     { label: 'Optimal', a: meta.optimal, b: meta2.optimal, better: betterYes(meta.optimal, meta2.optimal) },
     { label: 'Complete', a: meta.complete, b: meta2.complete, better: betterYes(meta.complete, meta2.complete) },
     {
       label: 'landmarks 2',
+      section: 'Landmarks',
       a: lmValue(lmEffectA, 'lm2'),
       b: lmValue(lmEffectB, 'lm2'),
       better: lmEffectA && lmEffectB ? betterLower(lmEffectA.lm2, lmEffectB.lm2) : undefined,
@@ -997,382 +1277,347 @@ function App() {
 
   // Cell classes for the comparison tables. Numeric-ish Step cells stay on one
   // line (they can reach two digits, e.g. “10 / 12”) instead of wrapping.
-  const cellCls = (
-    label: string,
-    wrap: boolean | undefined,
-    better: 'a' | 'b' | undefined,
-    side: 'a' | 'b',
-  ) =>
-    `${wrap ? 'col-wrap' : ''}${better === side ? (side === 'a' ? ' better-a' : ' better-b') : ''}${label === 'Step' ? ' col-nowrap' : ''}`
+  const bentoSections = cols.reduce<{ title: string; rows: Col[] }[]>((acc, c) => {
+    if (c.section) acc.push({ title: c.section, rows: [] })
+    acc[acc.length - 1].rows.push(c)
+    return acc
+  }, [])
+
+  const chipBase = 'font-mono text-[11px] px-2 py-[2px] rounded-full whitespace-nowrap'
+
+  const renderKanbanCol = (side: 'a' | 'b', label: string, badgeCls: string, accentCls: string, winnerCls: string, winnerBg: string) => (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)]">
+        <span className={`lane-badge ${badgeCls}`} aria-hidden="true">{side.toUpperCase()}</span>
+        <span className={`text-xs font-semibold ${accentCls} truncate`}>{label}</span>
+      </div>
+      {bentoSections.map(({ title, rows }) => (
+        <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-ink opacity-50 mb-2">{title}</div>
+          {rows.map((c) => {
+            const val = c[side], isBetter = c.better === side
+            const isYes = val === 'Yes', isNo = val === 'No'
+            const rowCls = c.wrap
+              ? 'flex flex-col items-start gap-1 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+              : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+            return (
+              <div key={c.label} className={rowCls}>
+                <span className="text-[11px] text-ink truncate">{c.label}</span>
+                {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path font-semibold`}>{val}</span>
+                 : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
+                 : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
+                 : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
 
   // Algorithm-comparison stats. Rendered once, slotted either into the right
   // sidebar or below the map depending on STATS_IN_SIDEBAR.
   const statsPanel = (
     <section className="compare-panel" aria-labelledby="compare-title">
-      <Card>
-        <CardContent>
-          <h2 id="compare-title" className="compare-title">
-            <span>Algorithm comparison</span>
-            <span className="ct-route">{start} → {goal}</span>
-          </h2>
-          <div className="compare-scroll">
-            {useTall ? (
-            <table className="compare compare-tall">
-              <thead>
-                <tr>
-                  <th scope="col" className="tall-metric-col">Metric</th>
-                  <th scope="col" className="tall-head tall-head-a">
-                    <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-                    <span className="tall-head-label">{rowLabelA}</span>
-                  </th>
-                  <th scope="col" className="tall-head tall-head-b">
-                    <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-                    <span className="tall-head-label">{rowLabelB}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {cols.map((c) => (
-                  <tr key={c.label}>
-                    <th scope="row" className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                    <td className={cellCls(c.label, c.wrap, c.better, 'a')}>{c.a}</td>
-                    <td className={cellCls(c.label, c.wrap, c.better, 'b')}>{c.b}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            ) : (
-            <table className="compare compare-fixed table-wide">
-              <thead>
-                <tr>
-                  <th scope="col" style={{ width: ALGO_COL_PX }}>Algorithm</th>
-                  {cols.map((c) => (
-                    <th key={c.label} scope="col" style={{ width: COL_PX[c.label] ?? DEFAULT_COL_PX }} className={c.label === 'Time (µs)' ? 'th-unit' : ''}>{c.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="row-lane-a">
-                  <th scope="row">
-                    <div className="run-cell">
-                      <span className="run-label">
-                        <span className="lane-badge lane-badge-a">A</span>
-                        <span className="run-label-text">{rowLabelA}</span>
-                      </span>
-                    </div>
-                  </th>
-                  {cols.map((c) => (
-                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'a')}>
-                      <div className="run-cell">{c.a}</div>
-                    </td>
-                  ))}
-                </tr>
-                <tr className="row-lane-b">
-                  <th scope="row">
-                    <div className="run-cell">
-                      <span className="run-label">
-                        <span className="lane-badge lane-badge-b">B</span>
-                        <span className="run-label-text">{rowLabelB}</span>
-                      </span>
-                    </div>
-                  </th>
-                  {cols.map((c) => (
-                    <td key={c.label} className={cellCls(c.label, c.wrap, c.better, 'b')}>
-                      <div className="run-cell">{c.b}</div>
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-            )}
-          </div>
-          <p className="footnotes">
-            {
-              [
-                `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
-                'live step metrics (Visited/Frontier/Path) compared only at the final frame',
-                ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
-                ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
-              ].filter(Boolean).join(' · ')
-            }
-          </p>
-        </CardContent>
-      </Card>
+      <h2 id="compare-title" className="compare-title">
+        <span>{theme === 'dnd' ? 'Alchemy comparison' : 'Algorithm comparison'}</span>
+        <span className="ct-route">{start} → {goal}</span>
+      </h2>
+      <div className="grid grid-cols-2 gap-3 p-3">
+        {renderKanbanCol('a', rowLabelA, 'lane-badge-a', 'text-map-accent', 'text-map-accent', 'bg-map-accent/15')}
+        {renderKanbanCol('b', rowLabelB, 'lane-badge-b', 'text-lane-b', 'text-lane-b', 'bg-lane-b/15')}
+      </div>
+      <ul className="footnotes">
+        {[
+          `Time = x̄ of ${BENCH_ITERS} runs (µs)`,
+          'live step metrics (Visited/Frontier/Path) compared only at the final frame',
+          ALGO_FOOTNOTES[algo] ? `A: ${ALGO_FOOTNOTES[algo]}` : '',
+          ALGO_FOOTNOTES[algo2] ? `B: ${ALGO_FOOTNOTES[algo2]}` : '',
+        ].filter(Boolean).map((t) => <li key={t}>{t}</li>)}
+      </ul>
     </section>
   )
 
   return (
-    <div className={`app-shell${statsInSidebar ? ' app-shell-fit' : ''}`}>
-    <Guide open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className={`app-shell${fit ? ' app-shell-fit' : ''}`}>
+    {theme === 'dnd' && <DndAurora />}
+    {theme === 'space' && <SpaceField />}
     <div className="app-main">
     <h1 className="app-title">
-      <button
-        className="sidebar-toggle"
-        aria-label={sidebarOpen ? 'Hide the guide' : 'Show the guide'}
-        aria-pressed={sidebarOpen}
-        title={sidebarOpen ? 'Hide guide' : 'Show guide'}
-        onClick={() => setSidebarOpen((v) => !v)}
-      >
-        <BookOpen aria-hidden="true" />
-      </button>
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
-      <ThemeToggle />
+      <ThemeControl theme={theme} onCycle={cycleTheme} busy={roll !== null} />
+      <button
+        type="button"
+        className="mute-toggle"
+        aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
+        aria-pressed={muted}
+        title={muted ? 'Unmute sounds' : 'Mute sounds'}
+        onClick={() => { const m = !muted; setMutedFlag(m); if (!m) ensureAudio() }}
+      >
+        {muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
+      </button>
     </h1>
-      <div className="query-bar" role="toolbar" aria-label="Search configuration">
-        <div className="query-route">
-        <span className="query-word">From</span>
-        <Select
-          value={start}
-          onValueChange={(v) => v && handleStartChange(v as NodeId)}
-          onOpenChange={(open) => !open && setHoveredCity(null)}
-        >
-          <SelectTrigger className="w-36 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {CITIES.map((city) => (
-              <SelectItem
-                key={city} value={city}
-                onMouseEnter={() => setHoveredCity(city)}
-                onMouseLeave={() => setHoveredCity(null)}
-              >{city}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
 
-        <span className="query-word">To</span>
-        <Select
-          value={goal}
-          onValueChange={(v) => v && handleGoalChange(v as NodeId)}
-          onOpenChange={(open) => !open && setHoveredCity(null)}
-        >
-          <SelectTrigger className="w-36 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {CITIES.map((city) => (
-              <SelectItem
-                key={city} value={city}
-                onMouseEnter={() => setHoveredCity(city)}
-                onMouseLeave={() => setHoveredCity(null)}
-              >{city}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="tab-bar" role="tablist">
+        <button
+          role="tab"
+          id="tab-map"
+          aria-controls="tabpanel-map"
+          className={`tab-btn${tab === 'map' ? ' tab-btn-active' : ''}`}
+          aria-selected={tab === 'map'}
+          onClick={() => setTab('map')}
+        >Map</button>
+        <button
+          role="tab"
+          id="tab-guide"
+          aria-controls="tabpanel-guide"
+          className={`tab-btn${tab === 'guide' ? ' tab-btn-active' : ''}`}
+          aria-selected={tab === 'guide'}
+          onClick={() => setTab('guide')}
+        >Guide</button>
+      </div>
 
-        <Button
-          variant="outline" size="icon"
-          aria-label="Randomize start and goal cities"
-          title="Randomize"
-          onClick={handleRandomize}
-        >
-          <Dices aria-hidden="true" />
-        </Button>
+      {tab === 'guide' && (
+        <div id="tabpanel-guide" role="tabpanel" aria-labelledby="tab-guide" className="guide-page-wrap">
+          <Guide />
         </div>
+      )}
 
-        <div className="query-lane">
-          <span className="query-word">with</span>
-          <div className="query-algo query-algo-a">
-          <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-          <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
-            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane A">
-              <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
-            </SelectTrigger>
+      {tab === 'map' && <>
+      <div className="query-bars-row">
+        {/* Map card */}
+        <div className="query-bar" role="group" aria-label="Route selection">
+          <Select
+            value={start}
+            onValueChange={(v) => v && handleStartChange(v as NodeId)}
+            onOpenChange={(open) => !open && setHoveredCity(null)}
+          >
+            <SelectTrigger className="w-32 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {ALGO_OPTIONS.map(([key, m]) => (
-                <SelectItem key={key} value={key}>{m.label}</SelectItem>
+              {CITIES.map((city) => (
+                <SelectItem
+                  key={city} value={city}
+                  onMouseEnter={() => setHoveredCity(city)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                >{city}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <LandmarkPicker
-            lane="A"
-            usesLandmarks={meta.usesLandmarks}
-            overlay={lmOverlayA}
-            setOverlay={setLmOverlayA}
-            count={landmarkA}
-            onCount={handleLandmarkAChange}
-            customCount={customA.length}
-            onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
-          />
-          </div>
+          <span className="query-word" aria-hidden="true">→</span>
+          <Select
+            value={goal}
+            onValueChange={(v) => v && handleGoalChange(v as NodeId)}
+            onOpenChange={(open) => !open && setHoveredCity(null)}
+          >
+            <SelectTrigger className="w-32 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CITIES.map((city) => (
+                <SelectItem
+                  key={city} value={city}
+                  onMouseEnter={() => setHoveredCity(city)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                >{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline" size="icon"
+            aria-label="Randomize start and goal cities"
+            title="Randomize"
+            onClick={handleRandomize}
+          >
+            <Dices aria-hidden="true" />
+          </Button>
         </div>
-
-        <div className="query-lane">
+        {/* Algo card */}
+        <div className="query-bar query-bar-algo" role="toolbar" aria-label="Algorithm selection">
+          <div className="query-algo query-algo-a">
+            <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+            <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
+              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane A">
+                <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ALGO_OPTIONS.map(([key, m]) => (
+                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <LandmarkPicker
+              lane="A"
+              usesLandmarks={meta.usesLandmarks}
+              overlay={lmOverlayA}
+              setOverlay={setLmOverlayA}
+              count={landmarkA}
+              onCount={handleLandmarkAChange}
+              customCount={customA.length}
+              onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
+            />
+          </div>
           <span className="query-word">vs</span>
           <div className="query-algo query-algo-b">
-          <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-          <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
-            <SelectTrigger className="w-44 algo-trigger" aria-label="Algorithm for lane B">
-              <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {ALGO_OPTIONS.map(([key, m]) => (
-                <SelectItem key={key} value={key}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <LandmarkPicker
-            lane="B"
-            usesLandmarks={meta2.usesLandmarks}
-            overlay={lmOverlayB}
-            setOverlay={setLmOverlayB}
-            count={landmarkB}
-            onCount={handleLandmarkBChange}
-            customCount={customB.length}
-            onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
-          />
+            <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+            <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
+              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane B">
+                <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ALGO_OPTIONS.map(([key, m]) => (
+                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <LandmarkPicker
+              lane="B"
+              usesLandmarks={meta2.usesLandmarks}
+              overlay={lmOverlayB}
+              setOverlay={setLmOverlayB}
+              count={landmarkB}
+              onCount={handleLandmarkBChange}
+              customCount={customB.length}
+              onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
+            />
           </div>
         </div>
       </div>
 
-      <div className={`workspace${statsInSidebar ? ' workspace-fit' : ''}`}>
+      <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className={`workspace${fit ? ' workspace-fit' : ''}`}>
       <main className="app">
         {/* Toolbar — above the map */}
         <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
 
-          {/* Group 1: Node state legend */}
-          <div className="toolbar-group" aria-label="Node state legend">
-            <span className="toolbar-group-label">Legend</span>
-            <ul className="legend" aria-label="Node state colors">
-              <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-              <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-              <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-              <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-              <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-              <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-              <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-            </ul>
-          </div>
+          {/* Overlays */}
+          <Button
+            variant={showLine ? 'default' : 'outline'} size="sm"
+            onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
+            title="Show straight line from origin to destination"
+          >
+            <span className="swatch swatch-arc" aria-hidden="true" />
+            Straight Line
+          </Button>
+          <Button
+            variant={showHeatmap ? 'default' : 'outline'} size="sm"
+            onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
+            title="h-value heatmap — stronger red = nearer the goal (lower h)"
+          >
+            <Thermometer size={14} aria-hidden="true" /> Heatmap
+          </Button>
+          <Button
+            variant={merged ? 'default' : 'outline'} size="sm"
+            onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
+            aria-pressed={merged}
+            title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
+          >
+            <Columns2 size={14} aria-hidden="true" /> {merged ? 'Merged map' : 'Merge maps'}
+          </Button>
 
-          {/* Group 2: Overlays */}
-          <div className="toolbar-group" aria-label="Map overlays">
-            <span className="toolbar-group-label">Overlays</span>
-            <div className="toolbar-row">
-              <Button
-                variant={showLine ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
-                title="Show straight line from origin to destination"
-              >
-                <span className="swatch swatch-arc" aria-hidden="true" />
-                Straight Line
-              </Button>
-              <Button
-                variant={showHeatmap ? 'default' : 'outline'} size="sm"
-                onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
-                title="h-value heatmap — red=near goal, blue=far"
-              >
-                🌡 Heatmap
-              </Button>
-              <Button
-                variant={merged ? 'default' : 'outline'} size="sm"
-                onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
-                aria-pressed={merged}
-                title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
-              >
-                ⬓ {merged ? 'Merged map' : 'Merge maps'}
-              </Button>
-            </div>
-          </div>
+          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
 
-          {/* Tool: landmark picker */}
-          <div className="toolbar-group" aria-label="Tools">
-            <span className="toolbar-group-label">Tool</span>
-            <div className="toolbar-row">
-              <Button
-                variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
-                onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
-                title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
-              >
-                ★ Landmarks ({customA.length + customB.length})
-              </Button>
-            </div>
-          </div>
-
-          {/* Group 3: Playback */}
-          <div className="toolbar-group" aria-label="Playback">
-            <span className="toolbar-group-label">Playback</span>
-            <div className="transport">
-              <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}>
-                <RotateCcw aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}>
-                <ChevronLeft aria-hidden="true" />
-              </Button>
-              <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>
-                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              </Button>
-              <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}>
-                <ChevronRight aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Group 4: Speed */}
-          <div className="toolbar-group toolbar-group-speed" aria-label="Speed">
-            <span className="toolbar-group-label">Speed</span>
-            <div className="speed">
-              <span className="speed-labels">
-                <span>Slow</span>
-                <span className="speed-value">{delay}ms</span>
-                <span>Fast</span>
-              </span>
-              <Slider
-                min={MIN_DELAY} max={MAX_DELAY} step={50}
-                value={MAX_DELAY - delay}
-                onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))}
-                aria-label="Animation speed"
-              />
-            </div>
-          </div>
+          {/* Tool */}
+          <Button
+            variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
+            onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
+            title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
+          >
+            <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
+          </Button>
 
         </div>
 
+        <div className="app-body">
         <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
           {/* Lane A */}
-          <section className="lane lane-a" aria-label="Lane A">
-            <div className="lane-header">
-              <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-              <span className="lane-algo-name">{meta.label}</span>
-            </div>
-            <div className="map-wrap">
-              <SVGMap
-                algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
-                result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                heatmapValues={heatA}
-                landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
-                onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
-              />
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
-            </div>
-          </section>
+          <div className="lanes-container">
+            <section className="lane lane-a" aria-label="Lane A">
+              <div className="lane-header">
+                <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
+                <span className="lane-algo-name">{meta.label}</span>
+              </div>
+              {theme === 'space' && <PlanetWindow variant="a" city={currentCityA} nonce={warpA} />}
+              <div className="map-wrap">
+                <SVGMap
+                  algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
+                  result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                  heatmapValues={heatA}
+                  landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
+                  onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
+                  showMapBg={theme === 'dnd'}
+                  spaceTheme={theme === 'space'}
+                />
+                <span className="heatmap-legend" aria-label="Heatmap scale"
+                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                  <span className="heatmap-legend-label">Near</span>
+                  <span className="heatmap-legend-bar" aria-hidden="true" />
+                  <span className="heatmap-legend-label">Far</span>
+                </span>
+              </div>
+              <div className="map-frame-bar">
+                <ul className="legend" aria-label="Node state colors">
+                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+                </ul>
+              </div>
+            </section>
 
-          <div className="lane-vs" aria-hidden="true">vs</div>
+            <div className="lane-vs" aria-hidden="true">vs</div>
 
-          {/* Lane B */}
-          <section className="lane lane-b" aria-label="Lane B">
-            <div className="lane-header">
-              <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-              <span className="lane-algo-name">{meta2.label}</span>
+            <div className="playback-controls">
+              <div className="transport">
+                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
+                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
+              </div>
+              <div className="speed toolbar-group-speed">
+                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
+                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
+              </div>
             </div>
-            <div className="map-wrap">
-              <SVGMap
-                algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
-                result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                heatmapValues={heatB}
-                landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
-                onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
-              />
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
-            </div>
-          </section>
+
+            {/* Lane B */}
+            <section className="lane lane-b" aria-label="Lane B">
+              <div className="lane-header">
+                <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
+                <span className="lane-algo-name">{meta2.label}</span>
+              </div>
+              {theme === 'space' && <PlanetWindow variant="b" city={currentCityB} nonce={warpB} />}
+              <div className="map-wrap">
+                <SVGMap
+                  algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
+                  result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
+                  heatmapValues={heatB}
+                  landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
+                  onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
+                  showMapBg={theme === 'dnd'}
+                  spaceTheme={theme === 'space'}
+                />
+                <span className="heatmap-legend" aria-label="Heatmap scale"
+                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
+                  <span className="heatmap-legend-label">Near</span>
+                  <span className="heatmap-legend-bar" aria-hidden="true" />
+                  <span className="heatmap-legend-label">Far</span>
+                </span>
+              </div>
+              <div className="map-frame-bar">
+                <ul className="legend" aria-label="Node state colors">
+                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+                </ul>
+              </div>
+            </section>
+          </div>
 
           {/* Merged single-map view — shown only when “Merge maps” is toggled on */}
           <section className="lane lane-merged" aria-label="Merged map (lane A and B)">
@@ -1383,10 +1628,16 @@ function App() {
               <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
               <span className="lane-algo-name">{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
               <span className="merged-legend">
-                <span className="ml-item"><span className="ml-swatch ml-a" aria-hidden="true" />{meta.label}</span>
-                <span className="ml-item"><span className="ml-swatch ml-b" aria-hidden="true" />{meta2.label}</span>
+                <span className="ml-item"><span className="ml-swatch ml-a" aria-hidden="true" />{meta.label}{laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}</span>
+                <span className="ml-item"><span className="ml-swatch ml-b" aria-hidden="true" />{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
               </span>
             </div>
+            {theme === 'space' && (
+              <div className="planet-windows">
+                <PlanetWindow variant="a" city={currentCityA} nonce={warpA} />
+                <PlanetWindow variant="b" city={currentCityB} nonce={warpB} />
+              </div>
+            )}
             <div className="map-wrap">
               <MergedSVGMap
                 stepIdx={stepIdx} lastIdx={lastIdx} lastIdx2={lastIdx2}
@@ -1396,6 +1647,8 @@ function App() {
                 landmarksA={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
                 landmarksB={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
                 onCityClick={onCityClickMerged} pickLandmarkMode={pickLandmarkMode}
+                showMapBg={theme === 'dnd'}
+                spaceTheme={theme === 'space'}
               />
               <span className="heatmap-legend" aria-label="Heatmap scale"
                 style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
@@ -1404,19 +1657,46 @@ function App() {
                 <span className="heatmap-legend-label">Far</span>
               </span>
             </div>
+            <div className="map-frame-bar">
+              <ul className="legend" aria-label="Node state colors">
+                <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
+                <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
+                <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+                <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
+                <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
+                <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
+                <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+              </ul>
+              <span className="map-frame-sep" aria-hidden="true" />
+              <div className="flex-row">
+              <div className="transport">
+                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
+                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
+                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
+              </div>
+              <span className="map-frame-sep" aria-hidden="true" />
+              <div className="speed toolbar-group-speed">
+                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
+                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
+              </div>
+              </div>
+            </div>
           </section>
         </div>
 
+        {statsInSidebar && (
+          <aside className="stats-panel" aria-label="Algorithm comparison">
+            {statsPanel}
+          </aside>
+        )}
+        </div>{/* .app-body */}
         {!statsInSidebar && statsPanel}
       </main>
-
-      {statsInSidebar && (
-        <aside className="stats-panel" aria-label="Algorithm comparison">
-          {statsPanel}
-        </aside>
-      )}
       </div>
+      </>}
     </div>
+      {roll && <ThemeRoll theme={roll.theme} nonce={roll.nonce} />}
     </div>
   )
 }
