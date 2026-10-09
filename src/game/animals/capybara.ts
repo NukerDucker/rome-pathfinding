@@ -13,6 +13,8 @@
  * body-appended; they are tracked and removed in dispose().
  */
 import { capySound } from './audio';
+import { EASE_HOP } from './motion';
+import { createLifecycle } from './lifecycle';
 
 export interface CapybaraOptions {
   /** #capy */
@@ -40,14 +42,22 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
   const perchCapy = (perchSlot.querySelector('button') ?? perchSlot) as HTMLElement;
   type CapyState = 'none' | 'map' | 'busy' | 'toGuide' | 'guide';
   let capyState: CapyState = 'none'; // 1842 'none' | 'map' | 'busy' | 'toGuide' | 'guide'
-  let disposed = false;
   let rebuildTimer: number | null = null;
 
   // live .capy-dust canvases (the rAF loop removes each one; dispose removes the rest)
   const dustCanvases = new Set<HTMLCanvasElement>();
 
-  const ac = new AbortController();
-  const { signal } = ac;
+  const lc = createLifecycle();
+  const { signal } = lc;
+  lc.cancelOnDispose(capyEl, perchCapy);
+  lc.onDispose(() => { if (rebuildTimer !== null) { clearTimeout(rebuildTimer); rebuildTimer = null; } });
+  lc.onDispose(() => { dustCanvases.forEach(c => c.remove()); dustCanvases.clear(); });
+  // back to the initial state: both hidden, no inline styles
+  lc.onDispose(() => { capyEl.hidden = true; perchCapy.hidden = true; });
+  lc.onDispose(() => { capyEl.removeAttribute('style'); perchCapy.removeAttribute('style'); });
+  lc.onDispose(() => { capyState = 'none'; });
+  // the element never leaves its React-owned parent, but keep the invariant explicit
+  lc.restore(capyEl, mapPanelEl);
 
   // the sprite's opaque pixels: [{ x, y, color }] in sprite pixels (0..47)
   // (original: new URL('./assets/capy.png', import.meta.url) — same sprite as the prop)
@@ -106,7 +116,7 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
       const DURATION = 1300;
       const t0 = performance.now();
       function frame(now: number): void {
-        if (disposed) { canvas.remove(); dustCanvases.delete(canvas); return; } // never resolves; the caller's .then stops running
+        if (lc.disposed) { canvas.remove(); dustCanvases.delete(canvas); return; } // never resolves; the caller's .then stops running
         const T = (now - t0) / DURATION;
         g.clearRect(0, 0, innerWidth, innerHeight);
         for (const q of parts) {
@@ -138,24 +148,24 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
       { transform: `translateY(${H - edge}px)`, clipPath: `inset(0 0 ${H - edge}px 0)` },
       { transform: 'translateY(-6px)', clipPath: 'inset(0 0 0 0)', offset: 0.8 },
       { transform: 'none', clipPath: 'inset(0 0 0 0)' },
-    ], { duration: 700, easing: 'ease-out' });
+    ], { duration: 700, easing: EASE_HOP });
   }
 
   function trigger(): void {
-    if (disposed) return;
+    if (lc.disposed) return;
     if (capyState === 'none' && Math.random() < CAPY_CHANCE) spawn();
   }
   // (the caller wires this to both the Next and Previous buttons)
 
   // Map: crumble away, then wait for the Guide slot to come on screen
   capyEl.addEventListener('click', () => {
-    if (disposed || capyState !== 'map') return;
+    if (lc.disposed || capyState !== 'map') return;
     capyState = 'busy';
     const rect = (capyEl.querySelector('img') ?? capyEl).getBoundingClientRect();
     capySound('poof');
     capyEl.style.visibility = 'hidden';
     capyDust(rect, 'crumble').then(() => {
-      if (disposed) return;
+      if (lc.disposed) return;
       capyEl.hidden = true;
       capyEl.style.visibility = '';
       capyState = 'toGuide';
@@ -163,7 +173,7 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
     });
   }, { signal });
 
-  const capyGuideObserver = new IntersectionObserver(entries => {
+  const capyGuideObserver = lc.observer(entries => {
     if (capyState !== 'toGuide' || !entries.some(e => e.isIntersecting)) return;
     capyGuideObserver.disconnect();
     capyRebuild();
@@ -171,14 +181,14 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
 
   // Rebuild on the Guide slot from dust
   function capyRebuild(): void {
-    if (disposed) return;
+    if (lc.disposed) return;
     capyState = 'busy';
     perchCapy.hidden = false;
     perchCapy.style.visibility = 'hidden';
     const rect = (perchCapy.querySelector('img') ?? perchCapy).getBoundingClientRect();
     capySound('chime');
     capyDust(rect, 'rebuild', true).then(() => { // assembles facing the centre (mirrored)
-      if (disposed) return;
+      if (lc.disposed) return;
       perchCapy.style.visibility = '';
       capyState = 'guide';
     });
@@ -186,34 +196,19 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
 
   // Guide: each click crumbles it and rebuilds it in the same spot
   perchCapy.addEventListener('click', () => {
-    if (disposed || capyState !== 'guide') return;
+    if (lc.disposed || capyState !== 'guide') return;
     capyState = 'busy';
     const rect = (perchCapy.querySelector('img') ?? perchCapy).getBoundingClientRect();
     capySound('poof');
     perchCapy.style.visibility = 'hidden';
     capyDust(rect, 'crumble', true).then(() => {
-      if (disposed) return;
+      if (lc.disposed) return;
       rebuildTimer = window.setTimeout(capyRebuild, 250);
     });
   }, { signal });
 
   function dispose(): void {
-    disposed = true;
-    capyGuideObserver.disconnect();
-    ac.abort();
-    if (rebuildTimer !== null) { clearTimeout(rebuildTimer); rebuildTimer = null; }
-    capyEl.getAnimations().forEach(an => an.cancel());
-    perchCapy.getAnimations().forEach(an => an.cancel());
-    dustCanvases.forEach(c => c.remove());
-    dustCanvases.clear();
-    // back to the initial state: both hidden, no inline styles
-    capyEl.hidden = true;
-    perchCapy.hidden = true;
-    capyEl.removeAttribute('style');
-    perchCapy.removeAttribute('style');
-    capyState = 'none';
-    // the element never leaves its React-owned parent, but keep the invariant explicit
-    mapPanelEl.appendChild(capyEl);
+    lc.dispose();
   }
 
   return { trigger, spawn, dispose };

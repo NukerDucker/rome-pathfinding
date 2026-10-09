@@ -11,6 +11,8 @@
  * button to <body> for its flights, so dispose() puts it back.
  */
 import { birdSound } from './audio';
+import { hopFrames, EASE_HOP, MS_HOP } from './motion';
+import { createLifecycle } from './lifecycle';
 
 export interface BirdOptions {
   /** #bird */
@@ -53,13 +55,20 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   let birdState: 'none' | 'flying' | 'map' | 'waitGuide' | 'guide' = 'none'; // 2021
   let birdFacing: 'left' | 'right' = 'left'; // 2016
   let flapTimer: number | null = null;
-  let disposed = false;
 
   // the React-owned parent the button must return to on dispose()
   const owner: HTMLElement = birdBtn.parentElement ?? routeBoxEl;
 
-  const ac = new AbortController();
-  const { signal } = ac;
+  const lc = createLifecycle();
+  const { signal } = lc;
+  lc.cancelOnDispose(birdBtn);
+  lc.onDispose(() => { if (flapTimer !== null) { clearInterval(flapTimer); flapTimer = null; } });
+  lc.onDispose(() => { birdBtn.classList.remove('bird-perched', 'in-slot'); });
+  // back to its initial state: hidden, standing, no inline styles
+  lc.onDispose(() => { birdBtn.hidden = true; });
+  lc.onDispose(() => { birdBtn.removeAttribute('style'); });
+  lc.onDispose(() => { birdFacing = 'left'; birdImg.src = BIRD_SPRITES.left.stand; birdState = 'none'; });
+  lc.restore(birdBtn, owner); // <body>-lifted button returns to its React-owned parent
 
   const BIRD_PERCHES: Record<'map' | 'guide', { box: () => HTMLElement; x: (box?: HTMLElement) => number }> = {
     map:   { box: () => routeBoxEl, x: () => { // x anchored to the dice button, not the box itself
@@ -108,7 +117,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
     // feet on the route box's top edge, or at the bottom of its Guide slot
     const feet = { x: perch.x(box), y: where === 'guide' ? boxRect.bottom : boxRect.top + 10 };
     birdFly(birdOffscreen(feet), feet, 1400).then(() => {
-      if (disposed) return;
+      if (lc.disposed) return;
       // land: sit inside the box so it scrolls with the page
       birdBtn.getAnimations().forEach(an => an.cancel());
       birdBtn.removeAttribute('style');
@@ -132,7 +141,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
     const r = birdBtn.getBoundingClientRect();
     const feet = { x: r.left + r.width / 2, y: r.bottom };
     birdFly(feet, birdOffscreen(feet), 1100).then(() => {
-      if (disposed) return;
+      if (lc.disposed) return;
       birdBtn.getAnimations().forEach(an => an.cancel());
       birdBtn.hidden = true;
       if (thenToGuide) { birdState = 'waitGuide'; birdGuideObserver.observe(perchBird); }
@@ -142,7 +151,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   // (thenToGuide is always true in the original: a Map click always sends it to the Guide)
 
   // Land on the Guide intro card once it's on screen (Guide tab open + scrolled to)
-  const birdGuideObserver = new IntersectionObserver(entries => {
+  const birdGuideObserver = lc.observer(entries => {
     if (birdState === 'waitGuide' && entries.some(e => e.isIntersecting)) {
       birdGuideObserver.disconnect();
       flyIn('guide');
@@ -150,16 +159,16 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   }, { threshold: 0.6 }); // 2133
 
   function trigger(): void {
-    if (disposed) return;
+    if (lc.disposed) return;
     if (birdState === 'none' && Math.random() < BIRD_CHANCE) flyIn('map');
   }
   randomBtnEl.addEventListener('click', trigger, { signal });
 
   birdBtn.addEventListener('click', () => {
-    if (disposed) return;
+    if (lc.disposed) return;
     if (birdState === 'guide') { // on its Guide perch it stays: chirp + little hop
       birdSound('chirp');
-      birdBtn.animate([{ transform: 'none' }, { transform: 'translateY(-14px)', offset: 0.4 }, { transform: 'none' }], { duration: 320, easing: 'ease-out' });
+      birdBtn.animate(hopFrames(14), { duration: MS_HOP, easing: EASE_HOP });
       return;
     }
     if (birdState !== 'map') return;
@@ -168,19 +177,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   }, { signal });
 
   function dispose(): void {
-    disposed = true;
-    birdGuideObserver.disconnect();
-    ac.abort();
-    if (flapTimer !== null) { clearInterval(flapTimer); flapTimer = null; }
-    birdBtn.getAnimations().forEach(an => an.cancel());
-    birdBtn.classList.remove('bird-perched', 'in-slot');
-    // back to its initial state: hidden, standing, no inline styles
-    birdBtn.hidden = true;
-    birdBtn.removeAttribute('style');
-    birdFacing = 'left';
-    birdImg.src = BIRD_SPRITES.left.stand;
-    birdState = 'none';
-    owner.appendChild(birdBtn); // <body>-lifted button returns to its React-owned parent
+    lc.dispose();
   }
 
   return { trigger, flyIn, dispose };

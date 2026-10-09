@@ -17,6 +17,8 @@
  * Elements come in via props (React owns them).
  */
 
+import { createLifecycle } from './lifecycle';
+
 export interface BreadOptions {
   /** #breadBtn */
   btn: HTMLElement;
@@ -41,13 +43,19 @@ export const BREAD_UNLOCK_SWITCHES = 5;
 
 export function createBread({ btn, overlay, perchBtn, perchSlot }: BreadOptions): BreadHandle {
   let breadPerchPending = false; // 1317
-  let disposed = false;
 
-  const ac = new AbortController();
-  const { signal } = ac;
+  const lc = createLifecycle();
+  const { signal } = lc;
+  lc.cancelOnDispose(overlay, perchBtn);
+  lc.onDispose(() => { overlay.classList.remove('play'); }); // mid-play: clean up, as the fade end would
+  lc.onDispose(() => { btn.classList.remove('reveal'); });
+  // back to the initial state: the secret hidden again
+  lc.onDispose(() => { btn.hidden = true; perchBtn.hidden = true; });
+  lc.onDispose(() => { perchBtn.removeAttribute('style'); });
+  lc.onDispose(() => { breadPerchPending = false; });
 
   function playBread(): void {
-    if (disposed) return;
+    if (lc.disposed) return;
     if (overlay.classList.contains('play')) return;
     overlay.classList.add('play');
   }
@@ -63,7 +71,7 @@ export function createBread({ btn, overlay, perchBtn, perchSlot }: BreadOptions)
     }
   }, { signal });
 
-  const breadPerchObserver = new IntersectionObserver(entries => {
+  const breadPerchObserver = lc.observer(entries => {
     if (!breadPerchPending || !entries.some(e => e.isIntersecting)) return;
     breadPerchPending = false;
     breadPerchObserver.disconnect();
@@ -75,25 +83,14 @@ export function createBread({ btn, overlay, perchBtn, perchSlot }: BreadOptions)
 
   // (script.js 1297-1302: the 5th day/night switch reveals the button)
   function unlock(): void {
-    if (disposed) return;
+    if (lc.disposed) return;
     btn.hidden = false;
     btn.classList.add('reveal');
     btn.addEventListener('animationend', () => btn.classList.remove('reveal'), { once: true, signal });
   }
 
   function dispose(): void {
-    disposed = true;
-    breadPerchObserver.disconnect();
-    ac.abort();
-    overlay.getAnimations().forEach(an => an.cancel());
-    perchBtn.getAnimations().forEach(an => an.cancel());
-    overlay.classList.remove('play');   // mid-play: clean up, as the fade end would
-    btn.classList.remove('reveal');
-    // back to the initial state: the secret hidden again
-    btn.hidden = true;
-    perchBtn.hidden = true;
-    perchBtn.removeAttribute('style');
-    breadPerchPending = false;
+    lc.dispose();
   }
 
   return { trigger: playBread, unlock, dispose };

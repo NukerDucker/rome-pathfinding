@@ -12,6 +12,8 @@
  * React's unmount would throw NotFoundError.
  */
 import { quack } from './audio';
+import { EASE_ROLL, MS_ROLL } from './motion';
+import { createLifecycle } from './lifecycle';
 
 export interface DuckOptions {
   /** #duckBtn */
@@ -56,13 +58,23 @@ export function createDuck({
   let duckClicks = 0;
   let duckBusy = false;
   let duckPending = false;
-  let disposed = false;
 
   // the React-owned parent the button must return to on dispose()
   const owner: HTMLElement = btn.parentElement ?? homeMap;
 
-  const ac = new AbortController();
-  const { signal } = ac;
+  const lc = createLifecycle();
+  const { signal } = lc;
+  lc.cancelOnDispose(btn);
+  lc.onDispose(() => btn.classList.remove('hop'));
+  lc.onDispose(() => {
+    homeMap.classList.remove('duck-home-waiting');
+    homeGuide.classList.remove('duck-home-waiting');
+  });
+  // back to its initial state: standing, visible, in the Map home, no inline styles
+  lc.onDispose(() => { btn.hidden = false; });
+  lc.onDispose(() => { btn.removeAttribute('style'); });
+  lc.onDispose(() => { img.src = DUCK_STANDING_SRC; });
+  lc.restore(btn, owner); // <body>-lifted button returns to its React-owned parent
 
   // one click's reaction: the lying-down duck flashes during a hop of `hop` px
   function duckHop(hop: number): void {
@@ -74,7 +86,7 @@ export function createDuck({
   }
 
   function trigger(): void {
-    if (disposed || duckBusy) return;
+    if (lc.disposed || duckBusy) return;
     if (duckHome === 'guide') { quack(); duckHop(-12); return; } // happy on its Guide perch: never leaves
     duckClicks++;
     if (duckClicks >= DUCK_PATIENCE) { duckRollAway(); return; }
@@ -129,9 +141,9 @@ export function createDuck({
       { transform: `translateX(${distance / 2}px) rotate(${spin / 2}deg)`, opacity: 1, offset: 0.5 },
       { transform: `translateX(${distance}px) rotate(${spin}deg)`, opacity: 0 },
     ];
-    btn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
+    btn.animate(frames, { duration: MS_ROLL, easing: EASE_ROLL, fill: 'forwards' })
       .finished.then(() => {
-        if (disposed) return;
+        if (lc.disposed) return;
         duckHome = duckHome === 'map' ? 'guide' : 'map';
         duckSettle(duckHome);
         btn.hidden = true;
@@ -145,7 +157,7 @@ export function createDuck({
   }
 
   // Roll in to the new home once its spot is on screen (tab open + scrolled to)
-  const duckArrivalObserver = new IntersectionObserver(entries => {
+  const duckArrivalObserver = lc.observer(entries => {
     if (duckPending && entries.some(e => e.isIntersecting)) duckRollIn();
   }, { threshold: 0.5 }); // 1463-1465
 
@@ -184,9 +196,9 @@ export function createDuck({
       { transform: 'translateX(0) rotate(0deg)', opacity: 1 },
     ];
     quack(1.2, 0.3); // "I'm here"
-    btn.animate(frames, { duration: 1000, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' })
+    btn.animate(frames, { duration: MS_ROLL, easing: EASE_ROLL, fill: 'forwards' })
       .finished.then(() => {
-        if (disposed) return;
+        if (lc.disposed) return;
         duckSettle(duckHome); // stand up in its new home
         btn.classList.add('hop');
         duckBusy = false;
@@ -195,18 +207,7 @@ export function createDuck({
   }
 
   function dispose(): void {
-    disposed = true;
-    duckArrivalObserver.disconnect();
-    ac.abort();
-    btn.getAnimations().forEach(an => an.cancel());
-    btn.classList.remove('hop');
-    homeMap.classList.remove('duck-home-waiting');
-    homeGuide.classList.remove('duck-home-waiting');
-    // back to its initial state: standing, visible, in the Map home, no inline styles
-    btn.hidden = false;
-    btn.removeAttribute('style');
-    img.src = DUCK_STANDING_SRC;
-    owner.appendChild(btn); // <body>-lifted button returns to its React-owned parent
+    lc.dispose();
   }
 
   return { trigger, getClickCount: () => duckClicks, dispose };
