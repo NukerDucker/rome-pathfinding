@@ -28,24 +28,7 @@ import { DEFAULT_DELAY } from './map/PlaybackBar'
 import '../App.css'
 import '../themes.css'
 
-// orientation (wide on desktop, transposed on narrow screens).
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState<boolean>(
-    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
-  )
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    const onChange = () => setMatches(mq.matches)
-    onChange()
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [query])
-  return matches
-}
-
 function ModernApp() {
-  // Swap the comparison table's orientation below 1100px (render only one table).
-  void useMediaQuery('(max-width: 1100px)')
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -85,13 +68,6 @@ function ModernApp() {
   const victoryPlayed = useRef(false)
   const themeRef = useRef(theme)
   themeRef.current = theme
-
-  // Stats always go to right sidebar in merged mode; fit-mode keeps the map
-  // from overflowing the viewport. Both collapse to column below 1100px via CSS.
-  void useMediaQuery('(min-width: 1500px)')
-  const fit = merged && tab === 'map'
-  const statsInSidebar = fit
-  void true // useTall removed — bento grid replaces table
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]
@@ -323,7 +299,7 @@ function ModernApp() {
   )
 
   return (
-    <div className={`app-shell${fit ? ' app-shell-fit' : ''}`}>
+    <div className="app-shell">
     {theme === 'dnd' && <DndAurora />}
     {theme === 'space' && <SpaceField />}
     <div className="app-main">
@@ -369,7 +345,7 @@ function ModernApp() {
         </div>
       </div>
 
-      <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className={`workspace${fit ? ' workspace-fit' : ''}`}>
+      <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className="workspace">
       <main className="app">
         {/* Toolbar — above the map */}
         <ToolbarRow
@@ -395,7 +371,7 @@ function ModernApp() {
             currentCity: currentCityB, warp: warpB, onCityClick: onCityClickB,
           }}
           onMergedCityClick={onCityClickMerged}
-          statsInSidebar={statsInSidebar} statsPanel={statsPanel}
+          statsPanel={statsPanel}
           playing={playing} delay={delay}
           onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
           onForward={handleStepForward} onDelay={setDelay}

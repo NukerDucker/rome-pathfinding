@@ -105,19 +105,17 @@
   grid-template-columns: 1fr auto 1fr;
   gap: var(--sp-5);
   align-items: start;
-  padding-bottom: var(--sp-12);
 
   @media (max-width: 1100px) {
     grid-template-columns: 1fr;
   }
 }
 
-.playback-controls {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+/* In flow under the map (both views) — one row of the .lanes grid, centred. */
+.playback-bar {
+  grid-column: 1 / -1;
+  justify-self: center;
+  align-self: center;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -128,7 +126,7 @@
   white-space: nowrap;
 }
 
-.playback-controls .speed {
+.playback-bar .speed {
   min-width: 200px;
 }
 /* Light/dark theme toggle, top-right of the masthead */
@@ -1202,12 +1200,6 @@ html.theme-anim *::after {
   overflow-y: auto;
 }
 
-/* Merged view: pin the shell to the viewport so nothing needs to scroll. */
-.app-shell-fit {
-  height: 100dvh;
-  overflow: hidden;
-}
-.app-shell-fit .app-main { height: 100%; min-height: 0; }
 
 /* ── Tab bar ────────────────────────────────────────────────────────── */
 .tab-bar {
@@ -1561,57 +1553,55 @@ html.theme-anim *::after {
   box-sizing: border-box;
 }
 
+/* Map column + stats sidebar. The sidebar is a grid item with contain:size, so
+   its content can never grow the row: it matches the map column's height and
+   scrolls inside its own pane instead of stretching the page. */
 .app-body {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: var(--sp-3);
+  align-items: stretch;
   padding: 0 var(--sp-3) var(--sp-3);
   box-sizing: border-box;
 }
 
-/* Merged mode: the centre column owns the height and everything flexes to fit,
-   so the middle panel never scrolls. */
-.workspace-fit {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-.workspace-fit > .app {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-.workspace-fit .app-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  align-items: stretch;
-}
-.workspace-fit .app-body > .lanes { flex: 1 1 auto; min-height: 0; }
+/* The SVG's own preserveAspectRatio="xMidYMid meet" fits and centres the
+   drawing inside the box, so the map reflows when the sidebar opens/closes. */
+.lane-merged .map-wrap { padding: var(--sp-4); }
 
-/* Merged map fills the centre column exactly; the SVG's own
-   preserveAspectRatio="xMidYMid meet" fits and centres the drawing inside it.
-   Sizing the box to 100%/100% (instead of width:auto) means the map always
-   reflows when the guide opens/closes — it can never get stuck smaller. */
-.workspace-fit .lanes-merged > .lane-merged { flex: 1 1 auto; min-height: 0; }
-.workspace-fit .lane-merged .map-wrap { flex: 1 1 auto; min-height: 0; padding: var(--sp-4); }
-.workspace-fit .lane-merged .map {
-  width: 100%;
-  height: 100%;
+/* ── Desktop: map + sidebar fill the viewport, page never scrolls ─────
+   The shell is 100dvh and .app-main flexes, so this chain hands the map
+   column a definite height; the maps then letterbox inside it via
+   preserveAspectRatio. Below 1101px everything is released and the page
+   scrolls normally. */
+@media (min-width: 1101px) {
+  .workspace { flex: 1 1 auto; min-height: 0; }
+  .workspace > .app { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; }
+  .app-body { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+  .lanes { flex: 1 1 auto; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr) auto; }
+  .lanes-merged { grid-template-rows: minmax(0, 1fr) auto; }
+  .lanes-container { align-items: stretch; min-height: 0; }
+  .lane { min-height: 0; }
+  .lane .map-wrap { flex: 1 1 auto; min-height: 0; }
+  .lane .map { height: 100%; }
 }
 
-/* ── Stats sidebar (merged mode only) ──────────────────────────────── */
+/* ── Stats sidebar ─────────────────────────────────────────────────── */
 .stats-panel {
-  flex: 0 0 380px;
-  width: 380px;
+  contain: size;
+  overflow: hidden;
   box-sizing: border-box;
-  align-self: stretch;
-  min-height: 0;
-  overflow-y: auto;
+  min-width: 0;
   /* Rounded like the lane/query blocks. Themed views give it a frosted
      background, so without this it reads as a square panel. */
   border-radius: var(--radius);
   text-align: left;
   margin-top: var(--sp-3);
+}
+/* The inner pane scrolls; the frame itself never grows. */
+.stats-panel > .compare-panel {
+  height: 100%;
+  overflow-y: auto;
 }
 .stats-panel .compare-panel { padding: 0; }
 .stats-panel .compare-title { font-size: 13px; margin-bottom: var(--sp-2); }
@@ -1625,23 +1615,21 @@ html.theme-anim *::after {
 .stats-panel .footnotes li { font-size: 10px; line-height: 1.4; }
 .stats-panel .compare .katex { font-size: 0.95em; }
 
-/* ── Stacked layout (narrow): release the fixed height ─────────────── */
+/* ── Stacked layout (narrow): sidebar drops below the map ──────────── */
 @media (max-width: 1100px) {
-  .app-shell-fit { height: auto; overflow: visible; }
-  .app-shell-fit .app-main { height: auto; }
-  .workspace-fit { flex-direction: column; }
-  .workspace-fit > .app { overflow: visible; }
+  .app-body {
+    grid-template-columns: 1fr;
+  }
   .stats-panel {
-    align-self: auto;
-    width: 100%;
-    flex-basis: auto;
-    height: auto;
-    max-height: none;
+    contain: none;
     overflow: visible;
-    border-left: none;
+    margin-top: 0;
     border-top: 1px solid var(--border);
   }
-  .workspace-fit .lane-merged .map { height: auto; width: 100%; margin-inline: 0; }
+  .stats-panel > .compare-panel {
+    height: auto;
+    overflow: visible;
+  }
 }
 
 /* ── Panel transitions ─────────────────────────────────────────────── */

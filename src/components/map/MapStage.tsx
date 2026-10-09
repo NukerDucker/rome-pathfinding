@@ -37,7 +37,6 @@ type MapStageProps = {
   laneA: LaneStage
   laneB: LaneStage
   onMergedCityClick: (city: NodeId) => void
-  statsInSidebar: boolean
   statsPanel: ReactNode
   playing: boolean
   delay: number
@@ -77,7 +76,7 @@ function HeatmapKey({ visible }: { visible: boolean }) {
 export function MapStage(props: MapStageProps) {
   const {
     theme, merged, stepIdx, hoveredCity, start, goal, showLine, showHeatmap, pickLandmarkMode,
-    laneA, laneB, onMergedCityClick, statsInSidebar, statsPanel, playing, delay,
+    laneA, laneB, onMergedCityClick, statsPanel, playing, delay,
     onReset, onBack, onPlayPause, onForward, onDelay,
   } = props
   const largerLastIdx = Math.max(laneA.lastIdx, laneB.lastIdx)
@@ -108,22 +107,13 @@ export function MapStage(props: MapStageProps) {
   )
 
   return (
-    <>
-      <div className="app-body">
+    <div className="app-body">
       <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
         {/* Lane A + B, shown when "Merge maps" is off */}
         <div className="lanes-container">
           {laneSection(laneA)}
 
           <div className="lane-vs" aria-hidden="true">vs</div>
-
-          <div className="playback-controls">
-            <PlaybackBar
-              playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
-              onReset={onReset} onBack={onBack} onPlayPause={onPlayPause}
-              onForward={onForward} onDelay={onDelay}
-            />
-          </div>
 
           {laneSection(laneB)}
         </div>
@@ -163,25 +153,22 @@ export function MapStage(props: MapStageProps) {
           </div>
           <div className="map-frame-bar">
             <Legend />
-            <span className="map-frame-sep" aria-hidden="true" />
-            <div className="flex-row">
-            <PlaybackBar sep
-              playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
-              onReset={onReset} onBack={onBack} onPlayPause={onPlayPause}
-              onForward={onForward} onDelay={onDelay}
-            />
-            </div>
           </div>
         </section>
+
+        {/* Playback sits in flow under the map, in both views. */}
+        <div className="playback-bar">
+          <PlaybackBar
+            playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
+            onReset={onReset} onBack={onBack} onPlayPause={onPlayPause}
+            onForward={onForward} onDelay={onDelay}
+          />
+        </div>
       </div>
 
-      {statsInSidebar && (
-        <aside className="stats-panel" aria-label="Algorithm comparison">
-          {statsPanel}
-        </aside>
-      )}
-      </div>{/* .app-body */}
-      {!statsInSidebar && statsPanel}
-    </>
+      <aside className="stats-panel" aria-label="Algorithm comparison">
+        {statsPanel}
+      </aside>
+    </div>
   )
 }
