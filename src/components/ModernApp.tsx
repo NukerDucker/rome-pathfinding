@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { ChevronLeft, ChevronRight, Columns2, Dices, MapPin, Pause, Play, RotateCcw, Thermometer, Volume2, VolumeX } from 'lucide-react'
-import { CITIES, type NodeId } from '@/romania'
+import { type NodeId } from '@/romania'
 import { ALGORITHMS } from '@/search'
 import { type LandmarkPreset } from '@/heuristic'
-import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Guide } from '@/components/Guide'
 import {
-  THEME_ORDER, ThemeControl, ThemeRoll, DndAurora,
+  THEME_ORDER, ThemeRoll, DndAurora,
   SpaceField, PlanetWindow, applyTheme, initialTheme,
   type Theme,
 } from '@/theme'
@@ -24,25 +14,19 @@ import {
   playCrow, playOwl, playGlitter, playWhoosh, playLaser,
   startCeltic, stopCeltic, startSpaceHum, stopSpaceHum,
 } from '@/audio'
-import { LandmarkPicker } from './map/LandmarkPicker'
 import { laneLandmarkCities, laneLmSuffix, type LandmarkCount } from './map/landmarks'
 import { benchmarkOne, landmarkEffect, withAltConfig } from './map/bench'
 import { StatsSidebar } from './map/StatsSidebar'
 import { SVGMap, MergedSVGMap } from './map/svgMap'
 import { heatmapFor, countMoves, randomPair } from './map/mapData'
+import { TitleRow } from './map/TitleRow'
+import { TabBar } from './map/TabBar'
+import { RouteCard } from './map/RouteCard'
+import { AlgorithmCard } from './map/AlgorithmCard'
+import { ToolbarRow } from './map/ToolbarRow'
+import { PlaybackBar, DEFAULT_DELAY } from './map/PlaybackBar'
 import '../App.css'
 import '../themes.css'
-
-
-// Algorithm options in alphabetical order (by display label) for the selects.
-const ALGO_OPTIONS: [string, (typeof ALGORITHMS)[string]][] = Object.entries(ALGORITHMS)
-  .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-
-
-
-const MIN_DELAY = 0
-const MAX_DELAY = 1500
-const DEFAULT_DELAY = 600
 
 // orientation (wide on desktop, transposed on narrow screens).
 function useMediaQuery(query: string): boolean {
@@ -343,41 +327,13 @@ function ModernApp() {
     {theme === 'dnd' && <DndAurora />}
     {theme === 'space' && <SpaceField />}
     <div className="app-main">
-    <h1 className="app-title">
-      <span>Uninformed &amp; Informed search</span>
-      <span className="app-title-sep" aria-hidden="true">·</span>
-      <span className="app-title-sub">Romania map</span>
-      <ThemeControl theme={theme} onCycle={cycleTheme} busy={roll !== null} />
-      <button
-        type="button"
-        className="mute-toggle"
-        aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
-        aria-pressed={muted}
-        title={muted ? 'Unmute sounds' : 'Mute sounds'}
-        onClick={() => { const m = !muted; setMutedFlag(m); if (!m) ensureAudio() }}
-      >
-        {muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
-      </button>
-    </h1>
+    <TitleRow
+      theme={theme} onCycle={cycleTheme} busy={roll !== null}
+      muted={muted}
+      onToggleMute={() => { const m = !muted; setMutedFlag(m); if (!m) ensureAudio() }}
+    />
 
-      <div className="tab-bar" role="tablist">
-        <button
-          role="tab"
-          id="tab-map"
-          aria-controls="tabpanel-map"
-          className={`tab-btn${tab === 'map' ? ' tab-btn-active' : ''}`}
-          aria-selected={tab === 'map'}
-          onClick={() => setTab('map')}
-        >Map</button>
-        <button
-          role="tab"
-          id="tab-guide"
-          aria-controls="tabpanel-guide"
-          className={`tab-btn${tab === 'guide' ? ' tab-btn-active' : ''}`}
-          aria-selected={tab === 'guide'}
-          onClick={() => setTab('guide')}
-        >Guide</button>
-      </div>
+      <TabBar tab={tab} onTab={setTab} />
 
       {tab === 'guide' && (
         <div id="tabpanel-guide" role="tabpanel" aria-labelledby="tab-guide" className="guide-page-wrap">
@@ -388,143 +344,41 @@ function ModernApp() {
       {tab === 'map' && <>
       <div className="query-bars-row">
         {/* Map card */}
-        <div className="query-bar" role="group" aria-label="Route selection">
-          <Select
-            value={start}
-            onValueChange={(v) => v && handleStartChange(v as NodeId)}
-            onOpenChange={(open) => !open && setHoveredCity(null)}
-          >
-            <SelectTrigger className="w-32 city-trigger" aria-label="Start city"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CITIES.map((city) => (
-                <SelectItem
-                  key={city} value={city}
-                  onMouseEnter={() => setHoveredCity(city)}
-                  onMouseLeave={() => setHoveredCity(null)}
-                >{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="query-word" aria-hidden="true">→</span>
-          <Select
-            value={goal}
-            onValueChange={(v) => v && handleGoalChange(v as NodeId)}
-            onOpenChange={(open) => !open && setHoveredCity(null)}
-          >
-            <SelectTrigger className="w-32 city-trigger" aria-label="Goal city"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CITIES.map((city) => (
-                <SelectItem
-                  key={city} value={city}
-                  onMouseEnter={() => setHoveredCity(city)}
-                  onMouseLeave={() => setHoveredCity(null)}
-                >{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline" size="icon"
-            aria-label="Randomize start and goal cities"
-            title="Randomize"
-            onClick={handleRandomize}
-          >
-            <Dices aria-hidden="true" />
-          </Button>
-        </div>
+        <RouteCard
+          start={start} goal={goal}
+          onStart={handleStartChange}
+          onGoal={handleGoalChange}
+          onHover={setHoveredCity}
+          onRandomize={handleRandomize}
+        />
         {/* Algo card */}
         <div className="query-bar query-bar-algo" role="toolbar" aria-label="Algorithm selection">
-          <div className="query-algo query-algo-a">
-            <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-            <Select value={algo} onValueChange={(v) => v && handleAlgoChange(v)}>
-              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane A">
-                <SelectValue>{ALGORITHMS[algo]?.label ?? algo}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {ALGO_OPTIONS.map(([key, m]) => (
-                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <LandmarkPicker
-              lane="A"
-              usesLandmarks={meta.usesLandmarks}
-              overlay={lmOverlayA}
-              setOverlay={setLmOverlayA}
-              count={landmarkA}
-              onCount={handleLandmarkAChange}
-              customCount={customA.length}
-              onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
-            />
-          </div>
+          <AlgorithmCard
+            lane="A" algo={algo} onAlgo={handleAlgoChange} usesLandmarks={meta.usesLandmarks}
+            overlay={lmOverlayA} setOverlay={setLmOverlayA} count={landmarkA} onCount={handleLandmarkAChange}
+            customCount={customA.length}
+            onClearCustom={() => { setCustomA([]); setStepIdx(0); setPlaying(false) }}
+          />
           <span className="query-word">vs</span>
-          <div className="query-algo query-algo-b">
-            <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-            <Select value={algo2} onValueChange={(v) => v && handleAlgoChange2(v)}>
-              <SelectTrigger className="w-40 algo-trigger" aria-label="Algorithm for lane B">
-                <SelectValue>{ALGORITHMS[algo2]?.label ?? algo2}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {ALGO_OPTIONS.map(([key, m]) => (
-                  <SelectItem key={key} value={key}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <LandmarkPicker
-              lane="B"
-              usesLandmarks={meta2.usesLandmarks}
-              overlay={lmOverlayB}
-              setOverlay={setLmOverlayB}
-              count={landmarkB}
-              onCount={handleLandmarkBChange}
-              customCount={customB.length}
-              onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
-            />
-          </div>
+          <AlgorithmCard
+            lane="B" algo={algo2} onAlgo={handleAlgoChange2} usesLandmarks={meta2.usesLandmarks}
+            overlay={lmOverlayB} setOverlay={setLmOverlayB} count={landmarkB} onCount={handleLandmarkBChange}
+            customCount={customB.length}
+            onClearCustom={() => { setCustomB([]); setStepIdx(0); setPlaying(false) }}
+          />
         </div>
       </div>
 
       <div id="tabpanel-map" role="tabpanel" aria-labelledby="tab-map" className={`workspace${fit ? ' workspace-fit' : ''}`}>
       <main className="app">
         {/* Toolbar — above the map */}
-        <div className="toolbar" role="toolbar" aria-label="Visualizer controls">
-
-          {/* Overlays */}
-          <Button
-            variant={showLine ? 'default' : 'outline'} size="sm"
-            onClick={() => setShowLine(v => !v)} aria-pressed={showLine}
-            title="Show straight line from origin to destination"
-          >
-            <span className="swatch swatch-arc" aria-hidden="true" />
-            Straight Line
-          </Button>
-          <Button
-            variant={showHeatmap ? 'default' : 'outline'} size="sm"
-            onClick={() => setShowHeatmap(v => !v)} aria-pressed={showHeatmap}
-            title="h-value heatmap — stronger red = nearer the goal (lower h)"
-          >
-            <Thermometer size={14} aria-hidden="true" /> Heatmap
-          </Button>
-          <Button
-            variant={merged ? 'default' : 'outline'} size="sm"
-            onClick={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
-            aria-pressed={merged}
-            title="Merge the two maps into one — each road becomes two coloured strands (purple = lane A, teal = lane B) and node discs split down the middle"
-          >
-            <Columns2 size={14} aria-hidden="true" /> {merged ? 'Merged map' : 'Merge maps'}
-          </Button>
-
-          <span className="w-px h-5 bg-[var(--border)] self-center" aria-hidden="true" />
-
-          {/* Tool */}
-          <Button
-            variant={pickLandmarkMode ? 'default' : 'outline'} size="sm"
-            onClick={() => setPickLandmarkMode(v => !v)} aria-pressed={pickLandmarkMode}
-            title="Pick landmarks per lane — click a city on either map to add/remove that lane's landmarks"
-          >
-            <MapPin size={14} aria-hidden="true" /> Landmarks ({customA.length + customB.length})
-          </Button>
-
-        </div>
+        <ToolbarRow
+          showLine={showLine} onToggleLine={() => setShowLine(v => !v)}
+          showHeatmap={showHeatmap} onToggleHeatmap={() => setShowHeatmap(v => !v)}
+          merged={merged} onToggleMerged={() => { setMerged(v => !v); setStepIdx(0); setPlaying(false) }}
+          pickLandmarkMode={pickLandmarkMode} onTogglePickLandmark={() => setPickLandmarkMode(v => !v)}
+          customCount={customA.length + customB.length}
+        />
 
         <div className="app-body">
         <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
@@ -569,16 +423,11 @@ function ModernApp() {
             <div className="lane-vs" aria-hidden="true">vs</div>
 
             <div className="playback-controls">
-              <div className="transport">
-                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
-                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
-                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
-                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
-              </div>
-              <div className="speed toolbar-group-speed">
-                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
-                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
-              </div>
+              <PlaybackBar
+                playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
+                onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
+                onForward={handleStepForward} onDelay={setDelay}
+              />
             </div>
 
             {/* Lane B */}
@@ -669,17 +518,11 @@ function ModernApp() {
               </ul>
               <span className="map-frame-sep" aria-hidden="true" />
               <div className="flex-row">
-              <div className="transport">
-                <Button variant="outline" size="icon" aria-label="Reset" onClick={handleReset} disabled={stepIdx === 0}><RotateCcw aria-hidden="true" /></Button>
-                <Button variant="outline" size="icon" aria-label="Step back" onClick={handleStepBack} disabled={stepIdx === 0}><ChevronLeft aria-hidden="true" /></Button>
-                <Button variant="outline" size="icon" aria-label={playing ? 'Pause' : 'Play'} onClick={handlePlayPause}>{playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>
-                <Button variant="outline" size="icon" aria-label="Step forward" onClick={handleStepForward} disabled={stepIdx >= largerLastIdx}><ChevronRight aria-hidden="true" /></Button>
-              </div>
-              <span className="map-frame-sep" aria-hidden="true" />
-              <div className="speed toolbar-group-speed">
-                <span className="speed-labels"><span>Slow</span><span className="speed-value">{delay}ms</span><span>Fast</span></span>
-                <Slider min={MIN_DELAY} max={MAX_DELAY} step={50} value={MAX_DELAY - delay} onValueChange={(v) => setDelay(MAX_DELAY - (Array.isArray(v) ? v[0] : v))} aria-label="Animation speed" />
-              </div>
+              <PlaybackBar sep
+                playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
+                onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
+                onForward={handleStepForward} onDelay={setDelay}
+              />
               </div>
             </div>
           </section>
