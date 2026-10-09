@@ -505,20 +505,23 @@ border:1px solid #333; vertical-align:middle;
 }
 .legend-bar .dot-hollow{ background:#fff; border-width:2px; }
 .legend-bar .dot-split{ background:linear-gradient(90deg, var(--state-frontier) 50%, var(--state-visited) 50%); }
-.legend-bar .road-dash{
-display:inline-block; width:20px; margin-right:5px; vertical-align:middle;
-border-top:3px dashed var(--road-path);
-}
+.legend-bar .road-dash{ width:24px; height:10px; margin-right:5px; vertical-align:middle; overflow:visible; }
 .legend-merged[hidden]{ display:none; }
 
 /* Merged map: tell the lanes apart. Each city disc is split down the middle
 	(left half = lane A's state, right half = lane B's, same legend colours);
-	lane B's roads draw thinner and dashed on top of lane A's solid roads.
+	lane B's roads draw dashed on top of lane A's solid roads, each dash outlined
+	in near-black (.road-casing: same dashes, wider) so it stands out on lane A's
+	pink / orange roads, whose colours are too close to B's to tell apart alone.
 	Negative insets keep the landmark outline that sits outside the disc. */
 .compare-wrap:not(.is-split) .lane-A .node-disc{ clip-path:inset(-8px 50% -8px -8px); }
 .compare-wrap:not(.is-split) .lane-B .node-disc{ clip-path:inset(-8px -8px -8px 50%); }
 .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-tree,
-.compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:4px; stroke-dasharray:10 7; }
+.compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:5px; stroke-dasharray:8 10; }
+.map-svg-layer .road-casing{ display:none; }
+.compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-casing{
+display:inline; stroke:#1a1a1a; stroke-width:9px; stroke-linecap:round; stroke-dasharray:8 10;
+}
 .playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:nowrap; } /* buttons + slider on one line, centred; the slider shrinks to fit */
 .playback-bar .playback-row{ margin:0; }
 .playback-bar .speed-row{ flex:0 1 auto; min-width:0; }

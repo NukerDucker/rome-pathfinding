@@ -1130,7 +1130,7 @@ function arcPoints(start, goal){
 function makeLaneOverlay(vp, lane){
   const svg = document.createElementNS(SVG_NS, 'svg');
   // lane-A / lane-B classes let CSS tell the lanes apart on the merged map
-  // (split discs, thin dashed lane-B roads drawn over lane A's)
+  // (split discs, dark-outlined dashed lane-B roads drawn over lane A's)
   svg.setAttribute('class', 'map-entity-layer map-svg-layer lane-' + lane);
   svg.style.zIndex = lane === 'B' ? 2 : 1;
   const world = document.createElementNS(SVG_NS, 'g'); // map image px space
@@ -1209,7 +1209,11 @@ function makeLaneOverlay(vp, lane){
     const onPath = final && L.result.found ? pathEdgeKeys(L.result.path) : new Set();
     const line = (a, b, cls, w) => {
       const pa = ROAD_POSITIONS[a], pb = ROAD_POSITIONS[b];
-      return pa && pb ? `<line class="${cls}" x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke-width="${w}"/>` : '';
+      if(!pa || !pb) return '';
+      const xy = `x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}"`;
+      // Lane B: a dark dashed copy underneath outlines each dash (shown on the merged map only)
+      const casing = lane === 'B' ? `<line class="road-casing" ${xy}/>` : '';
+      return casing + `<line class="${cls}" ${xy} stroke-width="${w}"/>`;
     };
     let html = '';
     if(L.heat){
