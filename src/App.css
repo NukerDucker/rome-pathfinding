@@ -1716,3 +1716,9 @@ html.theme-anim *::after {
 }
 .mode-toggle:hover { color: var(--text-h); }
 .mode-toggle:focus-visible { outline: 2px solid var(--ring, var(--accent)); outline-offset: 2px; }
+/* Narrow screens: the fixed pill would sit on top of the game's pixel title,
+   so drop the text and keep the icon (aria-label/title carry the meaning). */
+@media (max-width: 700px) {
+  .mode-toggle-label { display: none; }
+  .mode-toggle { padding: 8px 10px; }
+}

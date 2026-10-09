@@ -14,9 +14,11 @@ export default function ModeToggle({ mode, onToggle }: Props) {
       className="mode-toggle"
       onClick={onToggle}
       aria-pressed={!toGame}
+      aria-label={toGame ? 'Switch to the game-style UI' : 'Switch to the modern UI'}
       title={toGame ? 'Switch to the game-style UI' : 'Switch to the modern UI'}
     >
-      {toGame ? '🎮 Game style' : '🧭 Modern style'}
+      {toGame ? '🎮' : '🧭'}
+      <span className="mode-toggle-label">{toGame ? 'Game style' : 'Modern style'}</span>
     </button>
   )
 }
