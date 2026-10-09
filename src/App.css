@@ -74,7 +74,9 @@
   margin: 0;
   line-height: 1;
   text-align: center;
-  height: 52px;
+  /* Tall enough to contain the fixed .mode-toggle pill (top:12px + ~44px) so it
+     never covers the tab row below — a covered strip would swallow the click. */
+  height: 58px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -85,7 +87,8 @@
 
   @media (max-width: 768px) {
     font-size: 13px;
-    height: 44px;
+    /* Still has to clear the fixed pill, which does not shrink with the title. */
+    height: 58px;
     gap: 0.4em;
   }
 }
@@ -108,6 +111,9 @@
   justify-self: center;
   align-self: center;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
   align-items: center;
   gap: var(--sp-2);
   background: var(--surface);
@@ -162,9 +168,14 @@
 /* ── Query bar (From … To … with A vs B) ──────────────────────────── */
 .query-bars-row {
   display: flex;
+  flex-wrap: wrap;
   flex-shrink: 0;
   gap: var(--sp-3);
   margin: var(--sp-3) var(--sp-3) 0;
+}
+/* When the route and algorithm cards can't share a line, each takes the row. */
+@media (max-width: 700px) {
+  .query-bars-row > * { flex: 1 1 100%; }
 }
 
 .query-bar {
@@ -770,7 +781,8 @@
   /* Title: break across two centered lines instead of clipping (e.g. iPhone SE) */
   .app-title {
     height: auto;
-    min-height: 0;
+    /* Two wrapped lines come to ~48px; the fixed pill still needs 53+. */
+    min-height: 58px;
     flex-wrap: wrap;
     gap: 0;
     font-size: 16px;
@@ -779,6 +791,13 @@
   .app-title > span:first-child { flex-basis: 100%; }
   .app-title-sep { display: none; }
   .app-title-sub { flex-basis: 100%; letter-spacing: 0.2em; }
+  /* The title wraps to the full width on phones, so the pinned controls would
+     sit on top of the text. Drop them into the flow as their own centred row. */
+  .app-title .theme-toggle,
+  .app-title .mute-toggle {
+    position: static;
+    transform: none;
+  }
 
   /* Query bar: stack the clusters (route / with-A / vs-B) */
   .query-bar {
