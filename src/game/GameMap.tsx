@@ -1,6 +1,7 @@
 // ponytail: static markup — wired in stage 3
+import type { ReactNode } from 'react'
 
-export default function GameMap() {
+export default function GameMap({ playback, children }: { playback?: ReactNode; children?: ReactNode }) {
   return (
     <div className="map-row">
       <div className="section map-panel">
@@ -67,13 +68,13 @@ export default function GameMap() {
           <span className="legend-merged"><span className="dot dot-split" aria-hidden="true"></span>Left A / right B</span>
           <span className="legend-merged"><span className="road-dash" aria-hidden="true"></span>Lane B road</span>
         </div>
+
+        {/* playback bar lives inside the map panel (source nesting, index.html 163) */}
+        {playback}
       </div>
 
-      {/* Duck (just for fun): merged view only (CSS); click = quack (script.js).
-          After 10 clicks it rolls off to the Guide intro card and stays there. */}
-      <div className="duck-home" id="duckHomeMap">
-        <button className="duck-btn" id="duckBtn" type="button" aria-label="Quack" title="Quack"><img src="/assets/duck.png" alt="" /></button>
-      </div>
+      {/* the stats sidebar (aside) is a sibling of .map-panel inside .map-row */}
+      {children}
     </div>
   )
 }

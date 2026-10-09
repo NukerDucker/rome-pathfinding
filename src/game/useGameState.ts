@@ -198,7 +198,14 @@ function setCell(id: string, lane: Lane, content: string, better: Lane | undefin
   el.classList.toggle('better', better === lane)
 }
 
-export function syncTable(derived: Derived, stepIdx: number, laneA: LaneState, laneB: LaneState): void {
+export function syncTable(
+  derived: Derived,
+  stepIdx: number,
+  laneA: LaneState,
+  laneB: LaneState,
+  start: string,
+  goal: string,
+): void {
   const A = derived.A
   const B = derived.B
   const i = stepIdx
@@ -259,6 +266,14 @@ export function syncTable(derived: Derived, stepIdx: number, laneA: LaneState, l
   if (rowA) rowA.textContent = 'A · ' + A.meta.label + laneLmSuffix(A.meta, laneA)
   const rowB = document.getElementById('rowB')
   if (rowB) rowB.textContent = 'B · ' + B.meta.label + laneLmSuffix(B.meta, laneB)
+  // renderControls()' text writes (the buttons/labels that stay React-owned
+  // live in props; these three sit in static markup)
+  const routeLabel = document.getElementById('routeLabel')
+  if (routeLabel) routeLabel.textContent = start + ' → ' + goal
+  const algoALabel = document.getElementById('algoALabel')
+  if (algoALabel) algoALabel.textContent = A.meta.label
+  const algoBLabel = document.getElementById('algoBLabel')
+  if (algoBLabel) algoBLabel.textContent = B.meta.label
 }
 
 /* ===================== HOOK ===================== */
@@ -276,6 +291,8 @@ export function useGameState() {
   const [showLine, setShowLine] = useState(false)
   const [showHeat, setShowHeat] = useState(false)
   const [pickLandmarks, setPickLandmarks] = useState(false)
+  const [merged, setMerged] = useState(true) // #mergeChk — checked by default
+  const [showDistances, setShowDistances] = useState(true) // #distanceChk — checked by default
 
   const derived = useMemo(
     () => computeDerived({ start, goal, algoA, algoB, laneA, laneB, showHeat }),
@@ -304,10 +321,10 @@ export function useGameState() {
     return () => clearTimeout(timer)
   }, [playing, stepIdx, stepDelay, derived])
 
-  // renderTable() after every commit that touches derived/stepIdx
+  // renderTable() + renderControls()' static-markup writes after every commit
   useEffect(() => {
-    syncTable(derived, stepIdx, laneA, laneB)
-  }, [derived, stepIdx, laneA, laneB])
+    syncTable(derived, stepIdx, laneA, laneB, start, goal)
+  }, [derived, stepIdx, laneA, laneB, start, goal])
 
   // ── actions ──────────────────────────────────────────────────────────
   const setStart = useCallback((v: NodeId) => { reset(); setStartRaw(v) }, [reset])
@@ -359,13 +376,14 @@ export function useGameState() {
   return {
     // state
     start, goal, algoA, algoB, laneA, laneB, stepIdx, playing, delay, showLine, showHeat, pickLandmarks,
+    merged, showDistances,
     // derived
     derived,
     // actions
     setStart, setGoal, randomize, setAlgo, setLandmarkValue, pickLandmark, togglePickLandmarks,
     play, next, prev, restart,
     setDelay,
-    setShowLine, setShowHeat,
+    setShowLine, setShowHeat, setMerged, setShowDistances,
   }
 }
 

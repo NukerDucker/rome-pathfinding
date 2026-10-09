@@ -77,6 +77,12 @@ export default function GameStats() {
         </div>
 
         <p className="stats-caption">Time = mean of 400 runs (&mu;s) &middot; Peak Memory = largest frontier &middot; Landmarks 2/4/8 = nodes generated per preset &middot; live step metrics compared at final frame.</p>
+
+        {/* Duck (just for fun): merged view only (CSS); click = quack (script.js).
+            After 10 clicks it rolls off to the Guide intro card and stays there. */}
+        <div className="duck-home" id="duckHomeMap">
+          <button className="duck-btn" id="duckBtn" type="button" aria-label="Quack" title="Quack"><img src="/assets/duck.png" alt="" /></button>
+        </div>
       </div>
     </aside>
   )
