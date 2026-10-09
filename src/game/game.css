@@ -118,8 +118,17 @@ background:#c9a6e8; mix-blend-mode:hue;
 .game-root[data-theme="dnd"] #restartBtn{ filter:hue-rotate(250deg) saturate(.5) brightness(1.08); }
 .game-root[data-theme="dnd"] #playBtn{ border-image:none; border:2px solid #a95fd0; border-radius:4px; background:#efe0ff; color:#4a3768; }
 
-/* Theme menu (fixed corner) — pixel-styled like the tool buttons */
-.game-root .theme-menu-wrap{ position:fixed; top:12px; right:20px; z-index:60; }
+/* Corner row (fixed): mode switch + theme button, pixel-styled like the tool
+   buttons. The menu opens under the theme button (the row's right edge). */
+.game-root .theme-menu-wrap{ position:fixed; top:12px; right:20px; z-index:60; display:flex; gap:8px; align-items:flex-start; }
+.game-root .mode-toggle{
+width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+padding:0; cursor:pointer;
+color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+}
+.game-root .mode-toggle svg{ width:20px; height:20px; }
+.game-root .mode-toggle:hover, .game-root .mode-toggle:focus-visible{ filter:brightness(1.06); }
+.game-root .mode-toggle:active{ filter:brightness(.92); }
 .game-root .theme-menu{
 list-style:none; margin:6px 0 0; padding:4px;
 position:absolute; top:100%; right:0; min-width:132px;

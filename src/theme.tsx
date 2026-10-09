@@ -1,6 +1,6 @@
 import { Moon, Rocket, Sun } from 'lucide-react'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import type { NodeId } from './romania'
 import { CITIES } from './romania'
 
@@ -61,27 +61,10 @@ export function ThemeIcon({ theme }: { theme: Theme }) {
   return <BroomIcon />
 }
 
-// ── Masthead control ────────────────────────────────────────────────────────
-// Cycles the theme on click. The icon shows the theme you'll switch TO.
-export function ThemeControl({ theme, onCycle, busy }: { theme: Theme; onCycle: () => void; busy: boolean }) {
-  const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length]
-  return (
-    <button
-      type="button"
-      className={`theme-toggle${busy ? ' theme-toggle-busy' : ''}`}
-      aria-label={`Switch to ${THEME_META[next].label} theme`}
-      title={`${THEME_META[next].label} theme`}
-      onClick={onCycle}
-      disabled={busy}
-    >
-      <ThemeIcon theme={next} />
-    </button>
-  )
-}
-
-// Dropdown theme picker (replaces the cycle button): shows the current theme,
-// opens a list of all four. Shared with the game UI — both write the same
-// `theme` key through App, so a pick here skins the game too and vice versa.
+// Theme button + menu, the same interaction as the game's corner control:
+// one compact icon-only button; click opens the list of all four themes.
+// Shared with the game UI — both write the same `theme` key through App, so a
+// pick here skins the game too and vice versa.
 export function ThemeMenu({ theme, onSelect, busy }: { theme: Theme; onSelect: (t: Theme) => void; busy: boolean }) {
   return (
     <Select value={theme} onValueChange={(v) => { if (v && v !== theme) onSelect(v as Theme) }}>
@@ -89,10 +72,10 @@ export function ThemeMenu({ theme, onSelect, busy }: { theme: Theme; onSelect: (
         className={`theme-picker${busy ? ' theme-toggle-busy' : ''}`}
         size="sm"
         aria-label={`Theme: ${THEME_META[theme].label}`}
+        title={`Theme: ${THEME_META[theme].label}`}
         disabled={busy}
       >
         <ThemeIcon theme={theme} />
-        <SelectValue>{THEME_META[theme].short}</SelectValue>
       </SelectTrigger>
       <SelectContent align="end">
         {THEME_ORDER.map((t) => (

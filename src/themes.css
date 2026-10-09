@@ -781,12 +781,8 @@
   .roll-name { animation: none; }
 }
 
-/* Mute toggle, sits just left of the theme toggle */
+/* Mute toggle — a flex child of the masthead control cluster */
 .mute-toggle {
-  position: absolute;
-  right: 60px;
-  top: 50%;
-  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -806,10 +802,6 @@
 .mute-toggle svg {
   width: 18px;
   height: 18px;
-}
-@media (max-width: 768px) {
-  .mute-toggle { right: 54px; width: 30px; height: 30px; }
-  .mute-toggle svg { width: 16px; height: 16px; }
 }
 
 /* ── D&D map surface: wooden board-game tabletop ─────────────────────── */

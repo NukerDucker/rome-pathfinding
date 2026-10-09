@@ -14,6 +14,7 @@ import { createCapybara, type CapybaraHandle } from '@/game/animals/capybara'
 import { createBird, type BirdHandle } from '@/game/animals/bird'
 import { createBread, type BreadHandle, BREAD_UNLOCK_SWITCHES } from '@/game/animals/bread'
 import { THEME_ORDER, type Theme } from '@/theme'
+import ModeToggle from '@/components/ModeToggle'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
  *  React owns state/controls/tables; the map engine (viewport+scenery) and
@@ -57,7 +58,12 @@ function buildSnapshot(s: GameState): ScenerySnapshot {
   }
 }
 
-export default function GameApp({ theme, onSelectTheme }: { theme: Theme; onSelectTheme: (t: Theme) => void }) {
+export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
+  theme: Theme
+  mode: 'modern' | 'game'
+  onSelectTheme: (t: Theme) => void
+  onToggleMode: () => void
+}) {
   const g = useGameState()
   const [tab, setTab] = useState<GameTab>('map')
   const [themeOpen, setThemeOpen] = useState(false)
@@ -293,8 +299,9 @@ export default function GameApp({ theme, onSelectTheme }: { theme: Theme; onSele
         </main>
       </div>
 
-      {/* Fixed chrome (source index.html 18–29) */}
+      {/* Fixed chrome (source index.html 18–29): mode switch + theme button */}
       <div className="theme-menu-wrap">
+        <ModeToggle mode={mode} onToggle={onToggleMode} />
         <button
           type="button"
           className="theme-toggle"

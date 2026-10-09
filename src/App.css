@@ -80,7 +80,7 @@
 .app-title {
   position: relative;
   font-family: var(--heading);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-h);
@@ -99,7 +99,7 @@
   padding-inline: var(--sp-3);
 
   @media (max-width: 768px) {
-    font-size: 13px;
+    font-size: 14px;
     /* Still has to clear the fixed pill, which does not shrink with the title. */
     height: 58px;
     gap: 0.4em;
@@ -165,19 +165,36 @@
   width: 18px;
   height: 18px;
 }
-/* Theme dropdown trigger (replaces the cycle button) — same corner as the
-   old toggle; the Base UI popup supplies the list styling. */
-.theme-picker {
+/* Masthead control cluster: theme · mute · mode, one row in the title band. */
+.title-controls {
   position: absolute;
   right: 18px;
   top: 50%;
   transform: translateY(-50%);
-  width: auto;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Theme button: icon-only (the game's interaction), same 34px box as the
+   old cycle button; the Base UI popover carries the names. */
+.theme-picker[data-slot="select-trigger"] {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  gap: 0;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
 }
 .theme-picker svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
+}
+/* the trigger's built-in chevron has no room in a 34px square */
+.theme-picker svg.text-muted-foreground {
+  display: none;
 }
 
 .app-title-sep {
@@ -222,7 +239,7 @@
 
 .query-word {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -259,7 +276,7 @@
 
 .query-lm-custom {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--lm-ink);
   white-space: nowrap;
@@ -279,7 +296,7 @@
 /* Opt-in landmark overlay toggle (algorithms that don't need landmarks) */
 .lm-toggle {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
@@ -345,29 +362,39 @@
   }
 }
 
-/* VS chip between lanes */
+/* VS chip — centred over the gap between the two maps, overlapping both
+   maps' inner edges like the game's badge. Split view only. */
 .lane-vs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
   display: flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--border);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text);
-  flex-shrink: 0;
 
   @media (max-width: 1100px) {
     display: none;
   }
 }
+/* split view: tighter A↔B gutter so the disc sits over both maps */
+.lanes:not(.lanes-merged) .lanes-container { gap: var(--sp-3); }
+/* the middle column holds only the absolutely-positioned disc, so pin the
+   lanes to columns 1 and 3 (else auto-placement drops lane B into column 2) */
+.lanes-container > .lane-a { grid-column: 1; }
+.lanes-container > .lane-b { grid-column: 3; }
 
 /* ── Lane ───────────────────────────────────────────────────────────── */
 .lane {
@@ -400,7 +427,7 @@
   height: 20px;
   border-radius: 3px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   flex-shrink: 0;
@@ -419,7 +446,7 @@
 
 .lane-algo-name {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-h);
   white-space: nowrap;
@@ -457,7 +484,7 @@
 }
 
 .map-frame-bar .legend li {
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -624,7 +651,7 @@
 }
 
 .heatmap-legend-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
   white-space: nowrap;
 }
@@ -736,7 +763,7 @@
 .speed-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
 }
 
@@ -771,7 +798,7 @@
 }
 
 .footnotes li {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -819,11 +846,13 @@
   .app-title-sep { display: none; }
   .app-title-sub { flex-basis: 100%; letter-spacing: 0.2em; }
   /* The title wraps to the full width on phones, so the pinned controls would
-     sit on top of the text. Drop them into the flow as their own centred row. */
-  .app-title .theme-toggle,
-  .app-title .mute-toggle {
+     sit on top of the text. Drop the whole cluster into the flow as its own row. */
+  .title-controls {
     position: static;
     transform: none;
+    flex-basis: 100%;
+    justify-content: flex-end;
+    margin-top: 6px;
   }
 
   /* Query bar: stack the clusters (route / with-A / vs-B) */
@@ -879,7 +908,7 @@
   justify-content: center;
   gap: 0.45em;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   margin: 0;
 }
 .compare-title .ct-route {
@@ -929,6 +958,10 @@ html.theme-anim *::after {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  max-width: 1600px;            /* mirrors .game-root .app-shell */
+  margin: 0 auto;
+  padding: 0 16px 16px;         /* mirrors .game-root's root padding */
 }
 
 .app-main {
@@ -950,7 +983,7 @@ html.theme-anim *::after {
 }
 .tab-btn {
   padding: var(--sp-3) var(--sp-4);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   background: none;
@@ -1020,7 +1053,7 @@ html.theme-anim *::after {
 
 .guide-lede {
   grid-column: 1 / -1;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--text);
   margin: 0 0 var(--sp-4);
@@ -1045,7 +1078,7 @@ html.theme-anim *::after {
 .guide-nav a {
   display: block;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.35;
   padding: 4px var(--sp-2);
@@ -1080,7 +1113,7 @@ html.theme-anim *::after {
   scroll-margin-top: 56px;
 }
 .guide-section h3 {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-h);
@@ -1111,7 +1144,7 @@ html.theme-anim *::after {
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: var(--sp-1) var(--sp-2);
-    font-size: 12.5px;
+    font-size: 13.5px;
   }
   .guide-nav a:hover {
     background: color-mix(in srgb, var(--map-accent) 6%, transparent);
@@ -1122,11 +1155,11 @@ html.theme-anim *::after {
     grid-row: 3;
   }
 }
-.guide p { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
+.guide p { font-size: 15px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
 .guide ul, .guide ol { margin: 0 0 var(--sp-2); padding-left: 20px; }
-.guide li { font-size: 14px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
+.guide li { font-size: 15px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
 .guide strong { color: var(--text-h); font-weight: 650; }
-.guide code { font-size: 12px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
+.guide code { font-size: 13px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
 .guide .katex { font-size: 1.05em; }
 .guide-eq {
   overflow-x: auto;
@@ -1138,7 +1171,7 @@ html.theme-anim *::after {
 }
 
 .guide-note {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
   color: var(--text);
   background: color-mix(in srgb, var(--code-bg) 80%, var(--border));
@@ -1157,7 +1190,7 @@ html.theme-anim *::after {
   border-collapse: collapse;
   margin: 0 0 var(--sp-3);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 .guide-table th, .guide-table td {
   border: 1px solid var(--border);
@@ -1173,7 +1206,7 @@ html.theme-anim *::after {
 }
 .guide-table strong { color: var(--text-h); }
 
-.guide-figure { margin: var(--sp-2) 0 var(--sp-1); max-width: 480px; }
+.guide-figure { margin: var(--sp-2) auto var(--sp-1); max-width: 480px; text-align: center; }
 .guide-figure img {
   display: block;
   width: 100%;
@@ -1182,7 +1215,7 @@ html.theme-anim *::after {
   border-radius: 6px;
   background: var(--bg);
 }
-.guide-figure figcaption { font-size: 11px; line-height: 1.45; color: var(--text); margin-top: var(--sp-1); }
+.guide-figure figcaption { font-size: 12px; line-height: 1.45; color: var(--text); margin-top: var(--sp-1); }
 .guide-figure-missing {
   display: flex;
   align-items: center;
@@ -1192,12 +1225,12 @@ html.theme-anim *::after {
   padding: 12px;
   border: 1px dashed var(--border);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--text);
   background: color-mix(in srgb, var(--text) 4%, transparent);
 }
-.guide-foot { font-size: 11.5px; font-family: var(--mono); color: var(--text); opacity: 0.7; margin: var(--sp-5) 0 0; }
+.guide-foot { font-size: 12.5px; font-family: var(--mono); color: var(--text); opacity: 0.7; margin: var(--sp-5) 0 0; }
 
 .swatch-lm-a { background: var(--map-accent); }
 .swatch-lm-b { background: var(--lane-b); }
@@ -1246,7 +1279,7 @@ html.theme-anim *::after {
   align-items: center;
   gap: var(--sp-3);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
   white-space: nowrap;
 }
@@ -1296,7 +1329,7 @@ html.theme-anim *::after {
   grid-template-columns: minmax(0, 1fr) 380px;
   gap: var(--sp-3);
   align-items: stretch;
-  padding: 0 var(--sp-3) var(--sp-3);
+  padding: 0 var(--sp-6) var(--sp-3); /* 16 (shell) + 24 = the game's 40px content offset */
   box-sizing: border-box;
 }
 
@@ -1339,8 +1372,8 @@ html.theme-anim *::after {
   overflow-y: auto;
 }
 .stats-panel .compare-panel { padding: 0; }
-.stats-panel .compare-title { font-size: 13px; margin-bottom: var(--sp-2); }
-.stats-panel .ct-route { font-size: 11px; }
+.stats-panel .compare-title { font-size: 14px; margin-bottom: var(--sp-2); }
+.stats-panel .ct-route { font-size: 12px; }
 .stats-panel .footnotes { padding-top: var(--sp-2); margin-top: var(--sp-2); gap: var(--sp-1); }
 .stats-panel .footnotes li { font-size: 10px; line-height: 1.4; }
 
@@ -1348,6 +1381,7 @@ html.theme-anim *::after {
 @media (max-width: 1100px) {
   .app-body {
     grid-template-columns: 1fr;
+    padding-inline: var(--sp-3); /* phones: keep width, drop the 40px offset */
   }
   .stats-panel {
     contain: none;
@@ -1410,30 +1444,23 @@ html.theme-anim *::after {
   .transport > [data-slot="button"] { width: 44px; height: 44px; }
 }
 
-/* ── Mode switch (shell-level, visible in both UIs) ───────────────────── */
+/* ── Mode switch (modern variant) ─────────────────────────────────────── */
+/* Icon-only button inside each UI's control row (modern masthead cluster /
+   game corner, which restyles it wood). */
 .mode-toggle {
-  position: fixed;
-  top: 12px;
-  left: 20px;
-  z-index: 100;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.mode-toggle:hover { color: var(--text-h); }
+.mode-toggle:hover { background: color-mix(in srgb, var(--text-h) 8%, transparent); }
 .mode-toggle:focus-visible { outline: 2px solid var(--ring, var(--accent)); outline-offset: 2px; }
-/* Narrow screens: the fixed pill would sit on top of the game's pixel title,
-   so drop the text and keep the icon (aria-label/title carry the meaning). */
-@media (max-width: 700px) {
-  .mode-toggle-label { display: none; }
-  .mode-toggle { padding: 8px 10px; }
-}
+.mode-toggle svg { width: 18px; height: 18px; }

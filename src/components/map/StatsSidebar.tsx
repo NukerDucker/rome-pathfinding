@@ -194,17 +194,17 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
     return acc
   }, [])
 
-  const chipBase = 'font-mono text-[11px] px-2 py-[2px] rounded-full whitespace-nowrap'
+  const chipBase = 'font-mono text-[12px] px-2 py-[2px] rounded-full whitespace-nowrap'
 
   const renderKanbanCol = (side: 'a' | 'b', label: string, badgeCls: string, accentCls: string, winnerCls: string, winnerBg: string) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)]">
         <span className={`lane-badge ${badgeCls}`} aria-hidden="true">{side.toUpperCase()}</span>
-        <span className={`text-xs font-semibold ${accentCls} truncate`}>{label}</span>
+        <span className={`text-[13px] font-semibold ${accentCls} truncate`}>{label}</span>
       </div>
       {bentoSections.map(({ title, rows }) => (
         <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
-          <div className="text-[9px] font-bold uppercase tracking-widest text-ink mb-2">{title}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-ink mb-2">{title}</div>
           {rows.map((c) => {
             const val = c[side], isBetter = c.better === side
             const isYes = val === 'Yes', isNo = val === 'No'
@@ -213,7 +213,7 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
               : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
             return (
               <div key={c.label} className={rowCls}>
-                <span className="text-[11px] text-ink truncate">{c.label}</span>
+                <span className="text-[12px] text-ink truncate">{c.label}</span>
                 {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
                  : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
                  : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import ModernApp from '@/components/ModernApp'
-import ModeToggle from '@/components/ModeToggle'
 import GameApp from '@/game/GameApp'
 import { THEME_META, THEME_ORDER, applyTheme, initialTheme, type Theme } from '@/theme'
 
@@ -97,10 +96,11 @@ export default function App() {
     }
   }, [])
 
-  return (
-    <>
-      <ModeToggle mode={mode} onToggle={toggle} />
-      {mode === 'modern' ? <ModernApp theme={theme} onSelectTheme={setTheme} /> : <GameApp theme={theme} onSelectTheme={setTheme} />}
-    </>
+  // The mode switch lives inside each UI's own control row (modern masthead /
+  // game corner), not as a floating pill — both rows get [theme][…][mode].
+  return mode === 'modern' ? (
+    <ModernApp theme={theme} mode={mode} onSelectTheme={setTheme} onToggleMode={toggle} />
+  ) : (
+    <GameApp theme={theme} mode={mode} onSelectTheme={setTheme} onToggleMode={toggle} />
   )
 }

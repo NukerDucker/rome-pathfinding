@@ -28,7 +28,12 @@ import { DEFAULT_DELAY } from './map/PlaybackBar'
 import '../App.css'
 import '../themes.css'
 
-function ModernApp({ theme, onSelectTheme }: { theme: Theme; onSelectTheme: (t: Theme) => void }) {
+function ModernApp({ theme, mode, onSelectTheme, onToggleMode }: {
+  theme: Theme
+  mode: 'modern' | 'game'
+  onSelectTheme: (t: Theme) => void
+  onToggleMode: () => void
+}) {
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -295,6 +300,7 @@ function ModernApp({ theme, onSelectTheme }: { theme: Theme; onSelectTheme: (t: 
     <div className="app-main">
     <TitleRow
       theme={theme} onSelect={selectTheme} busy={roll !== null}
+      mode={mode} onToggleMode={onToggleMode}
       muted={muted}
       onToggleMute={() => { const m = !muted; setMutedFlag(m); if (!m) ensureAudio() }}
     />
