@@ -74,9 +74,12 @@ export default function GameApp() {
 
   const sceneryRef = useRef<SceneryHandle | null>(null)
   const animalsRef = useRef<Animals | null>(null)
-  // always-fresh state for the imperative modules' event-time reads
+  // Always-fresh state for the imperative modules' event-time reads. Updated
+  // after commit (never during render); the modules only read it on events.
   const latest = useRef(g)
-  latest.current = g
+  useEffect(() => {
+    latest.current = g
+  })
 
   // ── Map engine: one scenery instance driving both viewports (stage 2) ──
   useEffect(() => {
@@ -184,24 +187,25 @@ export default function GameApp() {
   }
 
   // ── trigger plumbing: the animals' own gates live in their modules ─────
+  const { randomize, next, prev, setMerged } = g
   const onRandom = useCallback(() => {
-    g.randomize()
+    randomize()
     animalsRef.current?.bird?.trigger()
-  }, [g.randomize])
+  }, [randomize])
   const onNext = useCallback(() => {
-    g.next()
+    next()
     animalsRef.current?.capybara?.trigger()
-  }, [g.next])
+  }, [next])
   const onPrev = useCallback(() => {
-    g.prev()
+    prev()
     animalsRef.current?.capybara?.trigger()
-  }, [g.prev])
+  }, [prev])
   const onMerged = useCallback(
     (v: boolean) => {
-      g.setMerged(v)
+      setMerged(v)
       animalsRef.current?.cat?.trigger()
     },
-    [g.setMerged],
+    [setMerged],
   )
 
   return (

@@ -61,12 +61,12 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   const ac = new AbortController();
   const { signal } = ac;
 
-  const BIRD_PERCHES = {
-    map:   { box: () => routeBoxEl, x: (_box: HTMLElement) => {
+  const BIRD_PERCHES: Record<'map' | 'guide', { box: () => HTMLElement; x: (box?: HTMLElement) => number }> = {
+    map:   { box: () => routeBoxEl, x: () => { // x anchored to the dice button, not the box itself
       const r = randomBtnEl.getBoundingClientRect(); return r.left + r.width / 2; } }, // 2023-2024
-    guide: { box: () => perchBird,  x: (box: HTMLElement) => { // its slot on the Guide intro card
-      const r = box.getBoundingClientRect(); return r.left + r.width / 2; } }, // 2025-2026
-  } as const;
+    guide: { box: () => perchBird,  x: (box) => { // its slot on the Guide intro card
+      const r = (box ?? perchBird).getBoundingClientRect(); return r.left + r.width / 2; } }, // 2025-2026
+  };
 
   // Fly the bird (position:fixed) from `from` to `to` (screen points = its feet),
   // along a curve that rises above both, flapping (sprite swap + flap sound).
