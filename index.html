@@ -3,8 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Romania Pathfinding Visualizer",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any (web browser)",
+        "description": "Step-by-step visualiser for uninformed and informed search on the Romania map: BFS, DFS, UCS, greedy best-first, A* and bidirectional variants, with a live comparison table and the LP + ALT heuristic.",
+        "about": ["Uniform-Cost Search", "A* search", "admissible heuristic", "ALT landmarks"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rome-pathfinding</title>
+    <title>Romania Pathfinding — UCS, A★ and landmark heuristics visualised</title>
+    <meta
+      name="description"
+      content="Step-through animation of BFS, DFS, UCS, greedy and A★ on the Romania map, side by side with a live comparison table. Covers the LP + ALT heuristic, its admissibility, and the measured search performance of every variant."
+    />
+    <meta name="theme-color" content="#14161d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Romania Pathfinding — search algorithm visualizer" />
+    <meta
+      property="og:description"
+      content="Step-by-step search on the Romania map: uninformed vs informed, a live side-by-side comparison, and the LP + ALT heuristic with measured numbers."
+    />
   </head>
   <body>
     <div id="root"></div>

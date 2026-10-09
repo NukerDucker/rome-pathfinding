@@ -204,7 +204,7 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
       </div>
       {bentoSections.map(({ title, rows }) => (
         <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
-          <div className="text-[9px] font-bold uppercase tracking-widest text-ink opacity-50 mb-2">{title}</div>
+          <div className="text-[9px] font-bold uppercase tracking-widest text-ink opacity-90 mb-2">{title}</div>
           {rows.map((c) => {
             const val = c[side], isBetter = c.better === side
             const isYes = val === 'Yes', isNo = val === 'No'

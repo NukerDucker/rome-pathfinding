@@ -240,7 +240,8 @@ export default function GameApp() {
           </button>
         </nav>
 
-        <div id="tabMap" className="tab-panel" role="tabpanel" aria-labelledby="tabBtnMap" hidden={tab !== 'map'}>
+        {/* One <main> per tab panel; `hidden` keeps exactly one exposed. */}
+        <main id="tabMap" className="tab-panel" aria-labelledby="tabBtnMap" hidden={tab !== 'map'}>
           <GameControls
             start={g.start}
             goal={g.goal}
@@ -279,11 +280,11 @@ export default function GameApp() {
           >
             <GameStats />
           </GameMap>
-        </div>
+        </main>
 
-        <div id="tabGuide" className="tab-panel" role="tabpanel" aria-labelledby="tabBtnGuide" hidden={tab !== 'guide'}>
+        <main id="tabGuide" className="tab-panel" aria-labelledby="tabBtnGuide" hidden={tab !== 'guide'}>
           <GameGuide />
-        </div>
+        </main>
       </div>
 
       {/* Fixed chrome (source index.html 18–29) */}

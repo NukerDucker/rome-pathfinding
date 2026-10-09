@@ -312,9 +312,9 @@ function ModernApp() {
       <TabBar tab={tab} onTab={setTab} />
 
       {tab === 'guide' && (
-        <div id="tabpanel-guide" role="tabpanel" aria-labelledby="tab-guide" className="guide-page-wrap">
+        <main id="tabpanel-guide" aria-labelledby="tab-guide" className="guide-page-wrap">
           <Guide />
-        </div>
+        </main>
       )}
 
       {tab === 'map' && <>

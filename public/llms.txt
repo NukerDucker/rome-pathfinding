@@ -1,0 +1,42 @@
+# Romania Pathfinding Visualizer
+
+> Interactive visualiser for search algorithms on the Romania map (the classic AI
+> textbook map): breadth-first, depth-first, uniform-cost, greedy best-first, A*
+> and bidirectional variants, animated step by step, with a live side-by-side
+> comparison table and a measured guide to the LP + ALT heuristic.
+
+The whole app is one client-side page — there are no server routes and no
+separate article URLs. The prose below is rendered in the Guide tab and is
+present in the DOM whether or not that tab is open.
+
+## Contents
+
+- **Map view** — pick a start and goal city, choose an algorithm per lane, then
+  play, step or scrub the search. Frontier, visited set, current node, the final
+  path, a straight-line overlay and an h-value heatmap are drawn on the map.
+  The two lanes can be merged into a single map with one colour per lane.
+- **Comparison table** — 17 metrics per lane: step, current, visited, frontier,
+  generated, peak memory, path, time, cost, hops, T(n), S(n), optimal, complete
+  and landmark effect at 2 / 4 / 8 landmarks.
+- **Guide tab** — UCS to A*, what a heuristic is, why the LP and ALT bounds are
+  admissible, and the measured performance of every variant over all 380 ordered
+  city pairs.
+- **Two skins** — a modern UI (light / dark / Dungeons & Dragons / space themes)
+  and a pixel-art game UI with day/night, reachable from the mode toggle.
+
+## Key facts
+
+- Graph: 20 cities, 380 ordered city pairs, edge costs from the assignment PDF
+  only. No straight-line distances and no GPS coordinates are used.
+- Heuristics: LP (an offline scipy/HiGHS linear program) and ALT (landmarks plus
+  the triangle inequality), combined as h = max(h_LP, h_ALT).
+- Measured: zero admissibility violations and zero wrong optimal costs across all
+  380 pairs, cross-checked against an independent all-pairs Dijkstra /
+  Floyd–Warshall oracle.
+- Informedness (ratio of sums over the 380 pairs): LP 0.683, ALT lm8 0.985,
+  combined 0.986. Expansions: UCS 4180, A* with the combined heuristic 1922.
+
+## Source
+
+- [Repository](https://github.com/NukerDucker/rome-pathfinding)
+- Measurements: `eval/independent-eval.ts` (run with `bun eval/independent-eval.ts`)
