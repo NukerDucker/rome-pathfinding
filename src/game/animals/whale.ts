@@ -21,8 +21,9 @@ export interface WhaleOptions {
   vsBadge: HTMLElement;
   /** #compareWrap */
   compareWrap: HTMLElement;
-  /** #whalePerch */
-  perchWhale: HTMLElement;
+  /** #perchWhale — the Guide slot (observed; the source watches the slot and
+   *  reveals its inner button, which is what actually perches) */
+  perchSlot: HTMLElement;
 }
 
 export interface WhaleHandle {
@@ -31,7 +32,8 @@ export interface WhaleHandle {
   dispose(): void;
 }
 
-export function createWhale({ whaleEl, vsBadge, compareWrap, perchWhale }: WhaleOptions): WhaleHandle {
+export function createWhale({ whaleEl, vsBadge, compareWrap, perchSlot }: WhaleOptions): WhaleHandle {
+  const perchWhale = (perchSlot.querySelector('button') ?? perchSlot) as HTMLElement;
   const WHALE_LEAVE_AFTER = 5;              // 1733
   let whaleJumps = 0;                        // 1734
   let whaleState: 'map' | 'toGuide' | 'guide' = 'map'; // 1734 'map' | 'toGuide' | 'guide'
@@ -105,7 +107,7 @@ export function createWhale({ whaleEl, vsBadge, compareWrap, perchWhale }: Whale
         whaleEl.hidden = true;
         whaleJumping = false;
         whaleState = 'toGuide';
-        whaleGuideObserver.observe(perchWhale);
+        whaleGuideObserver.observe(perchSlot);
       }).catch(() => {});
       return;
     }

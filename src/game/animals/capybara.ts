@@ -21,8 +21,9 @@ export interface CapybaraOptions {
   capyImg: HTMLImageElement;
   /** .map-panel — comfyCapy's React-owned parent */
   mapPanelEl: HTMLElement;
-  /** #capyPerch */
-  perchCapy: HTMLElement;
+  /** #perchCapy — the Guide slot (observed; the source watches the slot and
+   *  reveals its inner button, which is what actually perches) */
+  perchSlot: HTMLElement;
 }
 
 export interface CapybaraHandle {
@@ -35,7 +36,8 @@ export interface CapybaraHandle {
 
 const CAPY_CHANCE = 0.1; // 1839
 
-export function createCapybara({ capyEl, capyImg, mapPanelEl, perchCapy }: CapybaraOptions): CapybaraHandle {
+export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: CapybaraOptions): CapybaraHandle {
+  const perchCapy = (perchSlot.querySelector('button') ?? perchSlot) as HTMLElement;
   type CapyState = 'none' | 'map' | 'busy' | 'toGuide' | 'guide';
   let capyState: CapyState = 'none'; // 1842 'none' | 'map' | 'busy' | 'toGuide' | 'guide'
   let disposed = false;
@@ -84,8 +86,9 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchCapy }: Capyb
       canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px';
       document.body.appendChild(canvas);
       dustCanvases.add(canvas);
-      const g = canvas.getContext('2d');
-      if (!g) { canvas.remove(); dustCanvases.delete(canvas); resolve(); return; }
+      const ctx2d = canvas.getContext('2d');
+      if (!ctx2d) { canvas.remove(); dustCanvases.delete(canvas); resolve(); return; }
+      const g = ctx2d;
       g.scale(dpr, dpr);
       const px = rect.width / 48; // screen px per sprite px
       const parts = capyPixels.map(p => {
@@ -156,7 +159,7 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchCapy }: Capyb
       capyEl.hidden = true;
       capyEl.style.visibility = '';
       capyState = 'toGuide';
-      capyGuideObserver.observe(perchCapy);
+      capyGuideObserver.observe(perchSlot);
     });
   }, { signal });
 

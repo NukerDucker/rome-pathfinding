@@ -1,21 +1,36 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import GameControls from '@/game/GameControls'
 import GameGuide from '@/game/GameGuide'
 import GameMap from '@/game/GameMap'
 import GamePlayback from '@/game/GamePlayback'
 import GameStats from '@/game/GameStats'
 import { attachGuideExtras } from '@/game/guideScrollSpy'
-import { useGameState } from '@/game/useGameState'
+import { landmarkCitiesFor, useGameState, type GameState, type Lane } from '@/game/useGameState'
+import { createScenery, type SceneryHandle, type ScenerySnapshot } from '@/game/scenery'
+import { createDuck, type DuckHandle } from '@/game/animals/duck'
+import { createCat, type CatHandle } from '@/game/animals/cat'
+import { createWhale, type WhaleHandle } from '@/game/animals/whale'
+import { createCapybara, type CapybaraHandle } from '@/game/animals/capybara'
+import { createBird, type BirdHandle } from '@/game/animals/bird'
+import { createBread, type BreadHandle, BREAD_UNLOCK_SWITCHES } from '@/game/animals/bread'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
- *  React owns state/controls/tables; the map engine and the animals stay
- *  imperative modules (mounted in stage 2/4). */
+ *  React owns state/controls/tables; the map engine (viewport+scenery) and
+ *  the animals stay imperative modules, mounted once and disposed on unmount. */
 
 type GameTab = 'map' | 'guide'
 type DayNight = 'day' | 'night'
 
+type Animals = {
+  duck?: DuckHandle
+  cat?: CatHandle
+  whale?: WhaleHandle
+  capybara?: CapybaraHandle
+  bird?: BirdHandle
+  bread?: BreadHandle
+}
+
 const THEME_KEY = 'game-theme'
-const BREAD_UNLOCK_SWITCHES = 5 // theme toggles before the bread button appears
 
 function readGameTheme(): DayNight | null {
   try {
@@ -23,6 +38,29 @@ function readGameTheme(): DayNight | null {
     return t === 'day' || t === 'night' ? t : null
   } catch {
     return null
+  }
+}
+
+const q = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)
+
+// ScenerySnapshot: the imperative map modules read the world through this
+// (the original read module globals; here React state is the single source).
+function buildSnapshot(s: GameState): ScenerySnapshot {
+  const lane = (key: Lane) => ({
+    last: s.derived[key].last,
+    result: s.derived[key].result,
+    heat: s.derived[key].heat,
+    landmarks: landmarkCitiesFor(s.derived[key].meta, key === 'A' ? s.laneA : s.laneB),
+  })
+  return {
+    stepIdx: s.stepIdx,
+    start: s.start,
+    goal: s.goal,
+    showLine: s.showLine,
+    pickLandmarks: s.pickLandmarks,
+    merged: s.merged,
+    showDistances: s.showDistances,
+    lane: { A: lane('A'), B: lane('B') },
   }
 }
 
@@ -34,17 +72,94 @@ export default function GameApp() {
   const [themeSwitches, setThemeSwitches] = useState(0)
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null)
 
-  const toggleTheme = () => {
-    const next: DayNight = theme === 'night' ? 'day' : 'night'
-    setTheme(next)
-    setThemeSwitches((n) => n + 1)
-    try {
-      localStorage.setItem(THEME_KEY, next)
-    } catch {
-      /* storage denied — theme just won't persist */
+  const sceneryRef = useRef<SceneryHandle | null>(null)
+  const animalsRef = useRef<Animals | null>(null)
+  // always-fresh state for the imperative modules' event-time reads
+  const latest = useRef(g)
+  latest.current = g
+
+  // ── Map engine: one scenery instance driving both viewports (stage 2) ──
+  useEffect(() => {
+    const canvases = [...document.querySelectorAll<HTMLElement>('#compareWrap .algo-canvas')]
+    if (canvases.length < 2) return
+    const scenery = createScenery({
+      canvases: [canvases[0], canvases[1]],
+      getState: () => buildSnapshot(latest.current),
+      onPickLandmark: (lane, city) => latest.current.pickLandmark(lane, city),
+    })
+    sceneryRef.current = scenery
+    return () => {
+      sceneryRef.current = null
+      scenery.dispose()
     }
-  }
-  const breadUnlocked = themeSwitches >= BREAD_UNLOCK_SWITCHES
+  }, [])
+
+  // Re-draw after every commit that can change what the map shows.
+  useEffect(() => {
+    sceneryRef.current?.sync(buildSnapshot(g))
+  }, [g, g.derived, g.stepIdx, g.showLine, g.pickLandmarks, g.merged, g.showDistances, g.laneA, g.laneB])
+
+  // ── Animals + secret bread (stage 4) — imperative, dispose on unmount ──
+  useEffect(() => {
+    const a: Animals = {}
+    const duckBtn = q<HTMLButtonElement>('#duckBtn')
+    const duckImg = duckBtn?.querySelector('img')
+    const homeMap = q('#duckHomeMap')
+    const homeGuide = q('#duckHomeGuide')
+    if (duckBtn && duckImg && homeMap && homeGuide) {
+      a.duck = createDuck({
+        btn: duckBtn, img: duckImg, homeMap, homeGuide,
+        rolledSrc: '/assets/duck-rolled.png', standingSrc: '/assets/duck.png',
+      })
+    }
+    const peekBtn = q<HTMLButtonElement>('#peekCat')
+    const standBtn = q<HTMLButtonElement>('#catStand')
+    const algoBoxEl = q('.algo-box')
+    const perchCat = q('#perchCat')
+    const canvases = [...document.querySelectorAll<HTMLElement>('#compareWrap .algo-canvas')]
+    if (peekBtn && standBtn && algoBoxEl && perchCat) {
+      a.cat = createCat({ peekBtn, standBtn, algoBoxEl, canvases, perchCat })
+    }
+    const whaleEl = q('#whale')
+    const vsBadge = q('#vsBadge')
+    const compareWrap = q('#compareWrap')
+    const perchWhale = q('#perchWhale')
+    if (whaleEl && vsBadge && compareWrap && perchWhale) {
+      a.whale = createWhale({ whaleEl, vsBadge, compareWrap, perchSlot: perchWhale })
+    }
+    const capyEl = q<HTMLButtonElement>('#capy')
+    const capyImg = capyEl?.querySelector('img')
+    const mapPanelEl = q('.map-panel')
+    const perchCapy = q('#perchCapy')
+    if (capyEl && capyImg && mapPanelEl && perchCapy) {
+      a.capybara = createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot: perchCapy })
+    }
+    const birdBtn = q<HTMLButtonElement>('#bird')
+    const birdImg = birdBtn?.querySelector('img')
+    const routeBoxEl = q('.route-box')
+    const randomBtnEl = q('#randomBtn')
+    const perchBird = q('#perchBird')
+    if (birdBtn && birdImg && routeBoxEl && randomBtnEl && perchBird) {
+      a.bird = createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl, perchBird })
+    }
+    const breadBtn = q<HTMLButtonElement>('#breadBtn')
+    const breadOverlay = q('#breadOverlay')
+    const breadPerch = q<HTMLButtonElement>('#breadPerch')
+    const perchBread = q('#perchBread')
+    if (breadBtn && breadOverlay && breadPerch && perchBread) {
+      a.bread = createBread({ btn: breadBtn, overlay: breadOverlay, perchBtn: breadPerch, perchSlot: perchBread })
+    }
+    animalsRef.current = a
+    return () => {
+      animalsRef.current = null
+      a.duck?.dispose()
+      a.cat?.dispose()
+      a.whale?.dispose()
+      a.capybara?.dispose()
+      a.bird?.dispose()
+      a.bread?.dispose()
+    }
+  }, [])
 
   // GIF-failure fallback + guide contents scroll-spy (script.js 1246–1276)
   useEffect(() => attachGuideExtras(), [])
@@ -54,6 +169,40 @@ export default function GameApp() {
   useEffect(() => {
     rootEl?.classList.toggle('picking-landmarks', g.pickLandmarks)
   }, [rootEl, g.pickLandmarks])
+
+  const toggleTheme = () => {
+    const next: DayNight = theme === 'night' ? 'day' : 'night'
+    setTheme(next)
+    const switches = themeSwitches + 1
+    setThemeSwitches(switches)
+    if (switches === BREAD_UNLOCK_SWITCHES) animalsRef.current?.bread?.unlock()
+    try {
+      localStorage.setItem(THEME_KEY, next)
+    } catch {
+      /* storage denied — theme just won't persist */
+    }
+  }
+
+  // ── trigger plumbing: the animals' own gates live in their modules ─────
+  const onRandom = useCallback(() => {
+    g.randomize()
+    animalsRef.current?.bird?.trigger()
+  }, [g.randomize])
+  const onNext = useCallback(() => {
+    g.next()
+    animalsRef.current?.capybara?.trigger()
+  }, [g.next])
+  const onPrev = useCallback(() => {
+    g.prev()
+    animalsRef.current?.capybara?.trigger()
+  }, [g.prev])
+  const onMerged = useCallback(
+    (v: boolean) => {
+      g.setMerged(v)
+      animalsRef.current?.cat?.trigger()
+    },
+    [g.setMerged],
+  )
 
   return (
     <div className="game-root" data-theme={theme ?? undefined} ref={setRootEl}>
@@ -104,12 +253,12 @@ export default function GameApp() {
             onGoal={g.setGoal}
             onAlgo={g.setAlgo}
             onLandmark={g.setLandmarkValue}
-            onRandom={g.randomize}
+            onRandom={onRandom}
             onTogglePick={g.togglePickLandmarks}
             onShowLine={g.setShowLine}
             onShowHeat={g.setShowHeat}
             onShowDistances={g.setShowDistances}
-            onMerged={g.setMerged}
+            onMerged={onMerged}
           />
           <GameMap
             playback={
@@ -117,8 +266,8 @@ export default function GameApp() {
                 playing={g.playing}
                 delay={g.delay}
                 onPlay={g.play}
-                onNext={g.next}
-                onPrev={g.prev}
+                onNext={onNext}
+                onPrev={onPrev}
                 onRestart={g.restart}
                 onDelay={g.setDelay}
               />
@@ -133,18 +282,28 @@ export default function GameApp() {
         </div>
       </div>
 
-      {/* Fixed chrome: day/night toggle owns the top-right. Five switches
-          reveal the bread button (bread.ts, wired in stage 4). */}
+      {/* Fixed chrome (source index.html 18–29) */}
       <button
         type="button"
         className="theme-toggle"
         id="themeToggle"
         onClick={toggleTheme}
         aria-label="Toggle day and night"
-        data-bread-unlocked={breadUnlocked || undefined}
       >
         {theme === 'night' ? '☀' : '☾'}
       </button>
+      {/* Bread button (secret): revealed by bread.unlock() on the 5th theme switch */}
+      <button className="bread-btn" id="breadBtn" type="button" aria-label="Get bread" title="Get bread" hidden>
+        <img src="/assets/bread.png" alt="" />
+      </button>
+      {/* Bird (1-in-10 on each Random click — gated inside the module) */}
+      <button className="bird" id="bird" type="button" aria-label="Bird" title="Tweet" hidden>
+        <img src="/assets/bird.png" alt="" />
+      </button>
+      <div className="bread-overlay" id="breadOverlay" aria-hidden="true">
+        <img className="bread-big" src="/assets/bread.png" alt="" />
+        <div className="bread-text">GET BREAD</div>
+      </div>
     </div>
   )
 }
