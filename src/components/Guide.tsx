@@ -6,9 +6,8 @@ import { Tex } from './Tex'
 // the heuristic, how this app builds one (LP + ALT), why combining them works,
 // and whether the combination actually performs better (measured, not asserted).
 //
-// Animated illustrations are requested separately; their specs live in
-// requests.txt and the <Figure> placeholders fall back to a "pending" box if the
-// GIF has not been added to public/gifs/ yet.
+// Each animation lives in public/gifs/; if one fails to load the <Figure>
+// placeholder falls back to a labelled "pending" box naming the missing asset.
 
 function Figure({ src, alt, caption, spec }: { src: string; alt: string; caption: string; spec: string }) {
   const [failed, setFailed] = useState(false)
@@ -19,7 +18,7 @@ function Figure({ src, alt, caption, spec }: { src: string; alt: string; caption
           <span>
             {alt}
             <br />
-            GIF pending · spec <code>{spec}</code> in requests.txt
+            GIF pending · <code>{spec}</code>
           </span>
         </div>
       ) : (

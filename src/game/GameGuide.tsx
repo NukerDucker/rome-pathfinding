@@ -333,8 +333,8 @@ export default function GameGuide() {
           </section>
 
           <p className="guide-foot">
-            Guide based on the search implementation in <code>src/engine/</code>. Measurements come
-            from an independent evaluation over all 380 ordered city pairs.
+            Guide based on the implementation in <code>src/</code>. Measurements: see{' '}
+            <code>eval/independent-eval.ts</code>, over all 380 ordered city pairs.
           </p>
         </div>
       </div>

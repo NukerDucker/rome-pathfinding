@@ -10,7 +10,7 @@ Romania map pathfinding visualizer — AI assignment (KMITL Year 3, 2026).
 
 Step-by-step animation of search algorithms on the Romania map. Bento two-lane layout for side-by-side algorithm comparison. Frontier/visited highlighting, arc overlay, speed slider, play/pause/step, H-value heatmap, click-to-set-landmark.
 
-Also ships a **left-hand guide sidebar** that walks from Uniform-Cost Search to A\*, into the heuristic (LP + ALT), the `max` ensemble, and its measured performance, plus an optional **merged single-map view** (roads split down the middle, node discs and landmark rings split vertically, one colour per lane).
+Also ships a **Guide tab** that walks from Uniform-Cost Search to A\*, into the heuristic (LP + ALT), the `max` ensemble, and its measured performance, plus a **game-style UI** (pixel-art Romania, animals, day/night) reachable from the mode toggle in the top-left corner. The map view has an optional **merged single-map view** (roads split down the middle, node discs and landmark rings split vertically, one colour per lane).
 
 ## Stack
 
@@ -30,10 +30,10 @@ bun dev
 Type-check + self-checks:
 
 ```bash
-bun x tsc -b
-bun run src/heuristic.ts   # LP+ALT admissibility checks
-bun run src/astar.ts       # Arad→Bucharest = 418
-bun run src/biastar.ts     # bidirectional check
+bun x tsc -b   # type-check
+bun test       # regression suite: a known-cost case, endpoint edge cases, and an
+               # all-pairs cross-check of every registry algorithm against a
+               # Floyd–Warshall oracle (25 assertions)
 ```
 
 ## Algorithms
@@ -54,7 +54,7 @@ bun run src/biastar.ts     # bidirectional check
 
 `h = max(hLP, hALT)` — max of two independently admissible bounds.
 
-**LP (vector-decomposition):** offline scipy/HiGHS LP using pixel coords + edge km. Mean h/road = 0.729.
+**LP (vector-decomposition):** offline scipy/HiGHS LP using pixel coords + edge km. Mean h/road = 0.729 as a mean of per-pair ratios, 0.683 as a ratio of sums (the definition the Guide's tables use). Both are printed by `eval/independent-eval.ts`.
 
 **ALT (Landmarks + Triangle Inequality):** `h(n,goal) = max_L |d(L,n) − d(L,goal)|`. Three presets: lm2 / lm4 / lm8. Dijkstra precomputed at module load.
 
@@ -68,7 +68,7 @@ Combined: mean h/road = **0.986** on 380 directed pairs.
 src/
   romania.ts          — graph data (edges + schematic SVG coords, no SLD)
   search.ts           — SearchResult type, ALGORITHMS registry
-  heuristic.ts        — h() = max(hLP, hALT), self-checks
+  heuristic.ts        — h() = max(hLP, hALT)
   heuristic_table.ts  — LP lookup table (offline-solved)
   alt.ts              — ALT landmarks, Dijkstra, makeHALTArbitrary()
   bfs.ts / dfs.ts     — reference implementations
@@ -78,11 +78,17 @@ src/
   astar-alt.ts        — A* with combined LP+ALT
   astar-alt-only.ts   — A* with ALT only
   biastar.ts          — bidirectional A* (independent frontier bounds, reopening)
-  components/Guide.tsx — left sidebar explainer (UCS → A* → heuristic → ensemble)
-  components/Tex.tsx   — shared KaTeX inline renderer
-  App.tsx             — UI, toolbar, map render, heatmap, lane comparison, merged view
-  App.css             — layout + guide + merged-map styles
+  App.tsx                   — mode shell (modern ⇄ game) + view-transition crossfade
+  components/ModernApp.tsx  — modern UI: state, handlers, layout skeleton
+  components/map/           — modern UI parts: MapStage, StatsSidebar (the 17-metric
+                              `cols` table), chrome cards, SVG cartography, benchmark cache
+  components/Guide.tsx      — Guide tab explainer (UCS → A* → heuristic → ensemble)
+  components/Tex.tsx        — shared KaTeX inline renderer
+  game/                     — game-style UI: pixel scenery, viewport pan/zoom, animals, audio
+  App.css / themes.css      — modern layout + the light/dark/D&D/space theme layer
+  game/game.css             — game UI styles (scoped under .game-root)
 eval/
   independent-eval.ts — external measurement of heuristic informedness + expansions
-requests.txt          — specs for the sidebar's animated GIFs (for the asset agent)
+tests/
+  biastar.test.ts     — regression + all-pairs oracle cross-check (`bun test`)
 ```
