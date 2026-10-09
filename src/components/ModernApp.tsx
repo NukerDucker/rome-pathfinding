@@ -5,7 +5,7 @@ import { type LandmarkPreset } from '@/heuristic'
 import { Guide } from '@/components/Guide'
 import {
   THEME_ORDER, ThemeRoll, DndAurora,
-  SpaceField, PlanetWindow, applyTheme, initialTheme,
+  SpaceField, applyTheme, initialTheme,
   type Theme,
 } from '@/theme'
 import {
@@ -14,17 +14,17 @@ import {
   playCrow, playOwl, playGlitter, playWhoosh, playLaser,
   startCeltic, stopCeltic, startSpaceHum, stopSpaceHum,
 } from '@/audio'
-import { laneLandmarkCities, laneLmSuffix, type LandmarkCount } from './map/landmarks'
+import { type LandmarkCount } from './map/landmarks'
 import { benchmarkOne, landmarkEffect, withAltConfig } from './map/bench'
 import { StatsSidebar } from './map/StatsSidebar'
-import { SVGMap, MergedSVGMap } from './map/svgMap'
 import { heatmapFor, countMoves, randomPair } from './map/mapData'
 import { TitleRow } from './map/TitleRow'
 import { TabBar } from './map/TabBar'
 import { RouteCard } from './map/RouteCard'
 import { AlgorithmCard } from './map/AlgorithmCard'
 import { ToolbarRow } from './map/ToolbarRow'
-import { PlaybackBar, DEFAULT_DELAY } from './map/PlaybackBar'
+import { MapStage } from './map/MapStage'
+import { DEFAULT_DELAY } from './map/PlaybackBar'
 import '../App.css'
 import '../themes.css'
 
@@ -380,161 +380,26 @@ function ModernApp() {
           customCount={customA.length + customB.length}
         />
 
-        <div className="app-body">
-        <div className={`lanes${merged ? ' lanes-merged' : ''}`}>
-          {/* Lane A */}
-          <div className="lanes-container">
-            <section className="lane lane-a" aria-label="Lane A">
-              <div className="lane-header">
-                <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-                <span className="lane-algo-name">{meta.label}</span>
-              </div>
-              {theme === 'space' && <PlanetWindow variant="a" city={currentCityA} nonce={warpA} />}
-              <div className="map-wrap">
-                <SVGMap
-                  algoKey={algo} stepIdx={stepIdx} lastIdx={lastIdx}
-                  result={result} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                  heatmapValues={heatA}
-                  landmarks={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
-                  onCityClick={onCityClickA} pickLandmarkMode={pickLandmarkMode}
-                  showMapBg={theme === 'dnd'}
-                  spaceTheme={theme === 'space'}
-                />
-                <span className="heatmap-legend" aria-label="Heatmap scale"
-                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                  <span className="heatmap-legend-label">Near</span>
-                  <span className="heatmap-legend-bar" aria-hidden="true" />
-                  <span className="heatmap-legend-label">Far</span>
-                </span>
-              </div>
-              <div className="map-frame-bar">
-                <ul className="legend" aria-label="Node state colors">
-                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-                </ul>
-              </div>
-            </section>
-
-            <div className="lane-vs" aria-hidden="true">vs</div>
-
-            <div className="playback-controls">
-              <PlaybackBar
-                playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
-                onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
-                onForward={handleStepForward} onDelay={setDelay}
-              />
-            </div>
-
-            {/* Lane B */}
-            <section className="lane lane-b" aria-label="Lane B">
-              <div className="lane-header">
-                <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-                <span className="lane-algo-name">{meta2.label}</span>
-              </div>
-              {theme === 'space' && <PlanetWindow variant="b" city={currentCityB} nonce={warpB} />}
-              <div className="map-wrap">
-                <SVGMap
-                  algoKey={algo2} stepIdx={stepIdx} lastIdx={lastIdx2}
-                  result={result2} hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                  heatmapValues={heatB}
-                  landmarks={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
-                  onCityClick={onCityClickB} pickLandmarkMode={pickLandmarkMode}
-                  showMapBg={theme === 'dnd'}
-                  spaceTheme={theme === 'space'}
-                />
-                <span className="heatmap-legend" aria-label="Heatmap scale"
-                  style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                  <span className="heatmap-legend-label">Near</span>
-                  <span className="heatmap-legend-bar" aria-hidden="true" />
-                  <span className="heatmap-legend-label">Far</span>
-                </span>
-              </div>
-              <div className="map-frame-bar">
-                <ul className="legend" aria-label="Node state colors">
-                  <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-                  <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-                  <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-                  <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-                  <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-                  <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-                  <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-                </ul>
-              </div>
-            </section>
-          </div>
-
-          {/* Merged single-map view — shown only when “Merge maps” is toggled on */}
-          <section className="lane lane-merged" aria-label="Merged map (lane A and B)">
-            <div className="lane-header lane-header-merged">
-              <span className="lane-badge lane-badge-a" aria-hidden="true">A</span>
-              <span className="lane-algo-name">{meta.label}{laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}</span>
-              <span className="lane-vs-inline" aria-hidden="true">vs</span>
-              <span className="lane-badge lane-badge-b" aria-hidden="true">B</span>
-              <span className="lane-algo-name">{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
-              <span className="merged-legend">
-                <span className="ml-item"><span className="ml-swatch ml-a" aria-hidden="true" />{meta.label}{laneLmSuffix(meta.usesLandmarks, landmarkA, customA)}</span>
-                <span className="ml-item"><span className="ml-swatch ml-b" aria-hidden="true" />{meta2.label}{laneLmSuffix(meta2.usesLandmarks, landmarkB, customB)}</span>
-              </span>
-            </div>
-            {theme === 'space' && (
-              <div className="planet-windows">
-                <PlanetWindow variant="a" city={currentCityA} nonce={warpA} />
-                <PlanetWindow variant="b" city={currentCityB} nonce={warpB} />
-              </div>
-            )}
-            <div className="map-wrap">
-              <MergedSVGMap
-                stepIdx={stepIdx} lastIdx={lastIdx} lastIdx2={lastIdx2}
-                result={result} result2={result2}
-                hoveredCity={hoveredCity} start={start} goal={goal} showLine={showLine}
-                heatA={heatA} heatB={heatB}
-                landmarksA={laneLandmarkCities(meta.usesLandmarks, lmOverlayA, landmarkA, customA)}
-                landmarksB={laneLandmarkCities(meta2.usesLandmarks, lmOverlayB, landmarkB, customB)}
-                onCityClick={onCityClickMerged} pickLandmarkMode={pickLandmarkMode}
-                showMapBg={theme === 'dnd'}
-                spaceTheme={theme === 'space'}
-              />
-              <span className="heatmap-legend" aria-label="Heatmap scale"
-                style={{ visibility: showHeatmap ? 'visible' : 'hidden' }}>
-                <span className="heatmap-legend-label">Near</span>
-                <span className="heatmap-legend-bar" aria-hidden="true" />
-                <span className="heatmap-legend-label">Far</span>
-              </span>
-            </div>
-            <div className="map-frame-bar">
-              <ul className="legend" aria-label="Node state colors">
-                <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-                <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-                <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
-                <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
-                <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
-                <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
-                <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
-              </ul>
-              <span className="map-frame-sep" aria-hidden="true" />
-              <div className="flex-row">
-              <PlaybackBar sep
-                playing={playing} stepIdx={stepIdx} largerLastIdx={largerLastIdx} delay={delay}
-                onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
-                onForward={handleStepForward} onDelay={setDelay}
-              />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {statsInSidebar && (
-          <aside className="stats-panel" aria-label="Algorithm comparison">
-            {statsPanel}
-          </aside>
-        )}
-        </div>{/* .app-body */}
-        {!statsInSidebar && statsPanel}
+        <MapStage
+          theme={theme} merged={merged} stepIdx={stepIdx} hoveredCity={hoveredCity}
+          start={start} goal={goal} showLine={showLine} showHeatmap={showHeatmap}
+          pickLandmarkMode={pickLandmarkMode}
+          laneA={{
+            side: 'a', algo, meta, result, lastIdx, heatmap: heatA,
+            landmark: landmarkA, custom: customA, overlay: lmOverlayA,
+            currentCity: currentCityA, warp: warpA, onCityClick: onCityClickA,
+          }}
+          laneB={{
+            side: 'b', algo: algo2, meta: meta2, result: result2, lastIdx: lastIdx2, heatmap: heatB,
+            landmark: landmarkB, custom: customB, overlay: lmOverlayB,
+            currentCity: currentCityB, warp: warpB, onCityClick: onCityClickB,
+          }}
+          onMergedCityClick={onCityClickMerged}
+          statsInSidebar={statsInSidebar} statsPanel={statsPanel}
+          playing={playing} delay={delay}
+          onReset={handleReset} onBack={handleStepBack} onPlayPause={handlePlayPause}
+          onForward={handleStepForward} onDelay={setDelay}
+        />
       </main>
       </div>
       </>}
