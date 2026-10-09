@@ -64,15 +64,6 @@
 }
 
 /* ── App header ────────────────────────────────────────────────────── */
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-6);
-  border-bottom: 1px solid var(--border);
-}
-
 .app-title {
   position: relative;
   font-family: var(--heading);
@@ -189,21 +180,6 @@
 
 .query-bar-algo {
   flex: 1;
-}
-
-.query-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--border);
-  flex-shrink: 0;
-  margin: 0 var(--sp-1);
-}
-
-.query-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: nowrap;
 }
 
 .query-word {
@@ -435,13 +411,6 @@
   min-width: 200px;
 }
 
-.map-frame-sep {
-  width: 1px;
-  height: 18px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
 .map-frame-bar .legend {
   gap: var(--sp-2);
   flex-shrink: 1;
@@ -668,22 +637,6 @@
   min-width: 0;
 }
 
-.toolbar-group-label {
-  font-size: 11px;
-  font-family: var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text);
-  line-height: 1;
-}
-
-.toolbar-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-}
-
 .toolbar-group-speed { flex: 0 0 auto; }
 .toolbar-group-speed .speed { min-width: 150px; }
 
@@ -790,162 +743,6 @@
 
 /* ── Kanban comparison panel ─────────────────────────────────────── */
 
-.ck-card {}
-
-.compare-scroll {
-  overflow-x: auto;
-}
-
-.compare {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.compare th,
-.compare td {
-  padding: var(--sp-2) var(--sp-3);
-  text-align: right;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-
-.compare thead th {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text);
-  border-bottom: 2px solid var(--border);
-  vertical-align: bottom;
-}
-
-.compare tbody th[scope='row'],
-.compare thead th:first-child {
-  text-align: left;
-  color: var(--text-h);
-}
-
-.compare tbody th[scope='row'] {
-  vertical-align: middle;
-}
-
-.compare td {
-  font-family: var(--mono);
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
-}
-
-/* KaTeX output inside the complexity cells — keep it from ballooning relative to
-   the 13px mono cell text and inherit the cell's color. */
-.compare td .tex {
-  display: inline-block;
-}
-
-.compare .katex {
-  font-size: 1.02em;
-}
-
-/* Lane-highlighted rows in comparison table */
-.row-lane-a { border-left: 3px solid var(--map-accent); }
-.row-lane-b { border-left: 3px solid var(--lane-b); }
-.row-lane-ab {
-  border-left: 3px solid var(--map-accent);
-  background: color-mix(in srgb, var(--map-accent) 4%, transparent);
-}
-
-/* Better-value highlighting: the winning cell wears its lane's accent */
-.better-a { color: var(--map-accent); font-weight: 600; }
-.better-b { color: var(--lane-b); font-weight: 600; }
-
-/* Section group header rows in tall table */
-.section-head-row th {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text);
-  background: color-mix(in srgb, var(--border) 50%, transparent);
-  padding: 4px var(--sp-3);
-  border-top: 2px solid var(--border);
-  text-align: left;
-}
-
-/* Section group start col separators in wide table */
-.section-start {
-  border-left: 2px solid var(--border) !important;
-}
-
-/* Fixed column widths: table never reflows while live step values change */
-.compare-fixed {
-  table-layout: fixed;
-}
-
-.compare-fixed th,
-.compare-fixed td {
-  overflow-wrap: anywhere;
-  padding-left: var(--sp-2);
-  padding-right: var(--sp-2);
-}
-
-.compare-fixed thead th {
-  white-space: normal;
-}
-
-/* Header cells carrying a literal unit symbol (µ) must not be uppercased,
-   otherwise the micro sign becomes a capital Greek Mu (Μ). */
-.compare-fixed thead th.th-unit {
-  text-transform: none;
-  letter-spacing: 0.03em;
-}
-
-.compare-fixed td {
-  white-space: normal;
-}
-
-/* Taller body rows (the A/B algorithm rows) */
-.compare-fixed tbody th,
-.compare-fixed tbody td {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-/* Cell content is vertically centered with a modest minimum height; rows grow to
-   fit content so nothing clips. Height is driven only by static content, so it
-   stays stable while step values change. */
-.compare-fixed .run-cell {
-  min-height: 44px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* Keeps the lane badge (A/B) and the algorithm name on the same line */
-.compare-fixed .run-label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-}
-
-.compare-fixed .run-label-text {
-  min-width: 0;
-}
-
-/* Wrap-around column (long paths etc.) inside the otherwise nowrap table */
-.compare .col-wrap {
-  white-space: normal;
-  word-break: break-word;
-}
-
-/* Single-line cells (e.g. step counters like “10 / 12”) */
-.compare .col-nowrap {
-  white-space: nowrap;
-}
-
 /* ── Reduced motion ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .node circle, .edge, .mroad, .edge-label rect,
@@ -956,39 +753,8 @@
 /* ── Responsive layout ──────────────────────────────────────────────── */
 /* Breakpoint ladder
      phone  : <  640px   single column, compact controls
-     tablet : 640–1100px stacked maps + tall (transposed) table
-     desktop: ≥ 1100px   side-by-side maps + wide table          */
-
-/* The wide/tall comparison-table swap is driven by React (only one table is
-   rendered), so the rules below just style the transposed table and adapt the
-   page chrome to narrower layouts. */
-
-.compare-tall { table-layout: auto; width: 100%; }
-.compare-tall th,
-.compare-tall td { vertical-align: top; }
-.compare-tall th { white-space: normal; }
-.compare-tall td { white-space: normal; overflow-wrap: anywhere; }
-
-/* Metric label column — keep tidy, but allow wrap if a label is long */
-.compare-tall thead .tall-metric-col,
-.compare-tall tbody th[scope='row'] {
-  text-align: left;
-  white-space: normal;
-  font-weight: 600;
-}
-
-/* Algorithm headers (A / B columns) — badge + name, allow the name to wrap so
-   a long algorithm never forces the column (or the page) to overflow. */
-.compare-tall thead th { text-align: left; }
-.compare-tall thead .tall-head {
-  text-transform: none;
-  letter-spacing: 0.02em;
-  font-weight: 700;
-}
-.compare-tall thead .tall-head .lane-badge { margin-right: var(--sp-2); }
-.compare-tall thead .tall-head-a { color: var(--map-accent); }
-.compare-tall thead .tall-head-b { color: var(--lane-b); }
-.compare-tall thead .tall-head-label { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+     tablet : 640–1100px stacked maps + stats panel below the map
+     desktop: ≥ 1100px   side-by-side maps, stats panel beside them */
 
 @media (max-width: 1100px) {
   /* Show the legend on tablets/mobile (it was hidden below 768px) */
@@ -1014,18 +780,12 @@
   .app-title-sep { display: none; }
   .app-title-sub { flex-basis: 100%; letter-spacing: 0.2em; }
 
-  /* Query bar: stack the three clusters (route / with-A / vs-B), each ~80% wide */
+  /* Query bar: stack the clusters (route / with-A / vs-B) */
   .query-bar {
     flex-direction: column;
     align-items: center;
     gap: var(--sp-2);
     padding: var(--sp-2) var(--sp-3);
-  }
-  .query-route,
-  .query-lane {
-    width: 80%;
-    max-width: 420px;
-    flex: 0 0 auto;
   }
 
   /* Toolbar: tighter padding on phones (columns come from the container query) */
@@ -1056,9 +816,6 @@
 }
 
 /* ── Query-bar refinements ──────────────────────────────────────────── */
-/* “with”/“vs” live inside their algorithm groups so they never split away */
-.query-algo .query-lane-word { height: auto; }
-
 /* Keep select values on one line and truncate instead of wrapping */
 .query-bar .city-trigger,
 .query-bar .algo-trigger {
@@ -1109,18 +866,6 @@ html.theme-anim *::after {
   }
 }
 
-/* ── Query bar: preposition + algorithm group stick together, word outside box ── */
-.query-lane {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-width: 0;
-}
-.query-lane .query-word {
-  height: 32px;
-  display: flex;
-  align-items: center;
-}
 .query-algo { min-width: 0; }
 
 /* Let the select values truncate (ellipsis) so a long algorithm fits its box */
@@ -1128,62 +873,11 @@ html.theme-anim *::after {
 .query-bar [data-slot="select-value"] { min-width: 0; }
 .query-bar .algo-trigger { width: min(176px, 40vw); }
 
-/* Route row (From … To … dice) stays on one line; city selects shrink + ellipsis */
-.query-route {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-width: 0;
-  flex: 0 1 auto;
-}
-.query-route .query-word {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-.query-route .city-trigger {
-  flex: 1 1 60px;
-  min-width: 0;
-  width: auto;
-}
-.query-route > [data-slot="select-trigger"] { flex: 1 1 60px; min-width: 0; width: auto; }
-
 @media (max-width: 640px) {
   .query-word-lm { display: none; }
   .query-bar .algo-trigger { width: min(150px, 44vw); }
 }
 
-/* ── Wide table: header single-line, sticky first column, horizontal scroll ── */
-/* The wide table uses fixed pixel column widths and is as wide as its content;
-   .compare-scroll scrolls it horizontally instead of squeezing/clipping cells. */
-.table-wide {
-  width: max-content;
-  min-width: max-content;
-}
-.table-wide thead th {
-  white-space: nowrap;
-  overflow-wrap: normal;
-  font-size: 10.5px;
-  letter-spacing: 0.03em;
-}
-.table-wide thead th:first-child,
-.table-wide tbody tr > :first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--card);
-}
-.table-wide thead th:first-child { z-index: 3; }
-.table-wide tbody tr > :first-child { box-shadow: inset -1px 0 0 var(--border); }
-
-/* The comparison table may now overflow horizontally; let it scroll */
-.compare-scroll {
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-}
-
-/* ── App shell: left guide sidebar + main column ───────────────────── */
 .app-shell {
   width: 100%;
   height: 100dvh;
@@ -1606,14 +1300,8 @@ html.theme-anim *::after {
 .stats-panel .compare-panel { padding: 0; }
 .stats-panel .compare-title { font-size: 13px; margin-bottom: var(--sp-2); }
 .stats-panel .ct-route { font-size: 11px; }
-.stats-panel .compare { font-size: 11px; }
-.stats-panel .compare th,
-.stats-panel .compare td { padding: var(--sp-1) var(--sp-2); }
-.stats-panel .compare thead th { font-size: 9.5px; padding: var(--sp-1) var(--sp-2); }
-.stats-panel .section-head-row th { font-size: 9px; padding: var(--sp-1) var(--sp-2); }
 .stats-panel .footnotes { padding-top: var(--sp-2); margin-top: var(--sp-2); gap: var(--sp-1); }
 .stats-panel .footnotes li { font-size: 10px; line-height: 1.4; }
-.stats-panel .compare .katex { font-size: 0.95em; }
 
 /* ── Stacked layout (narrow): sidebar drops below the map ──────────── */
 @media (max-width: 1100px) {
@@ -1678,9 +1366,7 @@ html.theme-anim *::after {
 }
 
 @media (pointer: coarse) {
-  .transport > [data-slot="button"],
-  .query-route > [data-slot="button"] { width: 44px; height: 44px; }
-  .toolbar-row > [data-slot="button"] { min-height: 44px; }
+  .transport > [data-slot="button"] { width: 44px; height: 44px; }
 }
 
 /* ── Mode switch (shell-level, visible in both UIs) ───────────────────── */
