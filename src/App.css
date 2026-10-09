@@ -1326,7 +1326,9 @@ html.theme-anim *::after {
    scrolls inside its own pane instead of stretching the page. */
 .app-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  /* map : comparison = 1 : 2 — the game's proportions (its comparison box is
+     ~935px at 1440 against a ~451px map panel) */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: var(--sp-3);
   align-items: stretch;
   /* flush: the shell's 16px padding IS the gutter, like the game's root */
