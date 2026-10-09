@@ -236,6 +236,10 @@ code {
   --color-ink: var(--text);
   --color-ink-bold: var(--text-h);
   --color-state-path: var(--state-path);
+  /* text-on-light variants — see App.css :root / themes.css :root.dnd */
+  --color-map-accent-ink: var(--map-accent-ink);
+  --color-lane-b-ink: var(--lane-b-ink);
+  --color-state-path-ink: var(--state-path-ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

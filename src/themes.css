@@ -53,6 +53,11 @@
   --ink-on-visited: #eaf1ff;
   --ink-on-path: #04241a;
   --node-current-ring: #eaf1ff;
+  /* dark surfaces take the base colours as ink, brightened where the base
+     fails on the chip tint (lane B #b07bff on its 15% chip = 4.10:1) */
+  --map-accent-ink: var(--map-accent);
+  --lane-b-ink: #c4a0ff;      /* 5.65:1 on the 15% chip (base #b07bff = 4.10) */
+  --state-path-ink: var(--state-path);
   color-scheme: dark;
   /* Nebula backdrop on <html> so the starfield canvas (a child of <body>)
      paints over it instead of being hidden behind an opaque body. */
@@ -82,7 +87,7 @@
   --card-foreground: #34244e;
   --popover: #fbf7ff;
   --popover-foreground: #34244e;
-  --primary: #a95fd0;
+  --primary: #9a4ec0;          /* white on it = 4.97:1 (was #a95fd0 = 4.01) */
   --primary-foreground: #ffffff;
   --secondary: #efe4fb;
   --secondary-foreground: #4a3768;
@@ -109,6 +114,10 @@
   --ink-on-visited: #322646;
   --ink-on-path: #ffffff;
   --node-current-ring: #ffffff;
+  /* text-on-light inks (Stage D contrast) — see App.css :root */
+  --map-accent-ink: #83409f;    /* 5.96:1 on --surface-2, 5.04:1 on its 15% chip */
+  --lane-b-ink: #1a675f;        /* 5.04:1 on the 20% chip tint */
+  --state-path-ink: #1e6b41;    /* 4.95:1 on the 20% chip tint */
   --heading: 'Cinzel', Georgia, 'Times New Roman', serif;
   color-scheme: light;
   /* Background lives on <html> so the aurora layer (a child of <body>) paints

@@ -34,6 +34,14 @@
 
   /* elevation system */
   --surface-2: #f5f4ef;
+
+  /* Text-on-light inks (Stage D contrast): darker variants used where these
+     colours carry *text* on the light --surface-2 cards. The base tokens stay
+     untouched because they also paint the map (nodes/roads/strokes) where the
+     hue matters more than the ink. default = base colour. */
+  --map-accent-ink: var(--map-accent);
+  --lane-b-ink: #155e75;      /* 5.01:1 on --surface-2 (base #0e7490 = 3.97) */
+  --state-path-ink: #166534;  /* 4.98:1 on the 20% chip tint (base = 3.50) */
 }
 
 :root.dark {
@@ -61,6 +69,11 @@
 
   /* elevation system — dark */
   --surface-2: #232530;
+
+  /* dark surfaces take the base colours as ink (all ≥5.4:1 there) */
+  --map-accent-ink: var(--map-accent);
+  --lane-b-ink: var(--lane-b);
+  --state-path-ink: var(--state-path);
 }
 
 /* ── App header ────────────────────────────────────────────────────── */

@@ -204,7 +204,7 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
       </div>
       {bentoSections.map(({ title, rows }) => (
         <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
-          <div className="text-[9px] font-bold uppercase tracking-widest text-ink opacity-90 mb-2">{title}</div>
+          <div className="text-[9px] font-bold uppercase tracking-widest text-ink mb-2">{title}</div>
           {rows.map((c) => {
             const val = c[side], isBetter = c.better === side
             const isYes = val === 'Yes', isNo = val === 'No'
@@ -214,7 +214,7 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
             return (
               <div key={c.label} className={rowCls}>
                 <span className="text-[11px] text-ink truncate">{c.label}</span>
-                {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path font-semibold`}>{val}</span>
+                {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
                  : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
                  : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
                  : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
@@ -235,8 +235,8 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
         <span className="ct-route">{start} → {goal}</span>
       </h2>
       <div className="grid grid-cols-2 gap-3 p-3">
-        {renderKanbanCol('a', rowLabelA, 'lane-badge-a', 'text-map-accent', 'text-map-accent', 'bg-map-accent/15')}
-        {renderKanbanCol('b', rowLabelB, 'lane-badge-b', 'text-lane-b', 'text-lane-b', 'bg-lane-b/15')}
+        {renderKanbanCol('a', rowLabelA, 'lane-badge-a', 'text-map-accent-ink', 'text-map-accent-ink', 'bg-map-accent/15')}
+        {renderKanbanCol('b', rowLabelB, 'lane-badge-b', 'text-lane-b-ink', 'text-lane-b-ink', 'bg-lane-b/15')}
       </div>
       <ul className="footnotes">
         {[
