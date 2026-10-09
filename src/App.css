@@ -1607,6 +1607,9 @@ html.theme-anim *::after {
   align-self: stretch;
   min-height: 0;
   overflow-y: auto;
+  /* Rounded like the lane/query blocks. Themed views give it a frosted
+     background, so without this it reads as a square panel. */
+  border-radius: var(--radius);
   text-align: left;
   margin-top: var(--sp-3);
 }
