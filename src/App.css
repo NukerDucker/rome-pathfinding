@@ -165,6 +165,22 @@
   width: 18px;
   height: 18px;
 }
+/* Comparison card: each lane tiles its section cards 2-up on wide screens
+   (Live | Result / Complexity | Landmarks) — both lanes together give the
+   game's 4-column layout; single column when the sidebar stacks. */
+.lane-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+  align-content: start;
+}
+@media (min-width: 1101px) {
+  .lane-sections { grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  /* an odd number of sections leaves the last card spanning both columns
+     (Landmarks sits full-width under the pair, like the game's row) */
+  .lane-sections > :last-child:nth-child(odd) { grid-column: span 2; }
+}
+
 /* Masthead control cluster: theme · mute · mode, one row in the title band. */
 /* Flush with the shell gutter and pinned at 16px from the top — the same
    corner and inset as the game's control row, so toggling modes keeps the

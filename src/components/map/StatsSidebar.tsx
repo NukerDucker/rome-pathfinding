@@ -202,27 +202,32 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
         <span className={`lane-badge ${badgeCls}`} aria-hidden="true">{side.toUpperCase()}</span>
         <span className={`text-[13px] font-semibold ${accentCls} truncate`}>{label}</span>
       </div>
-      {bentoSections.map(({ title, rows }) => (
-        <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-ink mb-2">{title}</div>
-          {rows.map((c) => {
-            const val = c[side], isBetter = c.better === side
-            const isYes = val === 'Yes', isNo = val === 'No'
-            const rowCls = c.wrap
-              ? 'flex flex-col items-start gap-1 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
-              : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
-            return (
-              <div key={c.label} className={rowCls}>
-                <span className="text-[12px] text-ink truncate">{c.label}</span>
-                {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
-                 : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
-                 : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
-                 : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
-              </div>
-            )
-          })}
-        </div>
-      ))}
+      {/* Sections tile 2-up per lane on wide screens (Live | Result over
+          Complexity | Landmarks) — with both lanes that is the game's
+          4-column comparison card; they stack on narrow layouts. */}
+      <div className="lane-sections">
+        {bentoSections.map(({ title, rows }) => (
+          <div key={title} className="ck-card flex flex-col gap-0 rounded-xl bg-[var(--surface-2)] px-3 pt-2 pb-2">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-ink mb-2">{title}</div>
+            {rows.map((c) => {
+              const val = c[side], isBetter = c.better === side
+              const isYes = val === 'Yes', isNo = val === 'No'
+              const rowCls = c.wrap
+                ? 'flex flex-col items-start gap-1 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+                : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+              return (
+                <div key={c.label} className={rowCls}>
+                  <span className="text-[12px] text-ink truncate">{c.label}</span>
+                  {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
+                   : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
+                   : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
+                   : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   )
 
