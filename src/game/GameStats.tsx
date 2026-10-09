@@ -12,14 +12,14 @@ export default function GameStats() {
           <div className="stats-col">
             <div className="stats-head"><span id="rowA">A &middot; UCS</span></div>
             <div className="stats-card">
-              <h4>Live</h4>
+              <h3>Live</h3>
               <div className="stat-row"><span>Step</span><b id="fullStepA">0/0</b></div>
               <div className="stat-row"><span>Current</span><b id="fullCurA">-</b></div>
               <div className="stat-row"><span>Visited</span><b id="fullVisA">0</b></div>
               <div className="stat-row"><span>Frontier</span><b id="fullFroA">0</b></div>
             </div>
             <div className="stats-card">
-              <h4>Result</h4>
+              <h3>Result</h3>
               <div className="stat-row"><span>Generated</span><b id="fullGenA">0</b></div>
               <div className="stat-row"><span>Peak memory</span><b id="fullMemA">-</b></div>
               <div className="stat-row stat-row-wrap"><span>Path</span><b id="fullPathA">-</b></div>
@@ -28,14 +28,14 @@ export default function GameStats() {
               <div className="stat-row"><span>Time (<span className="no-caps">&micro;s</span>)</span><b id="fullTimeA">-</b></div>
             </div>
             <div className="stats-card">
-              <h4>Complexity</h4>
+              <h3>Complexity</h3>
               <div className="stat-row stat-row-wrap"><span>T(n)</span><b id="fullTnA">O(b^d)</b></div>
               <div className="stat-row stat-row-wrap"><span>S(n)</span><b id="fullSnA">O(b^d)</b></div>
               <div className="stat-row"><span>Optimal</span><b id="fullOptA">Yes</b></div>
               <div className="stat-row"><span>Complete</span><b id="fullCompA">Yes</b></div>
             </div>
             <div className="stats-card">
-              <h4>Landmarks</h4>
+              <h3>Landmarks</h3>
               <div className="stat-row"><span>2</span><b id="fullLM2A">-</b></div>
               <div className="stat-row"><span>4</span><b id="fullLM4A">-</b></div>
               <div className="stat-row"><span>8</span><b id="fullLM8A">-</b></div>
@@ -45,14 +45,14 @@ export default function GameStats() {
           <div className="stats-col">
             <div className="stats-head"><span id="rowB">B &middot; A* (LP+ALT)</span></div>
             <div className="stats-card">
-              <h4>Live</h4>
+              <h3>Live</h3>
               <div className="stat-row"><span>Step</span><b id="fullStepB">0/0</b></div>
               <div className="stat-row"><span>Current</span><b id="fullCurB">-</b></div>
               <div className="stat-row"><span>Visited</span><b id="fullVisB">0</b></div>
               <div className="stat-row"><span>Frontier</span><b id="fullFroB">0</b></div>
             </div>
             <div className="stats-card">
-              <h4>Result</h4>
+              <h3>Result</h3>
               <div className="stat-row"><span>Generated</span><b id="fullGenB">0</b></div>
               <div className="stat-row"><span>Peak memory</span><b id="fullMemB">-</b></div>
               <div className="stat-row stat-row-wrap"><span>Path</span><b id="fullPathB">-</b></div>
@@ -61,14 +61,14 @@ export default function GameStats() {
               <div className="stat-row"><span>Time (<span className="no-caps">&micro;s</span>)</span><b id="fullTimeB">-</b></div>
             </div>
             <div className="stats-card">
-              <h4>Complexity</h4>
+              <h3>Complexity</h3>
               <div className="stat-row stat-row-wrap"><span>T(n)</span><b id="fullTnB">O(b^d)</b></div>
               <div className="stat-row stat-row-wrap"><span>S(n)</span><b id="fullSnB">O(b^d)</b></div>
               <div className="stat-row"><span>Optimal</span><b id="fullOptB">Yes</b></div>
               <div className="stat-row"><span>Complete</span><b id="fullCompB">Yes</b></div>
             </div>
             <div className="stats-card">
-              <h4>Landmarks</h4>
+              <h3>Landmarks</h3>
               <div className="stat-row"><span>2</span><b id="fullLM2B">-</b></div>
               <div className="stat-row"><span>4</span><b id="fullLM4B">-</b></div>
               <div className="stat-row"><span>8</span><b id="fullLM8B">-</b></div>

@@ -492,7 +492,7 @@ function makeLaneOverlay(
    One km badge per road, at the midpoint between its two junctions, on each
    map. A badge turns "tree" (explored) or "path" (final route) when a lane
    shown on that map uses the road; on the merged map, either lane counts. */
-const KM_FONT_MIN = 10, KM_FONT_MAX = 20 // badge text px at 1x .. MAX_SCALE zoom
+const KM_FONT_MIN = 12, KM_FONT_MAX = 20 // badge text px at 1x .. MAX_SCALE zoom (MIN was 10 — below the legibility floor)
 type DistanceLayer = { update(): void; draw(): void; dispose(): void }
 
 function makeDistanceLayer(vp: ViewportApi, synced: () => ScenerySnapshot, lanesShown: () => LaneKey[]): DistanceLayer {

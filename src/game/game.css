@@ -27,6 +27,7 @@
 --marker-start:#E69F00; --marker-goal:#0072B2; --marker-landmark:#ffd43b;
 --road-tree:#CC79A7; --road-path:#D55E00; --arc:#E69F00;
 --better:#1f7a35; /* comparison table: winning value */
+--accent-deep:#9a6220; /* filled/active plate — white on it = 5.07:1 (AA+) */
 --disc-opacity:1; /* every node disc on the map, whatever its state */
 }
 @font-face {
@@ -243,10 +244,10 @@ background:none; border:none; cursor:pointer; pointer-events:none;
 /* ===================== TABS (Map | Guide) ===================== */
 .game-root .tab-bar{ display:flex; justify-content:center; gap:6px; margin:0 0 12px; }
 .game-root .tab-btn{
-padding:6px 18px; font-size:12px; letter-spacing:1px; cursor:pointer;
+padding:6px 18px; font-size:13px; letter-spacing:1px; cursor:pointer;
 background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 }
-.game-root .tab-btn.active{ background:#c9893f; color:#fff; }
+.game-root .tab-btn.active{ background:var(--accent-deep); color:#fff; }
 .game-root .tab-panel[hidden]{ display:none; }
 
 /* ===================== GUIDE PAGE =====================
@@ -256,7 +257,7 @@ background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 	keep KaTeX's math font). */
 .game-root .guide-page{ display:block; }
 .game-root .guide-head{ margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #c9893f; }
-.game-root .guide-eyebrow{ display:block; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
+.game-root .guide-eyebrow{ display:block; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
 .game-root .guide-title{ margin:4px 0 0; font-size:26px; color:#4a3a20; }
 .game-root .guide-body{
 font-family:'Minecraft', monospace; /* same pixel font as the rest of the app */
@@ -308,7 +309,7 @@ border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 .game-root .control-row{
 display:flex; align-items:center; justify-content: center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
 }
-.game-root .control-row label{ font-size:clamp(10px, 2.3vw, 12px); font-weight:bold; color:var(--text-soft); }
+.game-root .control-row label{ font-size:clamp(12px, 2.5vw, 13px); font-weight:bold; color:var(--text-soft); }
 /* Pixel art skin: every <select> on the page sits on the vine plank
 	(Button/Start button.png, 326x102). It is drawn with border-image so only the
 	plank's middle stretches: the vine ends (72px of the source each side) keep
@@ -349,14 +350,14 @@ font-size:0; image-rendering:pixelated;
 }
 .game-root .divider-vs{ font-weight:bold; padding:0 6px; color:var(--text-soft); }
 .game-root .small-btn{
-padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:12px;
+padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:13px;
 }
 .game-root .small-btn.active{ background:#333; color:#fff; }
 
 /* ===================== LANDMARK CONTROL =====================
 	One dropdown per lane (same plank skin as every select); options come from script.js. */
 .game-root .landmark-control{ display:inline-flex; align-items:center; gap:4px; }
-.game-root .lm-label{ font-size:10px; color:var(--text-soft); }
+.game-root .lm-label{ font-size:12px; color:var(--text-soft); }
 
 /* ===================== ROUTE BOX + ALGORITHM BOX =====================
 	Two separate wood boxes on one row: [From → To 🎲]  [A pill  VS  B pill].
@@ -372,13 +373,13 @@ display:flex; align-items:center; gap:6px; padding:3px 6px 3px 4px;
 border-radius:4px; background:#FED788;
 }
 .game-root .lane-sign{ height:32px; width:auto; image-rendering:pixelated; display:block; }
-.game-root .route-arrow{ font-size:12px; color:var(--text-soft); }
+.game-root .route-arrow{ font-size:13px; color:var(--text-soft); }
 .game-root .control-row select{ height:40px; padding:4px 30px 4px 14px; font-size:13px; text-indent:0 !important; } /* matches the 40px Random button */
 .game-root .control-row .city-select{ min-width:0; width:140px; }
 .game-root .control-row .algo-select{ min-width:0; width:160px; }
 .game-root .control-row .landmark-dropdown{ min-width:0; width:120px; }
 .game-root .control-row .icon-btn{ width:40px; height:40px; flex:none; }
-.game-root .control-row .divider-vs{ padding:0 2px; font-size:12px; }
+.game-root .control-row .divider-vs{ padding:0 2px; font-size:13px; }
 
 /* ===================== TOOLS BAR =====================
 	[Straight Line] [Heatmap] [Merge] | [Landmarks: OFF]. The overlay toggles are
@@ -387,11 +388,11 @@ border-radius:4px; background:#FED788;
 .game-root .tools-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .game-root .tool-toggle{
 display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px;
-font:inherit; font-size:11px; color:#4a3a20; cursor:pointer; user-select:none;
+font:inherit; font-size:12px; color:#4a3a20; cursor:pointer; user-select:none;
 background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .game-root .tool-toggle input{ position:absolute; opacity:0; width:0; height:0; margin:0; }
-.game-root .tool-toggle:has(input:checked), .game-root .tool-toggle.active{ background:#c9893f; color:#fff; }
+.game-root .tool-toggle:has(input:checked), .game-root .tool-toggle.active{ background:var(--accent-deep); color:#fff; }
 .game-root .tool-toggle:has(input:focus-visible), .game-root .tool-toggle:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; }
 .game-root .tools-sep{ width:2px; height:22px; background:#c9893f; margin:0 4px; }
 
@@ -467,7 +468,7 @@ display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start;
 /* pin the box to the map's width so the legend / playback rows wrap instead of widening it */
 .game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:calc(var(--split-map) + 2 * (var(--frame) + 8px)); }
 .game-root .legend-bar{
-display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:11px;
+display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:13px;
 padding:6px 10px; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .game-root .legend-bar .dot{
@@ -547,12 +548,12 @@ text-shadow:1px 0 #222, -1px 0 #222, 0 1px #222, 0 -1px #222;
 .game-root .km-layer[hidden]{ display:none; }
 .game-root .km-badge{
 position:absolute; left:0; top:0; pointer-events:none; white-space:nowrap;
-font-size:var(--km-font, 10px); line-height:1; padding:.2em .4em;
+font-size:var(--km-font, 12px); line-height:1; padding:.2em .4em; /* live value set by scenery.ts KM_FONT_MIN — the fallback here is cosmetic */
 color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:3px;
 font-variant-numeric:tabular-nums;
 }
 .game-root .km-badge.km-tree{ background:var(--road-tree); border-color:var(--road-tree); color:#1a1a1a; } /* dark text: readable on the light pink-purple */
-.game-root .km-badge.km-path{ background:var(--road-path); border-color:var(--road-path); color:#fff; }
+.game-root .km-badge.km-path{ background:#a84800; border-color:#a84800; color:#fff; } /* badge-local darker fill: white on it = 5.85:1; --road-path stays for the road stroke */
 .game-root.picking-landmarks .map-stage{ cursor:crosshair; } /* Tool on: click castles */
 
 .game-root .dev-square-layer{ z-index:10; } /* DevMode squares above every sprite layer (those use z 1..9) */
@@ -573,13 +574,13 @@ display:flex; align-items:center; gap:6px; pointer-events:none;
 .game-root .map-hud > *{ pointer-events:auto; }
 .game-root .map-readout{
 padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
-font-size:10px; white-space:nowrap; pointer-events:none !important;
+font-size:12px; white-space:nowrap; pointer-events:none !important;
 font-variant-numeric:tabular-nums; transition:opacity .25s;
 }
 .game-root .map-readout.hidden{ opacity:0; } /* only visible once the view leaves its resting position/scale */
 .game-root .map-reset{
 padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
-font-size:10px; cursor:pointer; transition:opacity .2s;
+font-size:12px; cursor:pointer; transition:opacity .2s;
 }
 .game-root .map-reset:hover{ background:#eee; }
 .game-root .map-reset.at-home{ opacity:.45; } /* already at default view */
@@ -613,7 +614,7 @@ font-size:0; image-rendering:pixelated;
    (72px of the source each side = 28px at 40px tall) keep their shape. */
 .game-root #playBtn{
 width:96px; height:40px; padding:0;
-font-size:12px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
+font-size:13px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
 background-image:none;
 border:0 solid transparent;
 border-image:url('/assets/Button/Start button.png') 0 72 fill / 0 28px stretch;
@@ -637,13 +638,13 @@ background-image:url('/assets/Button/Foward button.png');
 background-repeat:no-repeat; background-size:100% 100%;
 font-size:0; image-rendering:pixelated; cursor:pointer;
 }
-.game-root .speed-row{ display:flex; align-items:center; gap:6px; font-size:11px; }
+.game-root .speed-row{ display:flex; align-items:center; gap:6px; font-size:13px; }
 /* Ends show the limits (Slow 1500ms / Fast 0ms); the live delay sits under the slider */
 .game-root .speed-end{ text-align:center; line-height:1.3; }
-.game-root .speed-end small{ font-size:9px; color:var(--text-soft); }
+.game-root .speed-end small{ font-size:11px; color:var(--text-soft); }
 .game-root .speed-track{ flex:0 1 220px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:70px; } /* slider at most 220px long, shrinks to fit the row */
 .game-root .speed-track .pixel-slider{ width:100%; flex:none; min-width:0; }
-.game-root .speed-value{ font-size:11px; font-variant-numeric:tabular-nums; }
+.game-root .speed-value{ font-size:13px; font-variant-numeric:tabular-nums; }
 
 /* Pixel-art slider. Track and fill use border-image so only the bar's middle
 	stretches and the rounded ends stay crisp (slice 14px of the 417x42 source).
@@ -716,7 +717,7 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:16px;
 .game-root .stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
 .game-root .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
 /* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
-.game-root .stats-card h4{
+.game-root .stats-card h3{
 margin:0 0 6px; padding-bottom:4px; font-size:15px; letter-spacing:1px; text-transform:uppercase;
 color:#4a3a20; font-weight:bold; border-bottom:2px solid #c9893f;
 }
@@ -733,7 +734,7 @@ padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
 .game-root .stat-row > b.better{ color:#fff; background:var(--better); padding-left:6px; } /* winning value chip */
 .game-root .no-caps{ text-transform:none; } /* keep µ from uppercasing into a Greek capital mu */
 .game-root .stat-row .katex{ font-size:1em; }
-.game-root .stats-caption{ font-size:12px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
+.game-root .stats-caption{ font-size:13px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
 @media (max-width:1200px){
 .game-root .map-row{ grid-template-columns:1fr; } /* not enough width for map + sidebar: stack */
 .game-root .map-row{ --split-map:calc((100cqw - 2 * (var(--frame) + 8px) - 12px) / 2); }
@@ -753,7 +754,7 @@ padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
 .game-root{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
 
 .game-root .compare-wrap{ flex-direction:column; }
-.game-root .algo-canvas{ min-height:200px; font-size:12px; text-align:center; padding:10px; }
+.game-root .algo-canvas{ min-height:200px; font-size:13px; text-align:center; padding:10px; }
 .game-root .map-panel .algo-canvas{ min-height:260px; }
 .game-root .map-row:has(.compare-wrap:not(.is-split)){ justify-items:stretch; }
 .game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:auto; }
