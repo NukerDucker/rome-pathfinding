@@ -37,12 +37,10 @@
 .game-root, .game-root *{box-sizing:border-box;}
 /* ===================== APP SHELL =====================
    Single column: title, tabs, then the active tab's boxes. */
-/* Shell: 16 root padding + 24 shell padding = the modern page's 40px content
-   offset (modern: .app-shell 16 + .app-body 24). The padding also has to be
-   declared here because the modern stylesheet's unscoped .app-shell rule
-   (same 16px) reaches into the game otherwise. */
-.game-root .app-shell{ max-width:1600px; margin:0 auto; padding:0 24px; }
-@media (max-width:600px){ .game-root .app-shell{ padding:0; } }
+/* Shell: the game's boxes sit at the 16px root gutter (the modern page now
+   matches this: .app-shell 16px, .app-body flush). padding:0 also cancels the
+   modern stylesheet's unscoped .app-shell rule. */
+.game-root .app-shell{ max-width:1600px; margin:0 auto; padding:0; }
 .game-root button, .game-root select, .game-root input{ font-family: inherit; } /* form elements ignore body font by default in most browsers */
 .game-root{
 height:100dvh; overflow-y:auto; /* was html{height:100%;overflow:hidden} + body{height:100%;overflow-y:auto} */

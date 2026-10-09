@@ -215,7 +215,7 @@
   flex-wrap: wrap;
   flex-shrink: 0;
   gap: var(--sp-3);
-  margin: var(--sp-3) var(--sp-3) 0;
+  margin: var(--sp-3) 0 0; /* flush with the 16px shell gutter, like the game's boxes */
 }
 /* When the route and algorithm cards can't share a line, each takes the row. */
 @media (max-width: 700px) {
@@ -1329,7 +1329,8 @@ html.theme-anim *::after {
   grid-template-columns: minmax(0, 1fr) 380px;
   gap: var(--sp-3);
   align-items: stretch;
-  padding: 0 var(--sp-6) var(--sp-3); /* 16 (shell) + 24 = the game's 40px content offset */
+  /* flush: the shell's 16px padding IS the gutter, like the game's root */
+  padding: 0 0 var(--sp-3);
   box-sizing: border-box;
 }
 
@@ -1381,7 +1382,6 @@ html.theme-anim *::after {
 @media (max-width: 1100px) {
   .app-body {
     grid-template-columns: 1fr;
-    padding-inline: var(--sp-3); /* phones: keep width, drop the 40px offset */
   }
   .stats-panel {
     contain: none;
