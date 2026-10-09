@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import ModernApp from '@/components/ModernApp'
 import ModeToggle from '@/components/ModeToggle'
 import GameApp from '@/game/GameApp'
-import { THEME_META, THEME_ORDER } from '@/theme'
+import { THEME_META, THEME_ORDER, applyTheme, initialTheme, type Theme } from '@/theme'
 
 // Imported LAST on purpose: .game-root ties :root on specificity (0,1,0),
 // so CSS order decides the token collisions (see plan §6).
@@ -22,13 +22,20 @@ function readMode(): UiMode {
 
 export default function App() {
   const [mode, setMode] = useState<UiMode>(readMode)
+  // One shared theme for both UIs: the masthead dropdown and the game dropdown
+  // both write this (localStorage `theme`), so a pick in either mode skins the
+  // other. Modern paints it on <html>; the game reads .game-root[data-theme].
+  const [theme, setTheme] = useState<Theme>(initialTheme)
 
-  // Entering game mode: strip the modern theme classes/attrs from <html>, or
-  // themes.css rules (:root.space body{...} etc.) would tint/blank the game.
-  // Leaving: ModernApp re-applies its theme in its state initializer on remount.
-  useEffect(() => {
+  // In game mode the modern theme classes/attrs are stripped from <html>, or
+  // themes.css rules (:root.space body{...} etc.) would tint/blank the game
+  // under its own skin. Modern mode re-applies the full theme. Layout effect:
+  // no flash of unthemed content between modes.
+  useLayoutEffect(() => {
     const el = document.documentElement
-    if (mode === 'game') {
+    if (mode === 'modern') {
+      applyTheme(theme)
+    } else {
       for (const t of THEME_ORDER) for (const cls of THEME_META[t].classes) el.classList.remove(cls)
       delete el.dataset.theme
       el.style.colorScheme = ''
@@ -38,7 +45,15 @@ export default function App() {
     } catch {
       /* storage can be denied (private mode) — mode just won't persist */
     }
-  }, [mode])
+  }, [mode, theme])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme', theme)
+    } catch {
+      /* storage denied — theme just won't persist */
+    }
+  }, [theme])
 
   const toggle = useCallback(() => {
     const swap = () => flushSync(() => setMode((m) => (m === 'modern' ? 'game' : 'modern')))
@@ -85,7 +100,7 @@ export default function App() {
   return (
     <>
       <ModeToggle mode={mode} onToggle={toggle} />
-      {mode === 'modern' ? <ModernApp /> : <GameApp />}
+      {mode === 'modern' ? <ModernApp theme={theme} onSelectTheme={setTheme} /> : <GameApp theme={theme} onSelectTheme={setTheme} />}
     </>
   )
 }

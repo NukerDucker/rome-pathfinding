@@ -4,8 +4,8 @@ import { ALGORITHMS } from '@/search'
 import { type LandmarkPreset } from '@/heuristic'
 import { Guide } from '@/components/Guide'
 import {
-  THEME_ORDER, ThemeRoll, DndAurora,
-  SpaceField, applyTheme, initialTheme,
+  ThemeRoll, DndAurora,
+  SpaceField,
   type Theme,
 } from '@/theme'
 import {
@@ -28,7 +28,7 @@ import { DEFAULT_DELAY } from './map/PlaybackBar'
 import '../App.css'
 import '../themes.css'
 
-function ModernApp() {
+function ModernApp({ theme, onSelectTheme }: { theme: Theme; onSelectTheme: (t: Theme) => void }) {
   const [algo, setAlgo] = useState('ucs')
   const [algo2, setAlgo2] = useState('astaralt')
 
@@ -52,13 +52,8 @@ function ModernApp() {
   const [tab, setTab] = useState<AppTab>('map')
 
   // ── Theme system ──────────────────────────────────────────────────────
-  // Four themes cycled from the masthead. `applyTheme` runs in the initializer so
-  // the classes land before first paint (no flash); the effect below persists it.
-  const [theme, setTheme] = useState<Theme>(() => {
-    const t = initialTheme()
-    applyTheme(t)
-    return t
-  })
+  // The theme itself lives in App (shared with the game UI); this component
+  // only runs the reveal roll and tells App which theme was picked.
   const [roll, setRoll] = useState<{ theme: Theme; nonce: number } | null>(null)
   const rollNonce = useRef(0)
   const [muted, setMutedFlag] = useState<boolean>(() => {
@@ -175,10 +170,6 @@ function ModernApp() {
     }
   }, [stepIdx])
 
-  useEffect(() => {
-    applyTheme(theme)
-    try { window.localStorage.setItem('theme', theme) } catch { /* ignore */ }
-  }, [theme])
 
   // Audio: unlock the context on the first gesture (pointer OR keyboard) — browsers
   // keep it suspended until then, so the roll sounds and Celtic loop depend on it.
@@ -214,11 +205,10 @@ function ModernApp() {
     return () => { if (theme === 'space') stopSpaceHum() }
   }, [theme, audioReady])
 
-  // Cycle with a gacha-style roll: the reveal card plays, the theme switches
+  // Gacha-style roll on selection: the reveal card plays, the theme switches
   // mid-animation, then the card fades out. Each theme opens with its own sound.
-  function cycleTheme() {
-    if (roll) return
-    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length]
+  function selectTheme(next: Theme) {
+    if (roll || next === theme) return
     if (next === 'light') playCrow()
     else if (next === 'dark') playOwl()
     else if (next === 'dnd') playGlitter()
@@ -229,7 +219,7 @@ function ModernApp() {
       const el = document.documentElement
       el.classList.add('theme-anim')
       window.setTimeout(() => el.classList.remove('theme-anim'), 500)
-      setTheme(next)
+      onSelectTheme(next)
     }, 780)
     window.setTimeout(() => setRoll((r) => (r && r.nonce === nonce ? null : r)), 1700)
   }
@@ -304,7 +294,7 @@ function ModernApp() {
     {theme === 'space' && <SpaceField />}
     <div className="app-main">
     <TitleRow
-      theme={theme} onCycle={cycleTheme} busy={roll !== null}
+      theme={theme} onSelect={selectTheme} busy={roll !== null}
       muted={muted}
       onToggleMute={() => { const m = !muted; setMutedFlag(m); if (!m) ensureAudio() }}
     />

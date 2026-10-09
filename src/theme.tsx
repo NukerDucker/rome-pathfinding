@@ -1,5 +1,6 @@
 import { Moon, Rocket, Sun } from 'lucide-react'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { NodeId } from './romania'
 import { CITIES } from './romania'
 
@@ -75,6 +76,33 @@ export function ThemeControl({ theme, onCycle, busy }: { theme: Theme; onCycle: 
     >
       <ThemeIcon theme={next} />
     </button>
+  )
+}
+
+// Dropdown theme picker (replaces the cycle button): shows the current theme,
+// opens a list of all four. Shared with the game UI — both write the same
+// `theme` key through App, so a pick here skins the game too and vice versa.
+export function ThemeMenu({ theme, onSelect, busy }: { theme: Theme; onSelect: (t: Theme) => void; busy: boolean }) {
+  return (
+    <Select value={theme} onValueChange={(v) => { if (v && v !== theme) onSelect(v as Theme) }}>
+      <SelectTrigger
+        className={`theme-picker${busy ? ' theme-toggle-busy' : ''}`}
+        size="sm"
+        aria-label={`Theme: ${THEME_META[theme].label}`}
+        disabled={busy}
+      >
+        <ThemeIcon theme={theme} />
+        <SelectValue>{THEME_META[theme].short}</SelectValue>
+      </SelectTrigger>
+      <SelectContent align="end">
+        {THEME_ORDER.map((t) => (
+          <SelectItem key={t} value={t}>
+            <ThemeIcon theme={t} />
+            {THEME_META[t].label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

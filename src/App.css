@@ -165,6 +165,20 @@
   width: 18px;
   height: 18px;
 }
+/* Theme dropdown trigger (replaces the cycle button) — same corner as the
+   old toggle; the Base UI popup supplies the list styling. */
+.theme-picker {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  gap: 6px;
+}
+.theme-picker svg {
+  width: 16px;
+  height: 16px;
+}
 
 .app-title-sep {
   color: var(--text);

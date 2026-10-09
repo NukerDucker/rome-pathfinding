@@ -13,13 +13,13 @@ import { createWhale, type WhaleHandle } from '@/game/animals/whale'
 import { createCapybara, type CapybaraHandle } from '@/game/animals/capybara'
 import { createBird, type BirdHandle } from '@/game/animals/bird'
 import { createBread, type BreadHandle, BREAD_UNLOCK_SWITCHES } from '@/game/animals/bread'
+import { THEME_ORDER, type Theme } from '@/theme'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
  *  React owns state/controls/tables; the map engine (viewport+scenery) and
  *  the animals stay imperative modules, mounted once and disposed on unmount. */
 
 type GameTab = 'map' | 'guide'
-type DayNight = 'day' | 'night'
 
 type Animals = {
   duck?: DuckHandle
@@ -30,16 +30,9 @@ type Animals = {
   bread?: BreadHandle
 }
 
-const THEME_KEY = 'game-theme'
-
-function readGameTheme(): DayNight | null {
-  try {
-    const t = localStorage.getItem(THEME_KEY)
-    return t === 'day' || t === 'night' ? t : null
-  } catch {
-    return null
-  }
-}
+// Game-side labels for the shared themes (App owns the value + persistence).
+const THEME_LABEL: Record<Theme, string> = { light: 'Light', dark: 'Dark', dnd: 'D&D', space: 'Space' }
+const THEME_GLYPH: Record<Theme, string> = { light: '☀', dark: '☾', dnd: '❀', space: '✦' }
 
 const q = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)
 
@@ -64,11 +57,10 @@ function buildSnapshot(s: GameState): ScenerySnapshot {
   }
 }
 
-export default function GameApp() {
+export default function GameApp({ theme, onSelectTheme }: { theme: Theme; onSelectTheme: (t: Theme) => void }) {
   const g = useGameState()
   const [tab, setTab] = useState<GameTab>('map')
-  // null = no stored choice: CSS follows prefers-color-scheme.
-  const [theme, setTheme] = useState<DayNight | null>(readGameTheme)
+  const [themeOpen, setThemeOpen] = useState(false)
   const [themeSwitches, setThemeSwitches] = useState(0)
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null)
 
@@ -173,17 +165,31 @@ export default function GameApp() {
     rootEl?.classList.toggle('picking-landmarks', g.pickLandmarks)
   }, [rootEl, g.pickLandmarks])
 
-  const toggleTheme = () => {
-    const next: DayNight = theme === 'night' ? 'day' : 'night'
-    setTheme(next)
+  // Theme dropdown: close on outside click or Escape.
+  useEffect(() => {
+    if (!themeOpen) return
+    const onPointer = (e: PointerEvent) => {
+      const el = e.target as HTMLElement
+      if (!el.closest?.('.theme-menu-wrap')) setThemeOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setThemeOpen(false) }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [themeOpen])
+
+  // Bread is unlocked by count of theme changes made from the game (script.js
+  // behaviour); the value itself is shared with the modern UI through App.
+  const pickTheme = (next: Theme) => {
+    setThemeOpen(false)
+    if (next === theme) return
+    onSelectTheme(next)
     const switches = themeSwitches + 1
     setThemeSwitches(switches)
     if (switches === BREAD_UNLOCK_SWITCHES) animalsRef.current?.bread?.unlock()
-    try {
-      localStorage.setItem(THEME_KEY, next)
-    } catch {
-      /* storage denied — theme just won't persist */
-    }
   }
 
   // ── trigger plumbing: the animals' own gates live in their modules ─────
@@ -209,7 +215,7 @@ export default function GameApp() {
   )
 
   return (
-    <div className="game-root" data-theme={theme ?? undefined} ref={setRootEl}>
+    <div className="game-root" data-theme={theme} ref={setRootEl}>
       <div className="app-shell">
         <div className="section title-bar">
           <h1 id="titleText">
@@ -288,15 +294,37 @@ export default function GameApp() {
       </div>
 
       {/* Fixed chrome (source index.html 18–29) */}
-      <button
-        type="button"
-        className="theme-toggle"
-        id="themeToggle"
-        onClick={toggleTheme}
-        aria-label="Toggle day and night"
-      >
-        {theme === 'night' ? '☀' : '☾'}
-      </button>
+      <div className="theme-menu-wrap">
+        <button
+          type="button"
+          className="theme-toggle"
+          id="themeToggle"
+          onClick={() => setThemeOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={themeOpen}
+          aria-label={`Theme: ${THEME_LABEL[theme]}`}
+          title="Theme"
+        >
+          {THEME_GLYPH[theme]}
+        </button>
+        {themeOpen && (
+          <ul className="theme-menu" role="menu" aria-label="Theme">
+            {THEME_ORDER.map((t) => (
+              <li key={t} role="none">
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={t === theme}
+                  className={t === theme ? 'is-current' : undefined}
+                  onClick={() => pickTheme(t)}
+                >
+                  <span aria-hidden="true">{THEME_GLYPH[t]}</span> {THEME_LABEL[t]}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       {/* Bread button (secret): revealed by bread.unlock() on the 5th theme switch */}
       <button className="bread-btn" id="breadBtn" type="button" aria-label="Get bread" title="Get bread" hidden>
         <img src="/assets/bread.png" alt="" />

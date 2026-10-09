@@ -1,22 +1,22 @@
-// Masthead: title, theme cycler and mute toggle.
+// Masthead: title, theme dropdown and mute toggle.
 import { Volume2, VolumeX } from 'lucide-react'
-import { ThemeControl, type Theme } from '@/theme'
+import { ThemeMenu, type Theme } from '@/theme'
 
 type TitleRowProps = {
   theme: Theme
-  onCycle: () => void
+  onSelect: (t: Theme) => void
   busy: boolean
   muted: boolean
   onToggleMute: () => void
 }
 
-export function TitleRow({ theme, onCycle, busy, muted, onToggleMute }: TitleRowProps) {
+export function TitleRow({ theme, onSelect, busy, muted, onToggleMute }: TitleRowProps) {
   return (
     <h1 className="app-title">
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
-      <ThemeControl theme={theme} onCycle={onCycle} busy={busy} />
+      <ThemeMenu theme={theme} onSelect={onSelect} busy={busy} />
       <button
         type="button"
         className="mute-toggle"
