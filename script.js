@@ -13,7 +13,7 @@ import ROAD_POSITIONS from './assets/MapElements/Coordinates/path_positions.json
 // Internal developer flag. When true, a plain dev window is added to the page
 // for placing marker squares on the maps (positions exported as JSON).
 // Turn off before shipping.
-const DevMode = false;
+const DevMode = true;
 
 /* ===================== ENGINE GLUE =====================
    The pathfinding engine lives in src/engine/ (TypeScript, copied unchanged
@@ -215,6 +215,136 @@ function inputsChanged(){
   render();
 }
 
+/* ===================== CUSTOM DROPDOWNS =====================
+   Every <select> in a .select-wrap is drawn as a pixel-art button + popup list
+   (style.css: .dd-btn, .dd-list). The hidden native select keeps the value, so
+   the code below still reads/sets .value and listens for 'change'; picking an
+   option sets the value and fires 'change'. After setting .value from code,
+   call syncDropdowns() to update the button text (renderControls does). */
+const dropdowns = [];
+let openDropdown = null;
+
+function makeDropdown(select){
+  const wrap = select.parentElement;
+  const listId = select.id + 'List';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'dd-btn ' + select.className;
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-controls', listId);
+  const list = document.createElement('ul');
+  list.className = 'dd-list';
+  list.id = listId;
+  list.setAttribute('role', 'listbox');
+  list.setAttribute('aria-label', select.getAttribute('aria-label'));
+  list.tabIndex = -1;
+  list.hidden = true;
+  wrap.append(btn, list);
+
+  let activeIdx = -1;
+  const items = () => [...list.children];
+
+  function sync(){
+    const opt = select.selectedOptions[0];
+    btn.textContent = opt ? opt.text : '';
+    btn.setAttribute('aria-label', select.getAttribute('aria-label') + ': ' + btn.textContent);
+    btn.title = select.title;
+  }
+
+  function setActive(i){
+    const all = items();
+    if(!all.length) return;
+    activeIdx = Math.max(0, Math.min(all.length - 1, i));
+    all.forEach((li, j) => li.classList.toggle('active', j === activeIdx));
+    list.setAttribute('aria-activedescendant', all[activeIdx].id);
+    all[activeIdx].scrollIntoView({ block: 'nearest' });
+  }
+
+  function open(){
+    if(openDropdown && openDropdown !== api) openDropdown.close(false);
+    // Rebuilt on every open: options can change (landmark dropdown)
+    list.replaceChildren(...[...select.options].map((o, i) => {
+      const li = document.createElement('li');
+      li.className = 'dd-option';
+      li.id = listId + '-' + i;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(o.selected));
+      li.textContent = o.text;
+      return li;
+    }));
+    list.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    openDropdown = api;
+    setActive(select.selectedIndex);
+    list.focus({ preventScroll: true });
+  }
+
+  function close(refocus = true){
+    list.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+    if(openDropdown === api) openDropdown = null;
+    if(refocus) btn.focus();
+  }
+
+  function choose(i){
+    const changed = i !== select.selectedIndex;
+    select.selectedIndex = i;
+    close();
+    sync();
+    if(changed) select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  btn.addEventListener('click', () => list.hidden ? open() : close());
+  btn.addEventListener('keydown', e => {
+    if(['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)){ e.preventDefault(); open(); }
+  });
+  list.addEventListener('click', e => {
+    const li = e.target.closest('.dd-option');
+    if(li) choose(items().indexOf(li));
+  });
+  list.addEventListener('mousemove', e => {
+    const li = e.target.closest('.dd-option');
+    if(li) setActive(items().indexOf(li));
+  });
+  list.addEventListener('keydown', e => {
+    const n = items().length;
+    switch(e.key){
+      case 'ArrowDown': setActive(activeIdx + 1); break;
+      case 'ArrowUp': setActive(activeIdx - 1); break;
+      case 'Home': setActive(0); break;
+      case 'End': setActive(n - 1); break;
+      case 'PageDown': setActive(activeIdx + 5); break;
+      case 'PageUp': setActive(activeIdx - 5); break;
+      case 'Enter': case ' ': choose(activeIdx); break;
+      case 'Escape': close(); break;
+      case 'Tab': close(false); return; // let focus move on
+      default: {
+        // Type-ahead: jump to the next option starting with the typed letter
+        if(e.key.length !== 1) return;
+        const k = e.key.toLowerCase();
+        const all = items();
+        for(let s = 1; s <= n; s++){
+          const j = (activeIdx + s) % n;
+          if(all[j].textContent.toLowerCase().startsWith(k)){ setActive(j); break; }
+        }
+      }
+    }
+    e.preventDefault();
+  });
+
+  const api = { sync, close, wrap };
+  sync();
+  return api;
+}
+
+// Click anywhere outside the open dropdown closes it
+document.addEventListener('pointerdown', e => {
+  if(openDropdown && !openDropdown.wrap.contains(e.target)) openDropdown.close(false);
+});
+
+function syncDropdowns(){ for(const d of dropdowns) d.sync(); }
+
 /* ===================== CONTROL ROW ===================== */
 const fromSelect = document.getElementById('fromSelect');
 const toSelect = document.getElementById('toSelect');
@@ -286,6 +416,7 @@ function makeLandmarkControl(lane){
   return { render };
 }
 const landmarkControls = { A: makeLandmarkControl('A'), B: makeLandmarkControl('B') };
+for(const sel of document.querySelectorAll('.select-wrap select')) dropdowns.push(makeDropdown(sel));
 
 /* ===================== OVERLAYS + TOOL ===================== */
 const straightLineChk = document.getElementById('straightLineChk');
@@ -370,6 +501,7 @@ function renderControls(){
     document.getElementById('algo' + lane + 'Label').textContent = ALGORITHMS[state.algo[lane]].label;
     landmarkControls[lane].render();
   }
+  syncDropdowns();
   document.getElementById('routeLabel').textContent = state.start + ' → ' + state.goal;
   playBtn.textContent = state.playing ? 'PAUSE' : 'START';
   playBtn.classList.toggle('playing', state.playing);
@@ -965,7 +1097,7 @@ const DISC_SIZE = 44;     // disc width in map image px
 const DISC_Y_SCALE = 0.6; // discs are ovals: height = width * DISC_Y_SCALE
 const LABEL_GAP = 4;      // map image px between the bottom of the node disc and its label
 // City label font grows with zoom: LABEL_FONT_MIN px at 1x -> LABEL_FONT_MAX px at MAX_SCALE
-const LABEL_FONT_MIN = 13, LABEL_FONT_MAX = 26;
+const LABEL_FONT_MIN = 15, LABEL_FONT_MAX = 28;
 // Labels show just the city's initial (larger, see .node-label in style.css)
 // until the city is hovered (mouse within TAP_RADIUS) or tapped (touch).
 const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 6; // map image px
@@ -1157,7 +1289,7 @@ const allOverlays = Object.values(laneOverlays);
    map. A badge turns "tree" (explored) or "path" (final route) when a lane
    shown on that map uses the road; on the merged map, either lane counts. */
 const distanceChk = document.getElementById('distanceChk');
-const KM_FONT_MIN = 10, KM_FONT_MAX = 20; // badge text px at 1x .. MAX_SCALE zoom
+const KM_FONT_MIN = 12, KM_FONT_MAX = 22; // badge text px at 1x .. MAX_SCALE zoom
 function makeDistanceLayer(vp, lanesShown){
   const layer = document.createElement('div');
   layer.className = 'map-entity-layer km-layer';

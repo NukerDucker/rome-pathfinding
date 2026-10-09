@@ -43,7 +43,7 @@ background-attachment:fixed;
 .theme-toggle{
 position:fixed; top:12px; right:20px; z-index:50; /* right:20px keeps clear of the page scrollbar */
 width:40px; height:40px; display:flex; align-items:center; justify-content:center;
-font-size:20px; line-height:1; cursor:pointer;
+font-size:22px; line-height:1; cursor:pointer;
 color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 /* Pixel art skin: every top-level box uses the vine-wood 9-slice frame.
@@ -112,7 +112,7 @@ animation:bread-grow 4.5s cubic-bezier(.2,.8,.2,1) both;
 }
 .bread-text{
 position:absolute; bottom:12vh; left:0; right:0; text-align:center; /* below the eyes */
-font-family:'Minecraft', monospace; font-size:clamp(32px, 8vw, 96px);
+font-family:'Minecraft', monospace; font-size:clamp(34px, 8vw, 98px);
 color:#FFE9B8; letter-spacing:4px;
 text-shadow:4px 4px 0 #4a3a20, -2px -2px 0 #4a3a20, 2px -2px 0 #4a3a20, -2px 2px 0 #4a3a20;
 animation:bread-pop 4.5s ease both;
@@ -225,7 +225,7 @@ background:none; border:none; cursor:pointer; pointer-events:none;
 /* ===================== TABS (Map | Guide) ===================== */
 .tab-bar{ display:flex; justify-content:center; gap:6px; margin:0 0 12px; }
 .tab-btn{
-padding:6px 18px; font-size:12px; letter-spacing:1px; cursor:pointer;
+padding:6px 18px; font-size:14px; letter-spacing:1px; cursor:pointer;
 background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 }
 .tab-btn.active{ background:#c9893f; color:#fff; }
@@ -238,16 +238,16 @@ background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 	keep KaTeX's math font). */
 .guide-page{ display:block; }
 .guide-head{ margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #c9893f; }
-.guide-eyebrow{ display:block; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
-.guide-title{ margin:4px 0 0; font-size:26px; color:#4a3a20; }
+.guide-eyebrow{ display:block; font-size:14px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
+.guide-title{ margin:4px 0 0; font-size:28px; color:#4a3a20; }
 .guide-body{
 font-family:'Minecraft', monospace; /* same pixel font as the rest of the app */
-font-size:17px; line-height:1.75; color:#2e2414;
+font-size:19px; line-height:1.75; color:#2e2414;
 }
-.guide-lede{ font-size:18px; margin:0; }
+.guide-lede{ font-size:20px; margin:0; }
 .guide-layout{ display:grid; grid-template-columns:290px minmax(0,1fr); gap:12px; align-items:start; } /* list box wide enough for the bigger list text */
 .guide-nav{
-font-family:'Minecraft', monospace; font-size:17px; line-height:1.4;
+font-family:'Minecraft', monospace; font-size:19px; line-height:1.4;
 display:flex; flex-direction:column; gap:2px;
 position:sticky; top:12px; /* the list box follows you down the page */
 }
@@ -258,7 +258,7 @@ position:sticky; top:12px; /* the list box follows you down the page */
 .guide-section{ scroll-margin-top:12px; }
 .guide-section > :last-child{ margin-bottom:0; }
 .guide-section h3{
-font-family:'Minecraft', monospace; font-size:24px; color:#4a3a20;
+font-family:'Minecraft', monospace; font-size:26px; color:#4a3a20;
 margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid #c9893f;
 }
 .guide-section p, .guide-section ul, .guide-section ol{ margin:0 0 12px; }
@@ -269,20 +269,20 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
 .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:4px; }
-.guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:16px; }
+.guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:18px; }
 .guide-table th{
-font-family:'Minecraft', monospace; font-size:13px; font-weight:normal; text-transform:uppercase;
+font-family:'Minecraft', monospace; font-size:15px; font-weight:normal; text-transform:uppercase;
 letter-spacing:1px; color:var(--text-soft); text-align:left;
 }
 .guide-table th, .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
 .guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
 .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:4px; background:#fff; }
-.guide-figure figcaption{ font-size:15px; color:var(--text-soft); margin-top:6px; }
+.guide-figure figcaption{ font-size:17px; color:var(--text-soft); margin-top:6px; }
 .guide-figure-missing{
-padding:28px 14px; font-size:13px; color:var(--text-soft);
+padding:28px 14px; font-size:15px; color:var(--text-soft);
 border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 }
-.guide-foot{ font-size:14px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
+.guide-foot{ font-size:16px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
 .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:3px; }
 
 /* ===================== 2. CONTROL ROW =====================
@@ -290,13 +290,13 @@ border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 .control-row{
 display:flex; align-items:center; justify-content: center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
 }
-.control-row label{ font-size:clamp(10px, 2.3vw, 12px); font-weight:bold; color:var(--text-soft); }
-/* Pixel art skin: every <select> on the page sits on the vine plank
-	(Button/Start button.png, 326x102). It is drawn with border-image so only the
-	plank's middle stretches: the vine ends (72px of the source each side) keep
-	their shape at any width. The arrow lives on .select-wrap (below): the plank's
-	border-image fill paints over a select's own background, hiding anything there. */
-select{
+.control-row label{ font-size:clamp(12px, 2.3vw, 14px); font-weight:bold; color:var(--text-soft); }
+/* Pixel art skin: every dropdown is a custom one (script.js, CUSTOM DROPDOWNS):
+	the native <select> stays hidden as the value holder and a .dd-btn button
+	sits on the vine plank (Button/Start button.png, 326x102). It is drawn with
+	border-image so only the plank's middle stretches: the vine ends (72px of the
+	source each side) keep their shape at any width. */
+select, .dd-btn{
 appearance:none; -webkit-appearance:none;
 border:0 solid transparent;
 border-image-source:url('assets/Button/Start button.png');
@@ -308,19 +308,66 @@ padding:10px 30px 10px 16px; min-width:110px;
 font-weight:bold; color:#4a3a20;
 image-rendering:pixelated; cursor:pointer;
 }
-/* Wrapper around every <select>: draws the pixel arrow on top of the plank.
-	Clicks pass through the arrow to the select. */
-.select-wrap{ position:relative; display:inline-flex; }
-.select-wrap::after{
+.select-wrap{ position:relative; display:inline-flex; } /* anchors the popup list */
+.select-wrap select{ display:none; }
+.dd-btn{
+position:relative; display:block; text-align:left; font-size:inherit;
+white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Pixel arrow on the plank; flips up while the list is open */
+.dd-btn::after{
 content:''; position:absolute; right:12px; top:50%; width:10px; height:6px;
 transform:translateY(-50%); pointer-events:none;
 background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath fill='%234a3a20' d='M0 0h10v2H8v2H6v2H4V4H2V2H0z'/%3E%3C/svg%3E") center / 10px 6px no-repeat;
 }
+.dd-btn[aria-expanded="true"]::after{ transform:translateY(-50%) scaleY(-1); }
+/* Popup list: the same vine-wood 9-slice frame as the boxes (.section),
+	options are cream strips that turn brown like a pressed .tool-toggle. */
+.dd-list{
+position:absolute; left:0; top:calc(100% + 4px); z-index:45;
+min-width:100%; max-height:280px; overflow-y:auto; overscroll-behavior:contain;
+margin:0; padding:calc(var(--frame) - 4px); list-style:none;
+background-color:#FED788;
+background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat-x,repeat-x,repeat-y,repeat-y;
+background-image:
+	url('assets/pieces/corner-tl.png'),
+	url('assets/pieces/corner-tr.png'),
+	url('assets/pieces/corner-bl.png'),
+	url('assets/pieces/corner-br.png'),
+	url('assets/pieces/edge-top.png'),
+	url('assets/pieces/edge-bottom.png'),
+	url('assets/pieces/edge-left.png'),
+	url('assets/pieces/edge-right.png');
+background-position:
+	left top, right top, left bottom, right bottom,
+	var(--frame) top, var(--frame) bottom, left var(--frame), right var(--frame);
+background-size:var(--frame) var(--frame);
+image-rendering:pixelated;
+box-shadow:0 4px 0 rgba(74,58,32,.35); /* hard pixel drop shadow */
+scrollbar-width:thin; scrollbar-color:#c9893f transparent;
+}
+.dd-list[hidden]{ display:none; }
+/* Little bounce on open: drops in, overshoots, settles (replays on every
+	open since [hidden] -> display:none restarts the animation) */
+.dd-list:not([hidden]){ transform-origin:top center; animation:dd-bounce .32s cubic-bezier(.3,1.4,.5,1); }
+@keyframes dd-bounce{
+	0%{ opacity:0; transform:translateY(-8px) scaleY(.6); }
+	60%{ opacity:1; transform:translateY(3px) scaleY(1.04); }
+	100%{ transform:none; }
+}
+.dd-list:focus{ outline:none; } /* the highlighted option shows keyboard position */
+.dd-option{
+padding:6px 10px; margin:2px 0; font-size:15px; font-weight:bold; color:#4a3a20;
+white-space:nowrap; cursor:pointer; border:2px solid transparent; border-radius:4px;
+}
+.dd-option[aria-selected="true"]{ background:#FFE9B8; border-color:#c9893f; }
+.dd-option[aria-selected="true"]::before{ content:'\25B8'; margin-right:4px; } /* ▸ marks the current choice */
+.dd-option.active{ background:#c9893f; border-color:#c9893f; color:#fff; }
 .control-row input[type=number]{
-padding:8px 10px; border:2px solid var(--border); background:#fff; font-size:clamp(12px, 3vw, 14px);
+padding:8px 10px; border:2px solid var(--border); background:#fff; font-size:clamp(14px, 3vw, 16px);
 }
 .icon-btn{
-width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:16px;
+width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:18px;
 }
 /* Pixel art skin: Random button uses the dice icon asset, text glyph hidden */
 #randomBtn{
@@ -331,14 +378,14 @@ font-size:0; image-rendering:pixelated;
 }
 .divider-vs{ font-weight:bold; padding:0 6px; color:var(--text-soft); }
 .small-btn{
-padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:12px;
+padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:14px;
 }
 .small-btn.active{ background:#333; color:#fff; }
 
 /* ===================== LANDMARK CONTROL =====================
 	One dropdown per lane (same plank skin as every select); options come from script.js. */
 .landmark-control{ display:inline-flex; align-items:center; gap:4px; }
-.lm-label{ font-size:10px; color:var(--text-soft); }
+.lm-label{ font-size:12px; color:var(--text-soft); }
 
 /* ===================== ROUTE BOX + ALGORITHM BOX =====================
 	Two separate wood boxes on one row: [From → To 🎲]  [A pill  VS  B pill].
@@ -354,13 +401,13 @@ display:flex; align-items:center; gap:6px; padding:3px 6px 3px 4px;
 border-radius:4px; background:#FED788;
 }
 .lane-sign{ height:32px; width:auto; image-rendering:pixelated; display:block; }
-.route-arrow{ font-size:12px; color:var(--text-soft); }
-.control-row select{ height:40px; padding:4px 30px 4px 14px; font-size:13px; text-indent:0 !important; } /* matches the 40px Random button */
+.route-arrow{ font-size:14px; color:var(--text-soft); }
+.control-row .dd-btn{ height:40px; padding:4px 30px 4px 14px; font-size:15px; text-indent:0 !important; } /* matches the 40px Random button */
 .control-row .city-select{ min-width:0; width:140px; }
 .control-row .algo-select{ min-width:0; width:160px; }
 .control-row .landmark-dropdown{ min-width:0; width:120px; }
 .control-row .icon-btn{ width:40px; height:40px; flex:none; }
-.control-row .divider-vs{ padding:0 2px; font-size:12px; }
+.control-row .divider-vs{ padding:0 2px; font-size:14px; }
 
 /* ===================== TOOLS BAR =====================
 	[Straight Line] [Heatmap] [Merge] | [Landmarks: OFF]. The overlay toggles are
@@ -369,7 +416,7 @@ border-radius:4px; background:#FED788;
 .tools-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .tool-toggle{
 display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px;
-font:inherit; font-size:11px; color:#4a3a20; cursor:pointer; user-select:none;
+font:inherit; font-size:13px; color:#4a3a20; cursor:pointer; user-select:none;
 background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .tool-toggle input{ position:absolute; opacity:0; width:0; height:0; margin:0; }
@@ -380,7 +427,7 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 /* ===================== MAP PANEL =====================
 	Header (A vs B), map(s), legend bar, playback bar. */
 .map-panel{ display:flex; flex-direction:column; gap:10px; min-width:0; }
-.map-panel-head{ display:flex; align-items:center; gap:8px; font-size:14px; }
+.map-panel-head{ display:flex; align-items:center; gap:8px; font-size:16px; }
 .map-panel-head .lane-sign{ height:22px; }
 .head-lane{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
 /* Merge off: no VS; two columns with the same gap as the maps, so B sits right above map B */
@@ -449,7 +496,7 @@ display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start;
 /* pin the box to the map's width so the legend / playback rows wrap instead of widening it */
 .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:calc(var(--split-map) + 2 * (var(--frame) + 8px)); }
 .legend-bar{
-display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:11px;
+display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:13px;
 padding:6px 10px; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .legend-bar .dot{
@@ -480,7 +527,7 @@ border-top:3px dashed var(--road-path);
 .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:var(--split-map); max-width:100%; margin:0 auto; }
 .algo-canvas{
 flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
-color:var(--text-soft); font-size:14px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
+color:var(--text-soft); font-size:16px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
 border-radius:8px; /* slightly rounded map corners (overflow:hidden clips the map to them) */
 position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
 user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
@@ -520,17 +567,17 @@ opacity:var(--disc-opacity); /* one transparency for all states (colours themsel
 position:absolute; left:0; top:0; white-space:nowrap; pointer-events:none;
 color:#fff; letter-spacing:.5px;
 /* --label-font is set per frame from zoom (script.js); initials show larger */
-font-size:calc(var(--label-font, 13px) * 1.6);
+font-size:calc(var(--label-font, 15px) * 1.6);
 text-shadow:1px 0 #222, -1px 0 #222, 0 1px #222, 0 -1px #222;
 }
-.node-label.full{ font-size:var(--label-font, 13px); } /* hovered / tapped: full city name */
+.node-label.full{ font-size:var(--label-font, 15px); } /* hovered / tapped: full city name */
 /* Distance badges: one km chip per road at its midpoint (script.js:
 	makeDistanceLayer). Text grows with zoom via --km-font. Explored roads use
 	the road-tree colour, final-path roads the road-path colour. */
 .km-layer[hidden]{ display:none; }
 .km-badge{
 position:absolute; left:0; top:0; pointer-events:none; white-space:nowrap;
-font-size:var(--km-font, 10px); line-height:1; padding:.2em .4em;
+font-size:var(--km-font, 12px); line-height:1; padding:.2em .4em;
 color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:3px;
 font-variant-numeric:tabular-nums;
 }
@@ -556,20 +603,20 @@ display:flex; align-items:center; gap:6px; pointer-events:none;
 .map-hud > *{ pointer-events:auto; }
 .map-readout{
 padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
-font-size:10px; white-space:nowrap; pointer-events:none !important;
+font-size:12px; white-space:nowrap; pointer-events:none !important;
 font-variant-numeric:tabular-nums; transition:opacity .25s;
 }
 .map-readout.hidden{ opacity:0; } /* only visible once the view leaves its resting position/scale */
 .map-reset{
 padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
-font-size:10px; cursor:pointer; transition:opacity .2s;
+font-size:12px; cursor:pointer; transition:opacity .2s;
 }
 .map-reset:hover{ background:#eee; }
 .map-reset.at-home{ opacity:.45; } /* already at default view */
 /* Usage hint along the bottom of each map; fades out for good once either map is moved */
 .map-hint{
 position:absolute; left:0; right:0; bottom:10px; z-index:20; margin:0; padding:0 12px;
-text-align:center; font-size:14px; color:#555; opacity:.75;
+text-align:center; font-size:16px; color:#555; opacity:.75;
 pointer-events:none; transition:opacity .6s ease;
 }
 .map-hint.hidden{ opacity:0; }
@@ -596,7 +643,7 @@ font-size:0; image-rendering:pixelated;
    (72px of the source each side = 28px at 40px tall) keep their shape. */
 #playBtn{
 width:96px; height:40px; padding:0;
-font-size:12px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
+font-size:14px; color:#4a3a20; font-weight:bold; letter-spacing:1px;
 background-image:none;
 border:0 solid transparent;
 border-image:url('assets/Button/Start button.png') 0 72 fill / 0 28px stretch;
@@ -620,13 +667,13 @@ background-image:url('assets/Button/Foward button.png');
 background-repeat:no-repeat; background-size:100% 100%;
 font-size:0; image-rendering:pixelated; cursor:pointer;
 }
-.speed-row{ display:flex; align-items:center; gap:6px; font-size:11px; }
+.speed-row{ display:flex; align-items:center; gap:6px; font-size:13px; }
 /* Ends show the limits (Slow 1500ms / Fast 0ms); the live delay sits under the slider */
 .speed-end{ text-align:center; line-height:1.3; }
-.speed-end small{ font-size:9px; color:var(--text-soft); }
+.speed-end small{ font-size:11px; color:var(--text-soft); }
 .speed-track{ flex:0 1 220px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:70px; } /* slider at most 220px long, shrinks to fit the row */
 .speed-track .pixel-slider{ width:100%; flex:none; min-width:0; }
-.speed-value{ font-size:11px; font-variant-numeric:tabular-nums; }
+.speed-value{ font-size:13px; font-variant-numeric:tabular-nums; }
 
 /* Pixel-art slider. Track and fill use border-image so only the bar's middle
 	stretches and the rounded ends stay crisp (slice 14px of the 417x42 source).
@@ -690,24 +737,24 @@ body{ scrollbar-width:thin; scrollbar-color:#c9893f transparent; }
 body::-webkit-scrollbar{ width:8px; }
 body::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
 body::-webkit-scrollbar-track{ background:transparent; }
-.stats-title{ text-align:center; margin:0 0 4px; font-size:22px; }
-.stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:15px; }
+.stats-title{ text-align:center; margin:0 0 4px; font-size:24px; }
+.stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:17px; }
 .stats-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .stats-col{ display:flex; flex-direction:column; gap:8px; min-width:0; }
 .stats-head{
 display:flex; align-items:center; gap:8px; padding:6px 8px; min-width:0;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:16px; color:#4a3a20;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:18px; color:#4a3a20;
 }
 .stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
 .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
 /* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
 .stats-card h4{
-margin:0 0 6px; padding-bottom:4px; font-size:15px; letter-spacing:1px; text-transform:uppercase;
+margin:0 0 6px; padding-bottom:4px; font-size:17px; letter-spacing:1px; text-transform:uppercase;
 color:#4a3a20; font-weight:bold; border-bottom:2px solid #c9893f;
 }
 .stat-row{
 display:flex; align-items:center; justify-content:space-between; gap:6px;
-padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
+padding:4px 0; font-size:17px; border-bottom:1px solid rgba(120,70,20,.15);
 }
 .stat-row:last-child{ border-bottom:none; }
 .stat-row > span{ color:#5a4630; white-space:nowrap; } /* label: darker than --text-soft for readability */
@@ -718,7 +765,7 @@ padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
 .stat-row > b.better{ color:#fff; background:var(--better); padding-left:6px; } /* winning value chip */
 .no-caps{ text-transform:none; } /* keep µ from uppercasing into a Greek capital mu */
 .stat-row .katex{ font-size:1em; }
-.stats-caption{ font-size:12px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
+.stats-caption{ font-size:14px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
 @media (max-width:1200px){
 .map-row{ grid-template-columns:1fr; } /* not enough width for map + sidebar: stack */
 .map-row{ --split-map:calc((100cqw - 2 * (var(--frame) + 8px) - 12px) / 2); }
@@ -738,7 +785,7 @@ padding:4px 0; font-size:15px; border-bottom:1px solid rgba(120,70,20,.15);
 body{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
 
 .compare-wrap{ flex-direction:column; }
-.algo-canvas{ min-height:200px; font-size:12px; text-align:center; padding:10px; }
+.algo-canvas{ min-height:200px; font-size:14px; text-align:center; padding:10px; }
 .map-panel .algo-canvas{ min-height:260px; }
 .map-row:has(.compare-wrap:not(.is-split)){ justify-items:stretch; }
 .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:auto; }
@@ -750,27 +797,29 @@ body{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
 .map-row:has(.compare-wrap:not(.is-split)) .stats-col{ display:flex; }
 
 .algo-box{ justify-content:center; } /* A pill / VS / B pill stack on phones */
+.route-box{ flex:1 1 100%; } /* full width so city names fit the larger font */
+.algo-box .lane-pill{ flex-basis:100%; } /* buttons size to their text (not the longest option like a select): keep one pill per row */
 .control-row .select-wrap, .control-row input[type=number]{ flex:1; min-width:90px; }
-.control-row .select-wrap select{ width:100%; }
+.control-row .select-wrap .dd-btn{ width:100%; }
 }
 
 /* ===================== BUTTON HOVER / PRESS / FOCUS =====================
 	Every button: lifts 2px and brightens on hover, presses back down and
 	darkens on click. Keyboard focus gets the same lift plus a brown outline. */
-#randomBtn, .select-wrap, .tool-toggle, .playback-row button, .tab-btn, .map-reset, .theme-toggle, .bread-btn{
+#randomBtn, .dd-btn, .tool-toggle, .playback-row button, .tab-btn, .map-reset, .theme-toggle, .bread-btn{
 transition:transform .12s ease, filter .12s ease, opacity .2s;
 }
-#randomBtn:hover, .select-wrap:hover, .tool-toggle:hover,
+#randomBtn:hover, .dd-btn:hover, .tool-toggle:hover,
 .playback-row button:hover, .tab-btn:hover, .map-reset:hover, .theme-toggle:hover, .theme-toggle:focus-visible, .bread-btn:hover, .bread-btn:focus-visible,
-#randomBtn:focus-visible, .select-wrap:has(select:focus-visible), .tool-toggle:focus-visible,
+#randomBtn:focus-visible, .dd-btn:focus-visible, .tool-toggle:focus-visible,
 .tool-toggle:has(input:focus-visible), .playback-row button:focus-visible, .tab-btn:focus-visible, .map-reset:focus-visible{
 transform:translateY(-2px); filter:brightness(1.1);
 }
-#randomBtn:active, .select-wrap:active, .tool-toggle:active,
+#randomBtn:active, .dd-btn:active, .tool-toggle:active,
 .playback-row button:active, .tab-btn:active, .map-reset:active, .theme-toggle:active, .bread-btn:active{
 transform:translateY(0); filter:brightness(.9);
 }
-#randomBtn:focus-visible, select:focus-visible,
+#randomBtn:focus-visible, .dd-btn:focus-visible,
 .playback-row button:focus-visible, .tab-btn:focus-visible, .map-reset:focus-visible, .theme-toggle:focus-visible, .bread-btn:focus-visible{
 outline:2px solid #4a3a20; outline-offset:2px;
 }
@@ -778,7 +827,8 @@ outline:2px solid #4a3a20; outline-offset:2px;
 #playBtn.playing:hover, #playBtn.playing:focus-visible{ filter:brightness(.85); }
 #playBtn.playing:active{ filter:brightness(.7); }
 @media (prefers-reduced-motion: reduce){
-#randomBtn, .select-wrap, .tool-toggle, .playback-row button, .tab-btn, .map-reset{ transition:none; }
-#randomBtn:hover, .select-wrap:hover, .tool-toggle:hover,
+#randomBtn, .dd-btn, .tool-toggle, .playback-row button, .tab-btn, .map-reset{ transition:none; }
+.dd-list:not([hidden]){ animation:none; }
+#randomBtn:hover, .dd-btn:hover, .tool-toggle:hover,
 .playback-row button:hover, .tab-btn:hover, .map-reset:hover{ transform:none; }
 }
