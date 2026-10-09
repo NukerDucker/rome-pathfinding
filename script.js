@@ -651,12 +651,17 @@ function makeMapViewport(canvas){
   let m = null;
   function measure(){
     const r = canvas.getBoundingClientRect();
+    // Image box inside the untransformed stage, from rects (sub-pixel exact;
+    // offsetWidth/Height round, which drifts at high zoom). The stage's
+    // transform (origin 0 0) scales both rects alike, so divide it back out.
+    const sr = stage.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    const s = cur ? cur.s : 1;
     m = {
       left: r.left + canvas.clientLeft + stage.offsetLeft,
       top:  r.top  + canvas.clientTop  + stage.offsetTop,
       w: stage.offsetWidth, h: stage.offsetHeight,
-      imgX: img.offsetLeft - stage.offsetLeft, imgY: img.offsetTop - stage.offsetTop,
-      imgW: img.offsetWidth, imgH: img.offsetHeight,
+      imgX: (ir.left - sr.left) / s, imgY: (ir.top - sr.top) / s,
+      imgW: ir.width / s, imgH: ir.height / s,
       stageLeft: stage.offsetLeft, stageTop: stage.offsetTop, // stage box inside the canvas
     };
   }
