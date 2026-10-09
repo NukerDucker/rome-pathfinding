@@ -166,11 +166,13 @@
   height: 18px;
 }
 /* Masthead control cluster: theme · mute · mode, one row in the title band. */
+/* Flush with the shell gutter and pinned at 16px from the top — the same
+   corner and inset as the game's control row, so toggling modes keeps the
+   theme button in one place. */
 .title-controls {
   position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 0;
+  top: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
