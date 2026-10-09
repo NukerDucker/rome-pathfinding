@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import GameGuide from '@/game/GameGuide'
+import { attachGuideExtras } from '@/game/guideScrollSpy'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
  *  Stage 1: chrome, tabs and layout shell — behaviour lands in stages 2–4. */
@@ -31,6 +33,9 @@ export default function GameApp() {
       /* storage denied — theme just won't persist */
     }
   }
+
+  // GIF-failure fallback + guide contents scroll-spy (script.js 1246–1276)
+  useEffect(() => attachGuideExtras(), [])
 
   return (
     <div className="game-root" data-theme={theme ?? undefined}>
@@ -69,7 +74,7 @@ export default function GameApp() {
         </div>
 
         <div id="tabGuide" className="tab-panel" role="tabpanel" aria-labelledby="tabBtnGuide" hidden={tab !== 'guide'}>
-          <p className="game-placeholder">Guide tab — ported in stage 1b.</p>
+          <GameGuide />
         </div>
       </div>
 
