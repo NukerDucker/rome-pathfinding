@@ -1006,7 +1006,7 @@ html.theme-anim *::after {
 
 .guide-lede {
   grid-column: 1 / -1;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--text);
   margin: 0 0 var(--sp-4);
@@ -1031,7 +1031,7 @@ html.theme-anim *::after {
 .guide-nav a {
   display: block;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   line-height: 1.35;
   padding: 4px var(--sp-2);
@@ -1053,25 +1053,20 @@ html.theme-anim *::after {
   grid-row: 2;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--sp-3);
   padding-left: var(--sp-5);
 }
 
-/* Prose sections — divider between each */
+/* Prose sections — one card each, like the game guide's boxes */
 .guide-section {
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: var(--sp-5) 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--sp-4) var(--sp-5);
   scroll-margin-top: 56px;
-  border-top: 1px solid var(--border);
-}
-.guide-section:first-child {
-  border-top: none;
-  padding-top: 0;
 }
 .guide-section h3 {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-h);
@@ -1102,7 +1097,7 @@ html.theme-anim *::after {
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: var(--sp-1) var(--sp-2);
-    font-size: 11.5px;
+    font-size: 12.5px;
   }
   .guide-nav a:hover {
     background: color-mix(in srgb, var(--map-accent) 6%, transparent);
@@ -1113,11 +1108,11 @@ html.theme-anim *::after {
     grid-row: 3;
   }
 }
-.guide p { font-size: 13px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
+.guide p { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
 .guide ul, .guide ol { margin: 0 0 var(--sp-2); padding-left: 20px; }
-.guide li { font-size: 13px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
+.guide li { font-size: 14px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
 .guide strong { color: var(--text-h); font-weight: 650; }
-.guide code { font-size: 11px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
+.guide code { font-size: 12px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
 .guide .katex { font-size: 1.05em; }
 .guide-eq {
   overflow-x: auto;
