@@ -19,10 +19,8 @@ export function TitleRow({ theme, onSelect, busy, muted, onToggleMute, mode, onT
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
-      {/* Order matches the game corner: [mode] … [theme] — theme always hugs
-          the outer corner. */}
+      {/* [mute] [mode] [theme] — theme hugs the outer corner like the game's. */}
       <span className="title-controls">
-        <ModeToggle mode={mode} onToggle={onToggleMode} />
         <button
           type="button"
           className="mute-toggle"
@@ -33,6 +31,7 @@ export function TitleRow({ theme, onSelect, busy, muted, onToggleMute, mode, onT
         >
           {muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
         </button>
+        <ModeToggle mode={mode} onToggle={onToggleMode} />
         <ThemeMenu theme={theme} onSelect={onSelect} busy={busy} />
       </span>
     </h1>
