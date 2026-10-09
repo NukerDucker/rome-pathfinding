@@ -16,6 +16,7 @@ import {
   type LandmarkPreset,
 } from '@/heuristic'
 import { LANDMARK_PRESETS } from '@/alt'
+import { cached, gameBenchCache, heatCache, lmEffectCache } from '@/game/benchCache'
 
 export const BENCH_ITERS = 400
 export const MAX_DELAY = 1500 // speed slider max; step delay = MAX_DELAY - slider value
@@ -67,7 +68,10 @@ function withAltConfig<T>(preset: LandmarkPreset, custom: readonly NodeId[], fn:
 
 // Mean wall time over BENCH_ITERS runs, plus peak frontier as a space proxy
 function benchmarkOne(meta: AlgoMeta, start: NodeId, goal: NodeId, cfg: LandmarkPreset, custom: readonly NodeId[]): Bench {
-  return withAltConfig(cfg, custom, () => {
+  // Cached across mounts: the 400-run mean is machine-stable, so re-running it
+  // on every remount only produced a long task, not a better number.
+  return cached(gameBenchCache, `${meta.label}|${start}|${goal}|${cfg}|${custom.join(',')}`, () =>
+    withAltConfig(cfg, custom, () => {
     const res = meta.run(start, goal)
     const t0 = performance.now()
     for (let i = 0; i < BENCH_ITERS; i++) meta.run(start, goal)
@@ -81,36 +85,41 @@ function benchmarkOne(meta: AlgoMeta, start: NodeId, goal: NodeId, cfg: Landmark
       hops: res.found ? res.path.length - 1 : 0,
       found: res.found,
     }
-  })
+  }))
 }
 
 // Nodes generated under each landmark preset; null for non-landmark algorithms
 function landmarkEffect(meta: AlgoMeta, start: NodeId, goal: NodeId): Record<LaneCount, number> | null {
   if (!meta.usesLandmarks) return null
-  const saved = saveALTState()
-  try {
-    const out = {} as Record<LaneCount, number>
-    for (const preset of ['lm2', 'lm4', 'lm8'] as const) {
-      setALTPreset(preset)
-      out[preset] = meta.run(start, goal).generated
+  // cfg-independent (the presets are reset inside), so the key has no cfg part
+  return cached(lmEffectCache, `${meta.label}|${start}|${goal}`, () => {
+    const saved = saveALTState()
+    try {
+      const out = {} as Record<LaneCount, number>
+      for (const preset of ['lm2', 'lm4', 'lm8'] as const) {
+        setALTPreset(preset)
+        out[preset] = meta.run(start, goal).generated
+      }
+      return out
+    } finally {
+      restoreALTState(saved)
     }
-    return out
-  } finally {
-    restoreALTState(saved)
-  }
+  })
 }
 
 // Normalised ALT h-values toward the goal (0 = near, 1 = far)
 function heatmapFor(goal: NodeId, preset: LandmarkPreset, custom: readonly NodeId[]): Record<NodeId, number> | null {
-  const vals: Record<NodeId, number> = {}
-  let max = 0
-  for (const city of CITIES) {
-    vals[city] = altHWith(city, goal, preset, custom)
-    if (vals[city] > max) max = vals[city]
-  }
-  if (max === 0) return null
-  for (const city of CITIES) vals[city] /= max
-  return vals
+  return cached(heatCache, `${goal}|${preset}|${custom.join(',')}`, () => {
+    const vals: Record<NodeId, number> = {}
+    let max = 0
+    for (const city of CITIES) {
+      vals[city] = altHWith(city, goal, preset, custom)
+      if (vals[city] > max) max = vals[city]
+    }
+    if (max === 0) return null
+    for (const city of CITIES) vals[city] /= max
+    return vals
+  })
 }
 
 export function randomPair(): { start: NodeId; goal: NodeId } {
