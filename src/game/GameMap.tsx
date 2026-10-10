@@ -66,7 +66,7 @@ export default function GameMap({ playback, children }: { playback?: ReactNode; 
           <span><span className="dot dot-hollow" style={{ borderColor: 'var(--marker-goal)' }}></span>Goal</span>
           {/* merged map only (script.js hides these when Merge is off) */}
           <span className="legend-merged"><span className="dot dot-split" aria-hidden="true"></span>Left A / right B</span>
-          <span className="legend-merged"><svg className="road-dash" viewBox="0 0 24 10" aria-hidden="true"><line x1="3" y1="5" x2="21" y2="5" stroke="#1a1a1a" strokeWidth="7" strokeLinecap="round" strokeDasharray="4 7" /><line x1="3" y1="5" x2="21" y2="5" stroke="var(--road-path)" strokeWidth="3" strokeLinecap="round" strokeDasharray="4 7" /></svg>Lane B road</span>
+          <span className="legend-merged"><svg className="road-dash" viewBox="0 0 24 10" aria-hidden="true"><line x1="3" y1="3" x2="21" y2="3" stroke="var(--road-tree)" strokeWidth="3" strokeLinecap="round" /><line x1="3" y1="7" x2="21" y2="7" stroke="var(--road-path)" strokeWidth="3" strokeLinecap="round" /></svg>Roads: explored / route</span>
         </div>
 
         {/* playback bar lives inside the map panel (source nesting, index.html 163) */}

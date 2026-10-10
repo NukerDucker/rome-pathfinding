@@ -205,6 +205,11 @@ const LABEL_FONT_MIN = 15, LABEL_FONT_MAX = 28
 // Labels show just the city's initial (larger, see .node-label in style.css)
 // until the city is hovered (mouse within TAP_RADIUS) or tapped (touch).
 const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 6 // map image px
+// Merged map: each lane's roads shift to their own side of the road centreline
+// (map image px), so the two run as parallel strands instead of one lane's roads
+// drawing over the other's. Split maps show a single lane, so their roads stay
+// centred. Same trick as the modern map's MROAD_OFF.
+const STRAND_OFF = 5
 const TAP_RADIUS = 36 // map image px: how close a click must be to a node (road junction) to pick it
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const MIN_SCALE = 1, MAX_SCALE = 8
@@ -408,10 +413,19 @@ function makeLaneOverlay(
     const line = (a: NodeId, b: NodeId, cls: string, w: number): string => {
       const pa = ROAD_POSITIONS[a], pb = ROAD_POSITIONS[b]
       if (!pa || !pb) return ''
-      const xy = `x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}"`
-      // Lane B: a dark dashed copy underneath outlines each dash (shown on the merged map only)
-      const casing = lane === 'B' ? `<line class="road-casing" ${xy}/>` : ''
-      return casing + `<line class="${cls}" ${xy} stroke-width="${w}"/>`
+      // Merged map: nudge each lane to its own side of the road so A and B run
+      // parallel (see STRAND_OFF). Both keep their full width and their own
+      // colour, so neither can hide the other.
+      let x1 = pa.x, y1 = pa.y, x2 = pb.x, y2 = pb.y
+      if (state.merged) {
+        const dx = pb.x - pa.x, dy = pb.y - pa.y
+        const len = Math.hypot(dx, dy) || 1
+        const off = (lane === 'A' ? -STRAND_OFF : STRAND_OFF)
+        const nx = (-dy / len) * off, ny = (dx / len) * off
+        x1 += nx; y1 += ny; x2 += nx; y2 += ny
+      }
+      const xy = `x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"`
+      return `<line class="${cls}" ${xy} stroke-width="${w}"/>`
     }
     let html = ''
     if (L.heat) {

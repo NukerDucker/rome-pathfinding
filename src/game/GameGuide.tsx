@@ -331,9 +331,10 @@ export default function GameGuide() {
             <p>
               <strong>Merged map (default).</strong> With <em>Merge</em> on, both lanes share one map.
               Every city disc is split down the middle: the <strong>left half is lane A</strong>, the
-              <strong>right half is lane B</strong>, each in the usual legend colours. Lane A's roads
-              are solid; <strong>lane B's roads are thinner and dashed</strong>, drawn on top, so you can
-              see which roads both lanes used and which only one did. Turn <em>Merge</em> off to put
+              <strong>right half is lane B</strong>, each in the usual legend colours. Each road draws
+              as <strong>two parallel strands</strong>, one per lane, nudged to either side of the
+              centreline — so a road both lanes explored shows both colours side by side, and a road
+              only one lane used shows a single strand. Turn <em>Merge</em> off to put
               map A and map B side by side, each showing only its own lane. With Merge on, a click with the
               Landmarks tool sets that city for both lanes; with Merge off, click on map A or map B to
               set it for that lane only.
