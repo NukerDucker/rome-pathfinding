@@ -87,7 +87,8 @@ background:#5a6ec8; mix-blend-mode:hue;
 .game-root[data-theme="space"] .map-reset,
 .game-root[data-theme="space"] .bread-btn{ background:#2c3763; border-color:#5a6ec8; color:#dfe6ff; }
 .game-root[data-theme="space"] .algo-canvas{ background:#0e1633; }
-.game-root[data-theme="space"] #randomBtn{ filter:hue-rotate(190deg) saturate(.55) brightness(.85); }
+.game-root[data-theme="space"] #randomBtn,
+.game-root[data-theme="space"] .dd-list{ filter:hue-rotate(190deg) saturate(.55) brightness(.85); }
 .game-root[data-theme="space"] #prevBtn,
 .game-root[data-theme="space"] #nextBtn,
 .game-root[data-theme="space"] #restartBtn{ filter:hue-rotate(190deg) saturate(.55) brightness(.85); }
@@ -115,7 +116,8 @@ background:#c9a6e8; mix-blend-mode:hue;
 .game-root[data-theme="dnd"] .map-reset,
 .game-root[data-theme="dnd"] .bread-btn{ background:#efe0ff; border-color:#a95fd0; color:#4a3768; }
 .game-root[data-theme="dnd"] .algo-canvas{ background:#a06fc4; }
-.game-root[data-theme="dnd"] #randomBtn{ filter:hue-rotate(250deg) saturate(.5) brightness(1.08); }
+.game-root[data-theme="dnd"] #randomBtn,
+.game-root[data-theme="dnd"] .dd-list{ filter:hue-rotate(250deg) saturate(.5) brightness(1.08); }
 .game-root[data-theme="dnd"] #prevBtn,
 .game-root[data-theme="dnd"] #nextBtn,
 .game-root[data-theme="dnd"] #restartBtn{ filter:hue-rotate(250deg) saturate(.5) brightness(1.08); }
@@ -152,7 +154,7 @@ color:#4a3a20; background:none; border:none; border-radius:3px; cursor:pointer;
 .game-root .theme-toggle{
 position:static; transform:none; /* the modern stylesheet's unscoped .theme-toggle applies translateY(-50%) even to static elements — that lifted this button 20px above the mode button */
 width:40px; height:40px; display:flex; align-items:center; justify-content:center;
-font-size:20px; line-height:1; cursor:pointer;
+font-size:22px; line-height:1; cursor:pointer;
 color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 /* Pixel art skin: every top-level box uses the vine-wood 9-slice frame.
@@ -221,7 +223,7 @@ animation:bread-grow 4.5s cubic-bezier(.2,.8,.2,1) both;
 }
 .game-root .bread-text{
 position:absolute; bottom:12vh; left:0; right:0; text-align:center; /* below the eyes */
-font-family:'Minecraft', monospace; font-size:clamp(32px, 8vw, 96px);
+font-family:'Minecraft', monospace; font-size:clamp(34px, 8vw, 98px);
 color:#FFE9B8; letter-spacing:4px;
 text-shadow:4px 4px 0 #4a3a20, -2px -2px 0 #4a3a20, 2px -2px 0 #4a3a20, -2px 2px 0 #4a3a20;
 animation:bread-pop 4.5s ease both;
@@ -348,15 +350,15 @@ background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
 .game-root .guide-page{ display:block; }
 .game-root .guide-head{ margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #c9893f; }
 .game-root .guide-eyebrow{ display:block; font-size:14px; letter-spacing:2px; text-transform:uppercase; color:#7a5a2a; }
-.game-root .guide-title{ margin:4px 0 0; font-size:26px; color:#4a3a20; }
+.game-root .guide-title{ margin:4px 0 0; font-size:28px; color:#4a3a20; }
 .game-root .guide-body{
 font-family:'Minecraft', monospace; /* same pixel font as the rest of the app */
-font-size:18px; line-height:1.75; color:#2e2414;
+font-size:19px; line-height:1.75; color:#2e2414;
 }
-.game-root .guide-lede{ font-size:19px; margin:0; }
+.game-root .guide-lede{ font-size:20px; margin:0; }
 .game-root .guide-layout{ display:grid; grid-template-columns:290px minmax(0,1fr); gap:12px; align-items:start; } /* list box wide enough for the bigger list text */
 .game-root .guide-nav{
-font-family:'Minecraft', monospace; font-size:18px; line-height:1.4;
+font-family:'Minecraft', monospace; font-size:19px; line-height:1.4;
 display:flex; flex-direction:column; gap:2px;
 position:sticky; top:12px; /* the list box follows you down the page */
 }
@@ -378,20 +380,20 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 }
 .game-root .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
 .game-root .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:4px; }
-.game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:17px; }
+.game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:18px; }
 .game-root .guide-table th{
-font-family:'Minecraft', monospace; font-size:14px; font-weight:normal; text-transform:uppercase;
+font-family:'Minecraft', monospace; font-size:15px; font-weight:normal; text-transform:uppercase;
 letter-spacing:1px; color:var(--text-soft); text-align:left;
 }
 .game-root .guide-table th, .game-root .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
 .game-root .guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
 .game-root .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:4px; background:#fff; }
-.game-root .guide-figure figcaption{ font-size:16px; color:var(--text-soft); margin-top:6px; }
+.game-root .guide-figure figcaption{ font-size:17px; color:var(--text-soft); margin-top:6px; }
 .game-root .guide-figure-missing{
-padding:28px 14px; font-size:14px; color:var(--text-soft);
+padding:28px 14px; font-size:15px; color:var(--text-soft);
 border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 }
-.game-root .guide-foot{ font-size:15px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
+.game-root .guide-foot{ font-size:16px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
 .game-root .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:3px; }
 
 /* ===================== 2. CONTROL ROW =====================
@@ -400,12 +402,11 @@ border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
 display:flex; align-items:center; justify-content: center; gap:10px; flex-wrap:wrap; padding:34px; background-color:var(--header-bg);
 }
 .game-root .control-row label{ font-size:clamp(14px, 2.5vw, 15px); font-weight:bold; color:var(--text-soft); }
-/* Pixel art skin: every <select> on the page sits on the vine plank
-	(Button/Start button.png, 326x102). It is drawn with border-image so only the
-	plank's middle stretches: the vine ends (72px of the source each side) keep
-	their shape at any width. The arrow lives on .select-wrap (below): the plank's
-	border-image fill paints over a select's own background, hiding anything there. */
-.game-root select{
+/* Pixel art skin: every dropdown is a custom one (GameSelect.tsx): a .dd-btn
+	button on the vine plank (Button/Start button.png, 326x102). It is drawn with
+	border-image so only the plank's middle stretches: the vine ends (72px of the
+	source each side) keep their shape at any width. */
+.game-root select, .game-root .dd-btn{
 appearance:none; -webkit-appearance:none;
 border:0 solid transparent;
 border-image-source:url('/assets/Button/Start button.png');
@@ -417,19 +418,67 @@ padding:10px 30px 10px 16px; min-width:110px;
 font-weight:bold; color:#4a3a20;
 image-rendering:pixelated; cursor:pointer;
 }
-/* Wrapper around every <select>: draws the pixel arrow on top of the plank.
-	Clicks pass through the arrow to the select. */
-.game-root .select-wrap{ position:relative; display:inline-flex; }
-.game-root .select-wrap::after{
+.game-root .select-wrap{ position:relative; display:inline-flex; } /* anchors the popup list */
+.game-root .dd-btn{
+position:relative; display:block; text-align:left; font-size:inherit;
+white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Pixel arrow on the plank; flips up while the list is open */
+.game-root .dd-btn::after{
 content:''; position:absolute; right:12px; top:50%; width:10px; height:6px;
 transform:translateY(-50%); pointer-events:none;
 background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath fill='%234a3a20' d='M0 0h10v2H8v2H6v2H4V4H2V2H0z'/%3E%3C/svg%3E") center / 10px 6px no-repeat;
 }
+.game-root .dd-btn[aria-expanded="true"]::after{ transform:translateY(-50%) scaleY(-1); }
+/* Popup list: the same vine-wood 9-slice frame as the boxes (.section),
+	options are cream strips that turn brown like a pressed .tool-toggle. */
+.game-root .dd-list{
+position:absolute; left:0; top:calc(100% + 4px); z-index:45;
+min-width:100%; max-height:280px; overflow-y:auto; overscroll-behavior:contain;
+margin:0; padding:calc(var(--frame) - 4px); list-style:none;
+background-color:#FED788;
+background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat-x,repeat-x,repeat-y,repeat-y;
+background-image:
+	url('/assets/pieces/corner-tl.png'),
+	url('/assets/pieces/corner-tr.png'),
+	url('/assets/pieces/corner-bl.png'),
+	url('/assets/pieces/corner-br.png'),
+	url('/assets/pieces/edge-top.png'),
+	url('/assets/pieces/edge-bottom.png'),
+	url('/assets/pieces/edge-left.png'),
+	url('/assets/pieces/edge-right.png');
+background-position:
+	left top, right top, left bottom, right bottom,
+	var(--frame) top, var(--frame) bottom, left var(--frame), right var(--frame);
+background-size:var(--frame) var(--frame);
+image-rendering:pixelated;
+box-shadow:0 4px 0 rgba(74,58,32,.35); /* hard pixel drop shadow */
+scrollbar-width:thin; scrollbar-color:#c9893f transparent;
+}
+/* Space / D&D make every box its own stacking context (position + isolation),
+	which would trap the popup under the next box: lift the box while it is open */
+.game-root .section:has(.dd-list){ z-index:46; }
+.game-root .dd-list:focus{ outline:none; } /* the highlighted option shows keyboard position */
+/* Little bounce on open: drops in, overshoots, settles (the list mounts on every
+	open, so it replays each time). The theme menu gets the same entrance. */
+.game-root .dd-list, .game-root .theme-menu{ transform-origin:top center; animation:dd-bounce .32s cubic-bezier(.3,1.4,.5,1); }
+@keyframes dd-bounce{
+	0%{ opacity:0; transform:translateY(-8px) scaleY(.6); }
+	60%{ opacity:1; transform:translateY(3px) scaleY(1.04); }
+	100%{ transform:none; }
+}
+.game-root .dd-option{
+padding:6px 10px; margin:2px 0; font-size:15px; font-weight:bold; color:#4a3a20;
+white-space:nowrap; cursor:pointer; border:2px solid transparent; border-radius:4px;
+}
+.game-root .dd-option[aria-selected="true"]{ background:#FFE9B8; border-color:#c9893f; }
+.game-root .dd-option[aria-selected="true"]::before{ content:'\25B8'; margin-right:4px; } /* marks the current choice */
+.game-root .dd-option.active{ background:#c9893f; border-color:#c9893f; color:#fff; }
 .game-root .control-row input[type=number]{
-padding:8px 10px; border:2px solid var(--border); background:#fff; font-size:clamp(14px, 3vw, 15px);
+padding:8px 10px; border:2px solid var(--border); background:#fff; font-size:clamp(14px, 3vw, 16px);
 }
 .game-root .icon-btn{
-width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:16px;
+width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:18px;
 }
 /* Pixel art skin: Random button uses the dice icon asset, text glyph hidden */
 .game-root #randomBtn{
@@ -464,7 +513,7 @@ border-radius:4px; background:#FED788;
 }
 .game-root .lane-sign{ height:32px; width:auto; image-rendering:pixelated; display:block; }
 .game-root .route-arrow{ font-size:14px; color:var(--text-soft); }
-.game-root .control-row select{ height:40px; padding:4px 30px 4px 14px; font-size:14px; text-indent:0 !important; } /* matches the 40px Random button */
+.game-root .control-row .dd-btn{ height:40px; padding:4px 30px 4px 14px; font-size:15px; text-indent:0 !important; } /* matches the 40px Random button */
 .game-root .control-row .city-select{ min-width:0; width:140px; }
 .game-root .control-row .algo-select{ min-width:0; width:160px; }
 .game-root .control-row .landmark-dropdown{ min-width:0; width:120px; }
@@ -489,7 +538,7 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 /* ===================== MAP PANEL =====================
 	Header (A vs B), map(s), legend bar, playback bar. */
 .game-root .map-panel{ display:flex; flex-direction:column; gap:10px; min-width:0; }
-.game-root .map-panel-head{ display:flex; align-items:center; gap:8px; font-size:15px; }
+.game-root .map-panel-head{ display:flex; align-items:center; gap:8px; font-size:16px; }
 .game-root .map-panel-head .lane-sign{ height:22px; }
 .game-root .head-lane{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
 /* Merge off: no VS; two columns with the same gap as the maps, so B sits right above map B */
@@ -567,19 +616,22 @@ border:1px solid #333; vertical-align:middle;
 }
 .game-root .legend-bar .dot-hollow{ background:#fff; border-width:2px; }
 .game-root .legend-bar .dot-split{ background:linear-gradient(90deg, var(--state-frontier) 50%, var(--state-visited) 50%); }
-.game-root .legend-bar .road-dash{
-display:inline-block; width:20px; margin-right:5px; vertical-align:middle;
-border-top:3px dashed var(--road-path);
-}
+.game-root .legend-bar .road-dash{ width:24px; height:10px; margin-right:5px; vertical-align:middle; overflow:visible; }
 .game-root .legend-merged[hidden]{ display:none; }
 
 /* Merged map: tell the lanes apart. Each city disc is split down the middle
 	(left half = lane A's state, right half = lane B's, same legend colours);
-	lane B's roads draw thinner and dashed on top of lane A's solid roads.
+	lane B's roads draw dashed on top of lane A's solid roads, each dash outlined
+	in near-black (.road-casing: same dashes, wider) so it stands out on lane A's
+	roads, whose colours are too close to B's to tell apart alone.
 	Negative insets keep the landmark outline that sits outside the disc. */
 .game-root .compare-wrap:not(.is-split) .lane-A .node-disc{ clip-path:inset(-8px 50% -8px -8px); }
 .game-root .compare-wrap:not(.is-split) .lane-B .node-disc{ clip-path:inset(-8px -8px -8px 50%); }
-.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-tree,.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:4px; stroke-dasharray:10 7; }
+.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-tree,.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-path{ stroke-width:5px; stroke-dasharray:8 10; }
+.game-root .map-svg-layer .road-casing{ display:none; }
+.game-root .compare-wrap:not(.is-split) .map-svg-layer.lane-B .road-casing{
+display:inline; stroke:#1a1a1a; stroke-width:9px; stroke-linecap:round; stroke-dasharray:8 10;
+}
 .game-root .playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:nowrap; } /* buttons + slider on one line, centred; the slider shrinks to fit */
 .game-root .playback-bar .playback-row{ margin:0; }
 .game-root .playback-bar .speed-row{ flex:0 1 auto; min-width:0; }
@@ -588,7 +640,7 @@ border-top:3px dashed var(--road-path);
 .game-root .map-panel:has(.compare-wrap.is-split) .playback-bar{ width:var(--split-map); max-width:100%; margin:0 auto; }
 .game-root .algo-canvas{
 flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
-color:var(--text-soft); font-size:14px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
+color:var(--text-soft); font-size:16px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
 border-radius:8px; /* slightly rounded map corners (overflow:hidden clips the map to them) */
 position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
 user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
@@ -628,10 +680,10 @@ opacity:var(--disc-opacity); /* one transparency for all states (colours themsel
 position:absolute; left:0; top:0; white-space:nowrap; pointer-events:none;
 color:#fff; letter-spacing:.5px;
 /* --label-font is set per frame from zoom (script.js); initials show larger */
-font-size:calc(var(--label-font, 13px) * 1.6);
+font-size:calc(var(--label-font, 15px) * 1.6);
 text-shadow:1px 0 #222, -1px 0 #222, 0 1px #222, 0 -1px #222;
 }
-.game-root .node-label.full{ font-size:var(--label-font, 13px); } /* hovered / tapped: full city name */
+.game-root .node-label.full{ font-size:var(--label-font, 15px); } /* hovered / tapped: full city name */
 /* Distance badges: one km chip per road at its midpoint (script.js:
 	makeDistanceLayer). Text grows with zoom via --km-font. Explored roads use
 	the road-tree colour, final-path roads the road-path colour. */
@@ -677,7 +729,7 @@ font-size:13px; cursor:pointer; transition:opacity .2s;
 /* Usage hint along the bottom of each map; fades out for good once either map is moved */
 .game-root .map-hint{
 position:absolute; left:0; right:0; bottom:10px; z-index:20; margin:0; padding:0 12px;
-text-align:center; font-size:15px; color:#555; opacity:.75;
+text-align:center; font-size:16px; color:#555; opacity:.75;
 pointer-events:none; transition:opacity .6s ease;
 }
 .game-root .map-hint.hidden{ opacity:0; }
@@ -796,24 +848,24 @@ scrollbar-width:thin; scrollbar-color:#c9893f rgba(255,255,255,.35); /* track: w
 .game-root::-webkit-scrollbar{ width:8px; }
 .game-root::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
 .game-root::-webkit-scrollbar-track{ background:transparent; }
-.game-root .stats-title{ text-align:center; margin:0 0 4px; font-size:22px; }
-.game-root .stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:16px; }
+.game-root .stats-title{ text-align:center; margin:0 0 4px; font-size:24px; }
+.game-root .stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:17px; }
 .game-root .stats-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .game-root .stats-col{ display:flex; flex-direction:column; gap:8px; min-width:0; }
 .game-root .stats-head{
 display:flex; align-items:center; gap:8px; padding:6px 8px; min-width:0;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:16px; color:#4a3a20;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:18px; color:#4a3a20;
 }
 .game-root .stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
 .game-root .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
 /* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
 .game-root .stats-card h3{
-margin:0 0 6px; padding-bottom:4px; font-size:16px; letter-spacing:1px; text-transform:uppercase;
+margin:0 0 6px; padding-bottom:4px; font-size:17px; letter-spacing:1px; text-transform:uppercase;
 color:#4a3a20; font-weight:bold; border-bottom:2px solid #c9893f;
 }
 .game-root .stat-row{
 display:flex; align-items:center; justify-content:space-between; gap:6px;
-padding:4px 0; font-size:16px; border-bottom:1px solid rgba(120,70,20,.15);
+padding:4px 0; font-size:17px; border-bottom:1px solid rgba(120,70,20,.15);
 }
 .game-root .stat-row:last-child{ border-bottom:none; }
 .game-root .stat-row > span{ color:#5a4630; white-space:nowrap; } /* label: darker than --text-soft for readability */
@@ -824,7 +876,7 @@ padding:4px 0; font-size:16px; border-bottom:1px solid rgba(120,70,20,.15);
 .game-root .stat-row > b.better{ color:#fff; background:var(--better); padding-left:6px; } /* winning value chip */
 .game-root .no-caps{ text-transform:none; } /* keep µ from uppercasing into a Greek capital mu */
 .game-root .stat-row .katex{ font-size:1em; }
-.game-root .stats-caption{ font-size:13px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
+.game-root .stats-caption{ font-size:14px; color:#5a4630; text-align:center; margin:10px 0 0; line-height:1.5; }
 @media (max-width:1200px){
 .game-root .map-row{ grid-template-columns:1fr; } /* not enough width for map + sidebar: stack */
 .game-root .map-row{ --split-map:calc((100cqw - 2 * (var(--frame) + 8px) - 12px) / 2); }
@@ -844,7 +896,7 @@ padding:4px 0; font-size:16px; border-bottom:1px solid rgba(120,70,20,.15);
 .game-root{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
 
 .game-root .compare-wrap{ flex-direction:column; }
-.game-root .algo-canvas{ min-height:200px; font-size:13px; text-align:center; padding:10px; }
+.game-root .algo-canvas{ min-height:200px; font-size:14px; text-align:center; padding:10px; }
 .game-root .map-panel .algo-canvas{ min-height:260px; }
 .game-root .map-row:has(.compare-wrap:not(.is-split)){ justify-items:stretch; }
 .game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:auto; }
@@ -857,28 +909,31 @@ padding:4px 0; font-size:16px; border-bottom:1px solid rgba(120,70,20,.15);
 
 .game-root .algo-box{ justify-content:center; } /* A pill / VS / B pill stack on phones */
 .game-root .control-row .select-wrap, .game-root .control-row input[type=number]{ flex:1; min-width:90px; }
-.game-root .control-row .select-wrap select{ width:100%; }
+.game-root .control-row .select-wrap .dd-btn{ width:100%; }
+.game-root .route-box{ flex:1 1 100%; } /* full width so city names fit the larger font */
+.game-root .algo-box .lane-pill{ flex-basis:100%; } /* buttons size to their text (not the longest option like a select): keep one pill per row */
 }
 
 /* ===================== BUTTON HOVER / PRESS / FOCUS =====================
 	Every button: lifts 2px and brightens on hover, presses back down and
 	darkens on click. Keyboard focus gets the same lift plus a brown outline. */
-.game-root #randomBtn, .game-root .select-wrap, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset, .game-root .theme-toggle, .game-root .bread-btn{
+.game-root #randomBtn, .game-root .dd-btn, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset, .game-root .theme-toggle, .game-root .bread-btn{
 transition:transform .12s ease, filter .12s ease, opacity .2s;
 }
-.game-root #randomBtn:hover, .game-root .select-wrap:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover, .game-root .theme-toggle:hover, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:hover, .game-root .bread-btn:focus-visible,.game-root #randomBtn:focus-visible, .game-root .select-wrap:has(select:focus-visible), .game-root .tool-toggle:focus-visible,.game-root .tool-toggle:has(input:focus-visible), .game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible{
+.game-root #randomBtn:hover, .game-root .dd-btn:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover, .game-root .theme-toggle:hover, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:hover, .game-root .bread-btn:focus-visible,.game-root #randomBtn:focus-visible, .game-root .dd-btn:focus-visible, .game-root .tool-toggle:focus-visible,.game-root .tool-toggle:has(input:focus-visible), .game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible{
 transform:translateY(-2px); filter:brightness(1.1);
 }
-.game-root #randomBtn:active, .game-root .select-wrap:active, .game-root .tool-toggle:active,.game-root .playback-row button:active, .game-root .tab-btn:active, .game-root .map-reset:active, .game-root .theme-toggle:active, .game-root .bread-btn:active{
+.game-root #randomBtn:active, .game-root .dd-btn:active, .game-root .tool-toggle:active,.game-root .playback-row button:active, .game-root .tab-btn:active, .game-root .map-reset:active, .game-root .theme-toggle:active, .game-root .bread-btn:active{
 transform:translateY(0); filter:brightness(.9);
 }
-.game-root #randomBtn:focus-visible, .game-root select:focus-visible,.game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:focus-visible{
+.game-root #randomBtn:focus-visible, .game-root .dd-btn:focus-visible,.game-root .playback-row button:focus-visible, .game-root .tab-btn:focus-visible, .game-root .map-reset:focus-visible, .game-root .theme-toggle:focus-visible, .game-root .bread-btn:focus-visible{
 outline:2px solid #4a3a20; outline-offset:2px;
 }
 /* Start/Pause while playing is already darkened: keep it darker than idle on hover */
 .game-root #playBtn.playing:hover, .game-root #playBtn.playing:focus-visible{ filter:brightness(.85); }
 .game-root #playBtn.playing:active{ filter:brightness(.7); }
 @media (prefers-reduced-motion: reduce){
-.game-root #randomBtn, .game-root .select-wrap, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset{ transition:none; }
-.game-root #randomBtn:hover, .game-root .select-wrap:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover{ transform:none; }
+.game-root #randomBtn, .game-root .dd-btn, .game-root .tool-toggle, .game-root .playback-row button, .game-root .tab-btn, .game-root .map-reset{ transition:none; }
+.game-root #randomBtn:hover, .game-root .dd-btn:hover, .game-root .tool-toggle:hover,.game-root .playback-row button:hover, .game-root .tab-btn:hover, .game-root .map-reset:hover{ transform:none; }
+.game-root .dd-list, .game-root .theme-menu{ animation:none; }
 }

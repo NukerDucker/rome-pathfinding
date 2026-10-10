@@ -5,6 +5,7 @@ import { Fragment } from 'react'
 import { ALGORITHMS, type AlgoMeta } from '@/search'
 import { CITIES, type NodeId } from '@/romania'
 import { ALGO_OPTIONS, LM_SHORT, type Lane, type LaneState } from '@/game/useGameState'
+import GameSelect from '@/game/GameSelect'
 
 type Props = {
   start: NodeId
@@ -46,6 +47,9 @@ function landmarkValue(meta: AlgoMeta, l: LaneState): string {
   return l.custom.length > 0 ? 'custom' : l.count
 }
 
+const CITY_OPTIONS: [string, string][] = CITIES.map((c) => [c, c])
+const ALGO_SELECT_OPTIONS: [string, string][] = ALGO_OPTIONS.map(([key, meta]) => [key, meta.label])
+
 export default function GameControls(props: Props) {
   const metaA = ALGORITHMS[props.algoA]
   const metaB = ALGORITHMS[props.algoB]
@@ -58,33 +62,23 @@ export default function GameControls(props: Props) {
     <>
       <div className="top-row">
         <div className="section control-row route-box" role="group" aria-label="Route selection">
-          <span className="select-wrap">
-            <select
-              id="fromSelect"
-              className="city-select"
-              aria-label="Start city"
-              value={props.start}
-              onChange={(e) => props.onStart(e.target.value as NodeId)}
-            >
-              {CITIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </span>
+          <GameSelect
+            id="fromSelect"
+            className="city-select"
+            ariaLabel="Start city"
+            value={props.start}
+            options={CITY_OPTIONS}
+            onChange={(v) => props.onStart(v as NodeId)}
+          />
           <span className="route-arrow" aria-hidden="true">&#8594;</span>
-          <span className="select-wrap">
-            <select
-              id="toSelect"
-              className="city-select"
-              aria-label="Goal city"
-              value={props.goal}
-              onChange={(e) => props.onGoal(e.target.value as NodeId)}
-            >
-              {CITIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </span>
+          <GameSelect
+            id="toSelect"
+            className="city-select"
+            ariaLabel="Goal city"
+            value={props.goal}
+            options={CITY_OPTIONS}
+            onChange={(v) => props.onGoal(v as NodeId)}
+          />
           <button className="icon-btn" id="randomBtn" title="Random From/To" type="button" onClick={props.onRandom}>&#127922;</button>
         </div>
 
@@ -97,40 +91,30 @@ export default function GameControls(props: Props) {
               {lane === 'B' && <span className="divider-vs">VS</span>}
               <div className="lane-pill">
                 <img className="lane-sign" src={`/assets/NavigationBar/${lane} sign.png`} alt={lane} />
-              <span className="select-wrap">
-                <select
-                  id={`algo${lane}Select`}
-                  className="algo-select"
-                  aria-label={`Algorithm for lane ${lane}`}
-                  value={laneAlgo[lane]}
-                  onChange={(e) => props.onAlgo(lane, e.target.value)}
-                >
-                  {ALGO_OPTIONS.map(([key, meta]) => (
-                    <option key={key} value={key}>{meta.label}</option>
-                  ))}
-                </select>
-              </span>
+              <GameSelect
+                id={`algo${lane}Select`}
+                className="algo-select"
+                ariaLabel={`Algorithm for lane ${lane}`}
+                value={laneAlgo[lane]}
+                options={ALGO_SELECT_OPTIONS}
+                onChange={(v) => props.onAlgo(lane, v)}
+              />
               {/* Landmark dropdown: 2/4/8 for algorithms that need landmarks; Off/2/4/8 (visual overlay only)
                   for the others; "Custom (n)" appears while map-picked landmarks are active. */}
               <div className="landmark-control" id={`landmarkControl${lane}`}>
-                <span className="select-wrap">
-                  <select
-                    className="landmark-dropdown"
-                    id={`landmarkDropdown${lane}`}
-                    aria-label={`Landmarks for lane ${lane}`}
-                    value={landmarkValue(laneMeta[lane], laneState[lane])}
-                    title={
-                      laneMeta[lane].usesLandmarks
-                        ? 'Number of landmarks this algorithm uses'
-                        : 'Optional landmark overlay (visual only, algorithm unchanged)'
-                    }
-                    onChange={(e) => props.onLandmark(lane, e.target.value)}
-                  >
-                    {landmarkOptions(laneMeta[lane], laneState[lane]).map(([value, text]) => (
-                      <option key={value} value={value}>{text}</option>
-                    ))}
-                  </select>
-                </span>
+                <GameSelect
+                  className="landmark-dropdown"
+                  id={`landmarkDropdown${lane}`}
+                  ariaLabel={`Landmarks for lane ${lane}`}
+                  value={landmarkValue(laneMeta[lane], laneState[lane])}
+                  title={
+                    laneMeta[lane].usesLandmarks
+                      ? 'Number of landmarks this algorithm uses'
+                      : 'Optional landmark overlay (visual only, algorithm unchanged)'
+                  }
+                  options={landmarkOptions(laneMeta[lane], laneState[lane])}
+                  onChange={(v) => props.onLandmark(lane, v)}
+                />
                 <span className="lm-label" aria-hidden="true">LM</span>
               </div>
               </div>

@@ -201,7 +201,7 @@ const DISC_SIZE = 44 // disc width in map image px
 const DISC_Y_SCALE = 0.6 // discs are ovals: height = width * DISC_Y_SCALE
 const LABEL_GAP = 4 // map image px between the bottom of the node disc and its label
 // City label font grows with zoom: LABEL_FONT_MIN px at 1x -> LABEL_FONT_MAX px at MAX_SCALE
-const LABEL_FONT_MIN = 13, LABEL_FONT_MAX = 26
+const LABEL_FONT_MIN = 15, LABEL_FONT_MAX = 28
 // Labels show just the city's initial (larger, see .node-label in style.css)
 // until the city is hovered (mouse within TAP_RADIUS) or tapped (touch).
 const TREE_WIDTH = 5, PATH_WIDTH = 7, ARC_WIDTH = 6 // map image px
@@ -325,7 +325,7 @@ function makeLaneOverlay(
 ): LaneOverlay {
   const svg = document.createElementNS(SVG_NS, 'svg')
   // lane-A / lane-B classes let CSS tell the lanes apart on the merged map
-  // (split discs, thin dashed lane-B roads drawn over lane A's)
+  // (split discs, dark-outlined dashed lane-B roads drawn over lane A's)
   svg.setAttribute('class', 'map-entity-layer map-svg-layer lane-' + lane)
   svg.style.zIndex = String(lane === 'B' ? 2 : 1)
   const world = document.createElementNS(SVG_NS, 'g') // map image px space
@@ -407,7 +407,11 @@ function makeLaneOverlay(
     const onPath = final && L.result.found ? pathEdgeKeys(L.result.path) : new Set<string>()
     const line = (a: NodeId, b: NodeId, cls: string, w: number): string => {
       const pa = ROAD_POSITIONS[a], pb = ROAD_POSITIONS[b]
-      return pa && pb ? `<line class="${cls}" x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke-width="${w}"/>` : ''
+      if (!pa || !pb) return ''
+      const xy = `x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}"`
+      // Lane B: a dark dashed copy underneath outlines each dash (shown on the merged map only)
+      const casing = lane === 'B' ? `<line class="road-casing" ${xy}/>` : ''
+      return casing + `<line class="${cls}" ${xy} stroke-width="${w}"/>`
     }
     let html = ''
     if (L.heat) {
@@ -492,7 +496,7 @@ function makeLaneOverlay(
    One km badge per road, at the midpoint between its two junctions, on each
    map. A badge turns "tree" (explored) or "path" (final route) when a lane
    shown on that map uses the road; on the merged map, either lane counts. */
-const KM_FONT_MIN = 12, KM_FONT_MAX = 20 // badge text px at 1x .. MAX_SCALE zoom (MIN was 10 — below the legibility floor)
+const KM_FONT_MIN = 12, KM_FONT_MAX = 22 // badge text px at 1x .. MAX_SCALE zoom (MIN was 10 — below the legibility floor)
 type DistanceLayer = { update(): void; draw(): void; dispose(): void }
 
 function makeDistanceLayer(vp: ViewportApi, synced: () => ScenerySnapshot, lanesShown: () => LaneKey[]): DistanceLayer {

@@ -106,15 +106,21 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
   let m!: Metrics
   function measure(): void {
     const r = canvas.getBoundingClientRect()
+    // Image box inside the untransformed stage, from rects (sub-pixel exact;
+    // offsetWidth/Height round, which drifts at high zoom). The old
+    // img.offsetLeft - stage.offsetLeft subtracted the canvas padding twice
+    // (img's offsetParent is the stage), misplacing every overlay by 10px on
+    // phones. The stage transform (origin 0 0) scales both rects alike.
+    const sr = stage.getBoundingClientRect(), ir = img.getBoundingClientRect()
     m = {
       left: r.left + canvas.clientLeft + stage.offsetLeft,
       top: r.top + canvas.clientTop + stage.offsetTop,
       w: stage.offsetWidth,
       h: stage.offsetHeight,
-      imgX: img.offsetLeft - stage.offsetLeft,
-      imgY: img.offsetTop - stage.offsetTop,
-      imgW: img.offsetWidth,
-      imgH: img.offsetHeight,
+      imgX: (ir.left - sr.left) / cur.s,
+      imgY: (ir.top - sr.top) / cur.s,
+      imgW: ir.width / cur.s,
+      imgH: ir.height / cur.s,
       stageLeft: stage.offsetLeft,
       stageTop: stage.offsetTop, // stage box inside the canvas
     }
