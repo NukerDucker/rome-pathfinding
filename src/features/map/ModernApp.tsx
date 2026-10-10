@@ -69,7 +69,9 @@ function ModernApp({ theme, mode, onSelectTheme, onToggleMode }: {
   const [audioReady, setAudioReady] = useState(false)
   const victoryPlayed = useRef(false)
   const themeRef = useRef(theme)
-  themeRef.current = theme
+  // Written in an effect, not during render: every read below is inside an
+  // event handler or effect, so it only ever needs the committed theme.
+  useEffect(() => { themeRef.current = theme }, [theme])
 
   const meta = ALGORITHMS[algo]
   const meta2 = ALGORITHMS[algo2]

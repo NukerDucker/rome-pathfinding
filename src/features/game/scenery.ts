@@ -13,18 +13,16 @@ import pathPositions from './data/path_positions.json'
 
 /* ===================== MAP ENTITIES =====================
    Map elements (castles, and future ones) are placed from JSON position files
-   in assets/MapElements/Coordinates/, never hardcoded here. Each file is
+   under ./data/, never hardcoded here. Each file is
      { "1": { "x": 210, "y": 594 }, "2": { ... }, ... }
    in map image pixels (same format the DevMode editor exports).
    Castles/flags use castle_positions.json, keyed by engine city name.
    Anchor is the exact centre of the image (0.5, 0.5): the middle of each
    sprite sits on its position.
 
-   Position JSON is imported through Vite (still the single source: edit the
-   file, the page hot-reloads — the copies under src/game/data/ are
-   byte-identical to assets/MapElements/Coordinates/). Sprite paths stay as
-   plain 'assets/...' strings; assetUrl() maps them to the URLs served from
-   public/ so they survive `vite build`. */
+   Position JSON is imported through Vite — edit the file and the page
+   hot-reloads. Sprite paths stay as plain 'assets/...' strings; assetUrl()
+   maps them to the URLs served from public/ so they survive `vite build`. */
 
 const CITY_POSITIONS = castlePositions as Record<NodeId, { x: number; y: number }>
 const ROAD_POSITIONS = pathPositions as Record<NodeId, { x: number; y: number }>

@@ -124,7 +124,7 @@ function reconstructPath(parent: Record<NodeId, NodeId | null>, goal: NodeId): N
   let node: NodeId | undefined = goal
   while (node !== undefined) {
     path.unshift(node)
-    const prev = parent[node]
+    const prev: NodeId | null | undefined = parent[node]
     if (prev === undefined) return []
     if (prev === null) break
     node = prev

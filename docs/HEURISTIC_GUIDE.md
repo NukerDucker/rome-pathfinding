@@ -10,14 +10,14 @@ From the assignment PDF. Violations → wrong mark.
 
 - **Only data from PDF page 2.** No other source.
 - **SLD is banned** — including as an input to derive anything else (no "SLD ÷ speed", no "SLD × factor").
-- **No GPS / real-world coords / external APIs.** `x`/`y` in `src/romania.ts` are SVG layout coords for drawing — not geography.
+- **No GPS / real-world coords / external APIs.** `x`/`y` in `src/algorithms/romania.ts` are SVG layout coords for drawing — not geography.
 - **Must be a custom heuristic** — something you derive yourself from PDF data.
 
 ---
 
 ## The SearchResult contract
 
-Every algorithm returns the same shape (`src/search.ts`):
+Every algorithm returns the same shape (`src/algorithms/search.ts`):
 
 ```ts
 export type SearchResult = {
@@ -31,11 +31,11 @@ export type SearchResult = {
 
 `App.tsx` renders `steps`, `parent`, `path` — it doesn't care which algorithm produced them.
 
-Reference implementations: `src/bfs.ts`, `src/dfs.ts`.
+Reference implementations: `src/algorithms/bfs.ts`, `src/algorithms/dfs.ts`.
 
 ---
 
-## Heuristic: Combined LP+ALT (`src/heuristic.ts`)
+## Heuristic: Combined LP+ALT (`src/algorithms/heuristic.ts`)
 
 ```ts
 h(node, goal) = max(hLP(node, goal), hALT(node, goal))
@@ -43,7 +43,7 @@ h(node, goal) = max(hLP(node, goal), hALT(node, goal))
 
 Max of admissible heuristics → admissible and tighter than either alone.
 
-### LP — Vector-Decomposition (`src/heuristic_table.ts`)
+### LP — Vector-Decomposition (`src/algorithms/heuristic_table.ts`)
 
 Offline LP: `h(a,b) = min Σ αᵢ·kmᵢ` s.t. `Σ αᵢ·vecᵢ = chord_AB`, `0 ≤ αᵢ ≤ 1`
 
@@ -52,9 +52,9 @@ Solved with scipy/HiGHS using pixel coords + road km from PDF. No SLD, no GPS.
 - Mean h/road: **0.729**
 - Admissible: 190/190 pairs ✅
 
-Values live in `HEURISTIC_TABLE` — a `Record<NodeId, Record<NodeId, number>>` lookup. `h()` reads it directly.
+Values live in `HEURISTIC_TABLE` — a `Record<string, number>` keyed `'Arad|Bucharest'`. `h()` reads it directly.
 
-### ALT — Landmarks + Triangle Inequality (`src/alt.ts`)
+### ALT — Landmarks + Triangle Inequality (`src/algorithms/alt.ts`)
 
 ```
 h(n, goal) = max_L |d(L, n) − d(L, goal)|
@@ -100,7 +100,7 @@ LP buys +0.001 over ALT alone. **Q&A answer for "why keep LP":** LP is an indepe
 
 ---
 
-## Algorithms registry (`src/search.ts`)
+## Algorithms registry (`src/algorithms/search.ts`)
 
 All algorithms wired in `ALGORITHMS`:
 
@@ -133,17 +133,17 @@ Run manually:
 
 ```bash
 bun x tsc -b
-bun run src/heuristic.ts
-bun run src/astar.ts
-bun run src/biastar.ts
+bun run src/algorithms/heuristic.ts
+bun run src/algorithms/astar.ts
+bun run src/algorithms/biastar.ts
 ```
 
 ---
 
 ## Adding a new algorithm
 
-1. Copy `src/bfs.ts` → new file. Same structure: guard clauses, `discovered` set, per-iteration `steps.push(...)`, synthetic final step, `reconstructPath`. Change only frontier data structure + pop order.
-2. Add one line to `ALGORITHMS` in `src/search.ts`.
+1. Copy `src/algorithms/bfs.ts` → new file. Same structure: guard clauses, `discovered` set, per-iteration `steps.push(...)`, synthetic final step, `reconstructPath`. Change only frontier data structure + pop order.
+2. Add one line to `ALGORITHMS` in `src/algorithms/search.ts`.
 3. Import at top of `search.ts`.
 
 That's it — `App.tsx` reads `ALGORITHMS` via `Object.entries(...)` to build the dropdown and stats panel.

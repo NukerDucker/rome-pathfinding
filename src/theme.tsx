@@ -1,5 +1,10 @@
+/* The theme model and the components that render it are deliberately
+   co-located: splitting them would touch all seven consumers for no runtime
+   benefit. The rule below only governs Fast Refresh granularity in dev —
+   editing this file triggers a full reload rather than a hot swap. */
+/* eslint-disable react-refresh/only-export-components */
 import { Moon, Rocket, Sun } from 'lucide-react'
-import { useEffect, useId, useRef, type CSSProperties } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import type { NodeId } from '@/algorithms/romania'
 import { CITIES } from '@/algorithms/romania'
@@ -539,8 +544,10 @@ export function PlanetWindow({ variant, city, nonce }: { variant: 'a' | 'b'; cit
   const p = planetFor(city, `pw${variant}${uid}`)
   // Skip the burst on first mount: entering the space theme mid-run (or returning
   // from the Guide tab) must not replay a jump while the ship is parked.
-  const firstNonce = useRef(nonce)
-  const jumping = nonce !== firstNonce.current
+  // Mount-time value, never updated: a plain ref read during render is not
+  // allowed, and state captures the same "changed since mount" comparison.
+  const [firstNonce] = useState(nonce)
+  const jumping = nonce !== firstNonce
   return (
     <div className={`planet-window planet-${variant}`} aria-hidden="true">
       {/* The scene (stars + planet) is re-mounted per jump so it can stretch. */}

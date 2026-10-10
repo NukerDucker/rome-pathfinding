@@ -2,7 +2,7 @@
 
 Romania map pathfinding visualizer — AI assignment (KMITL Year 3, 2026).
 
-**Live:** Vercel deploy | **Video:** YouTube 10–15 min demo | **Due:** 2026-10-13
+**Due:** 2026-10-13
 
 ---
 
