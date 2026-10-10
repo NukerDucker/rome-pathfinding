@@ -1,6 +1,9 @@
 // ponytail: static markup — wired in stage 4
 import type { CSSProperties } from 'react'
 import { Tex } from '@/components/Tex'
+import { Figure } from '@/components/guide/Figure'
+import { GuideNav } from '@/components/guide/GuideNav'
+import { GuideSection } from '@/components/guide/GuideSection'
 
 export default function GameGuide() {
   return (
@@ -33,25 +36,12 @@ export default function GameGuide() {
 
       {/* two columns: sticky topic list box (left) | topic boxes (right) */}
       <div className="guide-layout">
-        <nav className="section guide-nav" aria-label="Contents">
-          {/* Labels mirror the section headings verbatim, same as the modern
-              guide's NAV list — they had drifted apart. */}
-          <a href="#g-ucs">1 · Uniform-Cost Search (UCS)</a>
-          <a href="#g-astar">2 · A★: adding a guess</a>
-          <a href="#g-heuristic">3 · What a heuristic actually is</a>
-          <a href="#g-lp">4 · Our first bound: LP vector-decomposition</a>
-          <a href="#g-alt">5 · Our second bound: ALT (landmarks)</a>
-          <a href="#g-ensemble">6 · The ensemble: take the maximum</a>
-          <a href="#g-perf">7 · Does it perform better? (measured)</a>
-          <a href="#g-map">8 · Reading the maps</a>
-          <a href="#g-complexity">9 · Time and space complexity</a>
-        </nav>
+        <GuideNav className="section" />
 
         <div className="guide-sections">
 
           {/* ── 1. UCS ── */}
-          <section className="section guide-section" id="g-ucs">
-            <h3>1 · Uniform-Cost Search (UCS)</h3>
+          <GuideSection id="g-ucs" className="section">
             <p>
               Keep a <strong>frontier</strong> of nodes to explore. Always expand the node with the
               smallest known cost from the start, <Tex>{'g(n)'}</Tex>, the kilometres already driven.
@@ -69,15 +59,11 @@ export default function GameGuide() {
               and press play. Watch the visited ring sweep outward on all sides before it finally
               reaches the goal.
             </div>
-            <figure className="guide-figure" data-spec="GIF-1">
-              <img src="/gifs/ucs-cost-rings.gif" alt="UCS cost contours spreading outward" loading="lazy" />
-              <figcaption>UCS expands in expanding cost rings, blind to the goal.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/ucs-cost-rings.gif" alt="UCS cost contours spreading outward" caption="UCS expands in expanding cost rings, blind to the goal." spec="GIF-1" />
+          </GuideSection>
 
           {/* ── 2. A* ── */}
-          <section className="section guide-section" id="g-astar">
-            <h3>2 · A★: adding a guess</h3>
+          <GuideSection id="g-astar" className="section">
             <p>
               A★ keeps the same <Tex>{'g(n)'}</Tex> but adds a <strong>heuristic</strong>
               <Tex>{'h(n)'}</Tex>: our estimate of the remaining cost from <Tex>{'n'}</Tex> to the goal.
@@ -105,15 +91,11 @@ export default function GameGuide() {
               <strong>B</strong> = <em>UCS</em>. Compare <em>Visited</em> and <em>Generated</em> in the
               table: same optimal 418 km, far fewer nodes explored.
             </div>
-            <figure className="guide-figure" data-spec="GIF-2">
-              <img src="/gifs/astar-vs-ucs.gif" alt="A* reaching the goal while UCS spreads outward" loading="lazy" />
-              <figcaption>A★ uses h to head for the goal; UCS can't.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/astar-vs-ucs.gif" alt="A* reaching the goal while UCS spreads outward" caption="A★ uses h to head for the goal; UCS can't." spec="GIF-2" />
+          </GuideSection>
 
           {/* ── 3. Heuristic ── */}
-          <section className="section guide-section" id="g-heuristic">
-            <h3>3 · What a heuristic actually is</h3>
+          <GuideSection id="g-heuristic" className="section">
             <p>
               A heuristic <Tex>{'h(n)'}</Tex> is a cheap estimate of the cost still to go, computed
               <em>without</em> solving the rest of the search. Two properties matter:
@@ -142,15 +124,11 @@ export default function GameGuide() {
               distance (SLD), but the rules ban SLD and GPS. So we build our own bounds from the
               <em>road kilometre values alone</em>. Two methods, then we combine them.
             </div>
-            <figure className="guide-figure" data-spec="GIF-3">
-              <img src="/gifs/admissible-consistent.gif" alt="h stays below the true distance; consistency across an edge" loading="lazy" />
-              <figcaption>Admissible = h never pokes above the true cost. Consistent = it can only rise by as much as a road costs.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/admissible-consistent.gif" alt="h stays below the true distance; consistency across an edge" caption="Admissible = h never pokes above the true cost. Consistent = it can only rise by as much as a road costs." spec="GIF-3" />
+          </GuideSection>
 
           {/* ── 4. LP ── */}
-          <section className="section guide-section" id="g-lp">
-            <h3>4 · Our first bound: LP vector-decomposition</h3>
+          <GuideSection id="g-lp" className="section">
             <p>
               Draw each road as a little arrow (a vector) whose length is its real kilometre value,
               laid out using the map's schematic pixel coordinates. To get from <Tex>{'a'}</Tex> to
@@ -172,15 +150,11 @@ export default function GameGuide() {
               Measured alone, LP is a valid but <em>loose</em> bound: mean <Tex>{'h/\\text{road} \\approx 0.68'}</Tex>.
               Useful, but we can do better.
             </div>
-            <figure className="guide-figure" data-spec="GIF-4">
-              <img src="/gifs/lp-vector-decomposition.gif" alt="The chord decomposed into road vectors" loading="lazy" />
-              <figcaption>The chord a→b rewritten as a combination of road vectors; the LP prices that combination.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/lp-vector-decomposition.gif" alt="The chord decomposed into road vectors" caption="The chord a→b rewritten as a combination of road vectors; the LP prices that combination." spec="GIF-4" />
+          </GuideSection>
 
           {/* ── 5. ALT ── */}
-          <section className="section guide-section" id="g-alt">
-            <h3>5 · Our second bound: ALT (landmarks)</h3>
+          <GuideSection id="g-alt" className="section">
             <p>
               Pick a few <strong>landmark</strong> cities <Tex>{'L'}</Tex>, far-flung corners of the map.
               Then precompute the true shortest road distance <Tex>{'d(L,n)'}</Tex> from each landmark to
@@ -213,19 +187,12 @@ export default function GameGuide() {
               <Tex>{'|d(L,n) - d(L,goal)| = d(n, goal)'}</Tex>. That is why, e.g., landmark Eforie
               gives a perfect estimate when the goal is Hirsova.
             </div>
-            <figure className="guide-figure" data-spec="GIF-5">
-              <img src="/gifs/alt-triangle-inequality.gif" alt="Triangle inequality via a landmark" loading="lazy" />
-              <figcaption>Any real route through the landmark is at least as long as the difference the landmark certifies.</figcaption>
-            </figure>
-            <figure className="guide-figure" data-spec="GIF-8">
-              <img src="/gifs/alt-worked-example.gif" alt="A landmark's own route to the goal, with the two legs of the bound added up" loading="lazy" />
-              <figcaption>One landmark priced end to end: the shared node→goal path is 80 + 99 = 179 km, the bound this landmark contributes.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/alt-triangle-inequality.gif" alt="Triangle inequality via a landmark" caption="Any real route through the landmark is at least as long as the difference the landmark certifies." spec="GIF-5" />
+            <Figure src="/gifs/alt-worked-example.gif" alt="A landmark's own route to the goal, with the two legs of the bound added up" caption="One landmark priced end to end: the shared node→goal path is 80 + 99 = 179 km, the bound this landmark contributes." spec="GIF-8" />
+          </GuideSection>
 
           {/* ── 6. Ensemble ── */}
-          <section className="section guide-section" id="g-ensemble">
-            <h3>6 · The ensemble: take the maximum</h3>
+          <GuideSection id="g-ensemble" className="section">
             <p>
               We have two admissible bounds that come from <em>different evidence</em>. Combine them
               by taking whichever is larger:
@@ -258,15 +225,11 @@ export default function GameGuide() {
               (<em>complete</em>). So the ensemble is correct by construction: it never depends on the
               two bounds agreeing, only on each one being optimistic.
             </div>
-            <figure className="guide-figure" data-spec="GIF-6">
-              <img src="/gifs/ensemble-max.gif" alt="Two lower bounds, the larger one wins" loading="lazy" />
-              <figcaption>Each bound certifies “the answer is at least this much”; the max keeps the strongest certificate.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/ensemble-max.gif" alt="Two lower bounds, the larger one wins" caption="Each bound certifies “the answer is at least this much”; the max keeps the strongest certificate." spec="GIF-6" />
+          </GuideSection>
 
           {/* ── 7. Performance ── */}
-          <section className="section guide-section" id="g-perf">
-            <h3>7 · Does it perform better? (measured)</h3>
+          <GuideSection id="g-perf" className="section">
             <p>
               An independent evaluation re-ran everything over all 380 ordered city pairs with its
               own Dijkstra oracle and a standard A★. Two things matter:
@@ -308,15 +271,11 @@ export default function GameGuide() {
               landmark choice. Zero admissibility violations and zero wrong optimal costs were
               measured for every variant.
             </p>
-            <figure className="guide-figure" data-spec="GIF-7">
-              <img src="/gifs/ensemble-performance.gif" alt="Bars: informedness and expansions across heuristics" loading="lazy" />
-              <figcaption>Informedness rises and expansions fall as the heuristic tightens; the ensemble tops it off.</figcaption>
-            </figure>
-          </section>
+            <Figure src="/gifs/ensemble-performance.gif" alt="Bars: informedness and expansions across heuristics" caption="Informedness rises and expansions fall as the heuristic tightens; the ensemble tops it off." spec="GIF-7" />
+          </GuideSection>
 
           {/* ── 8. Reading the maps (describes this app's controls) ── */}
-          <section className="section guide-section" id="g-map">
-            <h3>8 · Reading the maps</h3>
+          <GuideSection id="g-map" className="section">
             <p>
               <strong>Two lanes.</strong> Pick any two algorithms in the algorithm box, lane
               <strong>A</strong> and lane <strong>B</strong>, and run them on the same From → To route.
@@ -341,11 +300,10 @@ export default function GameGuide() {
               Landmarks tool sets that city for both lanes; with Merge off, click on map A or map B to
               set it for that lane only.
             </p>
-          </section>
+          </GuideSection>
 
           {/* ── 9. Complexity ── */}
-          <section className="section guide-section" id="g-complexity">
-            <h3>9 · Time and space complexity</h3>
+          <GuideSection id="g-complexity" className="section">
             <p>
               Two costs, and they behave differently. <strong>Time</strong> is how many nodes the
               search expands before it settles the goal — one expansion per pop from the frontier.{' '}
@@ -390,7 +348,7 @@ export default function GameGuide() {
               to 0.99. The tables never change after precomputation, so they are pure overhead paid up
               front, not per expansion.
             </div>
-          </section>
+          </GuideSection>
 
           <p className="guide-foot">
             Guide based on the implementation in <code>src/</code>. Measurements: see{' '}

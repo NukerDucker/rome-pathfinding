@@ -1049,6 +1049,10 @@ html.theme-anim *::after {
   letter-spacing: -0.02em;
   line-height: 1.2;
   color: var(--text-h);
+  /* It is an h2 now (it was a span, which left the page with no h2 between the
+     app's h1 and the h3 sections). The .guide-head flex column already sets the
+     gap, so kill the heading's default margins. */
+  margin: 0;
 }
 .guide-eyebrow {
   font-family: var(--mono);
