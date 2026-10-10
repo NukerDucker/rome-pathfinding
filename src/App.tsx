@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
-import ModernApp from '@/components/ModernApp'
-import GameApp from '@/game/GameApp'
+import ModernApp from '@/features/map/ModernApp'
+import GameApp from '@/features/game/GameApp'
 import { THEME_META, THEME_ORDER, applyTheme, initialTheme, type Theme } from '@/theme'
 
 // Imported LAST on purpose: .game-root ties :root on specificity (0,1,0),
 // so CSS order decides the token collisions (see plan §6).
-import '@/game/game.css'
+import '@/styles/game.css'
 
 type UiMode = 'modern' | 'game'
 const MODE_KEY = 'ui-mode'

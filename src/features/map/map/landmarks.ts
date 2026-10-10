@@ -1,5 +1,5 @@
-import type { NodeId } from '@/romania'
-import { LANDMARK_PRESETS } from '@/alt'
+import type { NodeId } from '@/algorithms/romania'
+import { LANDMARK_PRESETS } from '@/algorithms/alt'
 
 export type LandmarkCount = 'lm2' | 'lm4' | 'lm8'
 export const LM_OPTIONS: { value: LandmarkCount; label: string }[] = [

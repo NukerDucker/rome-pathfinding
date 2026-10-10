@@ -5,8 +5,8 @@
 // `state` object and the DOM control readers.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import katex from 'katex'
-import { ALGORITHMS, pathCost, type AlgoMeta, type SearchResult } from '@/search'
-import { CITIES, cityCode, type NodeId } from '@/romania'
+import { ALGORITHMS, pathCost, type AlgoMeta, type SearchResult } from '@/algorithms/search'
+import { CITIES, cityCode, type NodeId } from '@/algorithms/romania'
 import {
   altHWith,
   restoreALTState,
@@ -14,9 +14,9 @@ import {
   setALTPreset,
   setCustomLandmarks,
   type LandmarkPreset,
-} from '@/heuristic'
-import { LANDMARK_PRESETS } from '@/alt'
-import { cached, gameBenchCache, heatCache, lmEffectCache } from '@/game/benchCache'
+} from '@/algorithms/heuristic'
+import { LANDMARK_PRESETS } from '@/algorithms/alt'
+import { cached, gameBenchCache, heatCache, lmEffectCache } from '@/lib/benchCache'
 
 export const BENCH_ITERS = 400
 export const MAX_DELAY = 1500 // speed slider max; step delay = MAX_DELAY - slider value

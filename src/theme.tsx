@@ -1,8 +1,8 @@
 import { Moon, Rocket, Sun } from 'lucide-react'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import type { NodeId } from './romania'
-import { CITIES } from './romania'
+import type { NodeId } from '@/algorithms/romania'
+import { CITIES } from '@/algorithms/romania'
 
 // ── Theme model ─────────────────────────────────────────────────────────────
 // Four themes, cycled by the masthead button. `dnd` shows the illustrated map

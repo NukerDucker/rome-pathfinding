@@ -4,8 +4,8 @@
 // The 17-metric `cols` array below is the graded contract for the modern UI —
 // it is moved verbatim from ModernApp.tsx and must not be edited in place.
 import type { ReactNode } from 'react'
-import { cityCode, type NodeId } from '@/romania'
-import { pathCost, type Step, type AlgoMeta, type SearchResult } from '@/search'
+import { cityCode, type NodeId } from '@/algorithms/romania'
+import { pathCost, type Step, type AlgoMeta, type SearchResult } from '@/algorithms/search'
 import { Tex } from '@/components/Tex'
 import { BENCH_ITERS, type CompareRow } from './bench'
 import { laneLmSuffix, type LandmarkCount } from './landmarks'

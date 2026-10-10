@@ -1,8 +1,8 @@
 // Map-derived values that the modern shell needs but the SVG renderers do not:
 // random route selection, normalized h-values, and the step move count.
-import { CITIES, type NodeId } from '@/romania'
-import { type Step } from '@/search'
-import { altHWith, type LandmarkPreset } from '@/heuristic'
+import { CITIES, type NodeId } from '@/algorithms/romania'
+import { type Step } from '@/algorithms/search'
+import { altHWith, type LandmarkPreset } from '@/algorithms/heuristic'
 
 export function randomPair(): { start: NodeId; goal: NodeId } {
   const start = CITIES[Math.floor(Math.random() * CITIES.length)]

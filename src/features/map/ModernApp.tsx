@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { type NodeId } from '@/romania'
-import { ALGORITHMS } from '@/search'
-import { type LandmarkPreset } from '@/heuristic'
+import { type NodeId } from '@/algorithms/romania'
+import { ALGORITHMS } from '@/algorithms/search'
+import { type LandmarkPreset } from '@/algorithms/heuristic'
 import { Guide } from '@/components/Guide'
 // Shared with the game guide (which passes no argument and gets #tabGuide).
 import { attachGuideExtras } from '@/components/guide/guideScrollSpy'
@@ -15,7 +15,7 @@ import {
   playDice, playExpand, playVictory,
   playCrow, playOwl, playGlitter, playWhoosh, playLaser,
   startCeltic, stopCeltic, startSpaceHum, stopSpaceHum,
-} from '@/audio'
+} from '@/features/map/audio'
 import { type LandmarkCount } from './map/landmarks'
 import { benchmarkOne, landmarkEffect, withAltConfig } from './map/bench'
 import { StatsSidebar } from './map/StatsSidebar'
@@ -27,8 +27,8 @@ import { AlgorithmCard } from './map/AlgorithmCard'
 import { ToolbarRow } from './map/ToolbarRow'
 import { MapStage } from './map/MapStage'
 import { DEFAULT_DELAY } from './map/PlaybackBar'
-import '../App.css'
-import '../themes.css'
+import '@/styles/app.css'
+import '@/styles/themes.css'
 
 function ModernApp({ theme, mode, onSelectTheme, onToggleMode }: {
   theme: Theme

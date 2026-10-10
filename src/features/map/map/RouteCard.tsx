@@ -1,6 +1,6 @@
 // Route selection card: start city, goal city, randomize.
 import { Dices } from 'lucide-react'
-import { CITIES, type NodeId } from '@/romania'
+import { CITIES, type NodeId } from '@/algorithms/romania'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 

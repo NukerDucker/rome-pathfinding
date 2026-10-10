@@ -1,6 +1,6 @@
 // Wired in stage 3: transport + pixel slider, all state from useGameState.
 import type { CSSProperties } from 'react'
-import { MAX_DELAY } from '@/game/useGameState'
+import { MAX_DELAY } from '@/features/game/useGameState'
 
 type Props = {
   playing: boolean

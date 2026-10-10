@@ -5,8 +5,8 @@
    the Merge/Distance toggles); dispose() undoes every listener, node and object
    URL so StrictMode remounts stay clean. */
 
-import { CITIES, cityCode, ROMANIA, type NodeId } from '@/romania'
-import type { SearchResult, Step } from '@/search'
+import { CITIES, cityCode, ROMANIA, type NodeId } from '@/algorithms/romania'
+import type { SearchResult, Step } from '@/algorithms/search'
 import { createViewport, type ViewportApi } from './viewport'
 import castlePositions from './data/castle_positions.json'
 import pathPositions from './data/path_positions.json'

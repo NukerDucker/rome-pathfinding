@@ -2,10 +2,10 @@
 // from useGameState. Ids and structure mirror the source exactly (script.js
 // queried them); the port keeps them for landmark-picking and tests.
 import { Fragment } from 'react'
-import { ALGORITHMS, type AlgoMeta } from '@/search'
-import { CITIES, type NodeId } from '@/romania'
-import { ALGO_OPTIONS, LM_SHORT, type Lane, type LaneState } from '@/game/useGameState'
-import GameSelect from '@/game/GameSelect'
+import { ALGORITHMS, type AlgoMeta } from '@/algorithms/search'
+import { CITIES, type NodeId } from '@/algorithms/romania'
+import { ALGO_OPTIONS, LM_SHORT, type Lane, type LaneState } from '@/features/game/useGameState'
+import GameSelect from '@/features/game/GameSelect'
 
 type Props = {
   start: NodeId

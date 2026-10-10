@@ -2,8 +2,8 @@
 // discs, wood/planet surfaces) and the two mountings — per-lane `SVGMap` and the
 // merged `MergedSVGMap`. Pure render: all state arrives as props.
 import { useId, type CSSProperties, type ReactNode } from 'react'
-import { CITIES, ROMANIA, cityCode, type NodeId } from '@/romania'
-import { ALGORITHMS, type Step, type SearchResult } from '@/search'
+import { CITIES, ROMANIA, cityCode, type NodeId } from '@/algorithms/romania'
+import { ALGORITHMS, type Step, type SearchResult } from '@/algorithms/search'
 import { planetFor, type PlanetInfo } from '@/theme'
 
 type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'

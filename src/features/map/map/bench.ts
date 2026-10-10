@@ -1,7 +1,7 @@
-import type { NodeId } from '@/romania'
-import { pathCost, type AlgoMeta } from '@/search'
-import { setALTPreset, setCustomLandmarks, saveALTState, restoreALTState, type LandmarkPreset } from '@/heuristic'
-import { cached, lmEffectCache, modernBenchCache } from '@/game/benchCache'
+import type { NodeId } from '@/algorithms/romania'
+import { pathCost, type AlgoMeta } from '@/algorithms/search'
+import { setALTPreset, setCustomLandmarks, saveALTState, restoreALTState, type LandmarkPreset } from '@/algorithms/heuristic'
+import { cached, lmEffectCache, modernBenchCache } from '@/lib/benchCache'
 
 export const BENCH_ITERS = 400
 

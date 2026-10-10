@@ -17,9 +17,9 @@
 //     finite bestG), including the start. Matches the repo's SearchResult.generated.
 //   * Frontier tie-break on equal f: first entry encountered by the linear scan.
 
-import { ROMANIA, CITIES, type NodeId } from '../src/romania'
-import { hLP, h } from '../src/heuristic'
-import { hALT2, hALT4, hALT8, ALL_CITY_DIST } from '../src/alt'
+import { ROMANIA, CITIES, type NodeId } from '../src/algorithms/romania'
+import { hLP, h } from '../src/algorithms/heuristic'
+import { hALT2, hALT4, hALT8, ALL_CITY_DIST } from '../src/algorithms/alt'
 
 // ---------------------------------------------------------------------------
 // My own Dijkstra (independent of src/alt.ts)

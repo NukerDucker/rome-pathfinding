@@ -1,5 +1,5 @@
 // Standard AIMA "Map of Romania" — 20 cities, 23 roads. No straight-line
-// distance data (SLD is banned as a heuristic input — see HEURISTIC_GUIDE.md).
+// distance data (SLD is banned as a heuristic input — see docs/HEURISTIC_GUIDE.md).
 
 export type NodeId = string
 export type Edge = { to: NodeId; km: number }

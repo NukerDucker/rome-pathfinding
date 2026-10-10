@@ -1,8 +1,8 @@
 // The map stage: the split lane pair or the merged map, the node-state legend,
 // the playback transport, and the stats sidebar slot.
 import { type ReactNode } from 'react'
-import { type NodeId } from '@/romania'
-import { type AlgoMeta, type SearchResult } from '@/search'
+import { type NodeId } from '@/algorithms/romania'
+import { type AlgoMeta, type SearchResult } from '@/algorithms/search'
 import { PlanetWindow, type Theme } from '@/theme'
 import { laneLandmarkCities, laneLmSuffix, type LandmarkCount } from './landmarks'
 import { SVGMap, MergedSVGMap } from './svgMap'

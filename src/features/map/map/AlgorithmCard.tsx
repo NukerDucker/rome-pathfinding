@@ -1,5 +1,5 @@
 // Per-lane algorithm selection: lane badge, algorithm select, landmark controls.
-import { ALGORITHMS } from '@/search'
+import { ALGORITHMS } from '@/algorithms/search'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LandmarkPicker } from './LandmarkPicker'
 import type { LandmarkCount } from './landmarks'

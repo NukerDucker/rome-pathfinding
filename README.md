@@ -64,29 +64,59 @@ Combined: mean h/road = **0.986** on 380 directed pairs.
 
 ## Source layout
 
+Convention: `@/` is the alias for `src/`, and every cross-directory import uses
+it — only siblings are imported relatively. `components/` holds what **both**
+UIs share; anything used by one UI lives under its own `features/` folder.
+
 ```
 src/
-  romania.ts          — graph data (edges + schematic SVG coords, no SLD)
-  search.ts           — SearchResult type, ALGORITHMS registry
-  heuristic.ts        — h() = max(hLP, hALT)
-  heuristic_table.ts  — LP lookup table (offline-solved)
-  alt.ts              — ALT landmarks, Dijkstra, makeHALTArbitrary()
-  bfs.ts / dfs.ts     — reference implementations
-  ucs.ts / biucs.ts   — cost-based uninformed search
-  greedy.ts           — greedy best-first (uses h)
-  astar.ts            — A* with LP heuristic
-  astar-alt.ts        — A* with combined LP+ALT
-  astar-alt-only.ts   — A* with ALT only
-  biastar.ts          — bidirectional A* (independent frontier bounds, reopening)
-  App.tsx                   — mode shell (modern ⇄ game) + view-transition crossfade
-  components/ModernApp.tsx  — modern UI: state, handlers, layout skeleton
-  components/map/           — modern UI parts: MapStage, StatsSidebar (the 17-metric
-                              `cols` table), chrome cards, SVG cartography, benchmark cache
-  components/Guide.tsx      — Guide tab explainer (UCS → A* → heuristic → ensemble)
-  components/Tex.tsx        — shared KaTeX inline renderer
-  game/                     — game-style UI: pixel scenery, viewport pan/zoom, animals, audio
-  App.css / themes.css      — modern layout + the light/dark/D&D/space theme layer
-  game/game.css             — game UI styles (scoped under .game-root)
+  main.tsx       — Vite entry: imports styles/index.css, renders App
+  App.tsx        — mode shell (modern ⇄ game) + view-transition crossfade
+  theme.tsx      — theme model + ThemeMenu/SpaceField/DndAurora (shared by both UIs)
+
+  algorithms/    — pure search: no React, no DOM
+    romania.ts          — graph data (edges + schematic SVG coords, no SLD)
+    search.ts           — SearchResult type, ALGORITHMS registry
+    heuristic.ts        — h() = max(hLP, hALT)
+    heuristic_table.ts  — LP lookup table (AUTO-GENERATED, see scripts/)
+    alt.ts              — ALT landmarks, Dijkstra, makeHALTArbitrary()
+    bfs.ts / dfs.ts     — reference implementations
+    ucs.ts / biucs.ts   — cost-based uninformed search
+    greedy.ts           — greedy best-first (uses h)
+    astar.ts            — A* with LP heuristic
+    astar-alt.ts        — A* with combined LP+ALT
+    astar-alt-only.ts   — A* with ALT only
+    biastar.ts          — bidirectional A* (independent frontier bounds, reopening)
+
+  features/
+    map/
+      ModernApp.tsx     — modern UI: state, handlers, layout skeleton
+      audio.ts          — synthesised modern-UI audio (Web Audio, no files)
+      map/              — modern UI parts: MapStage, StatsSidebar (the 17-metric
+                          `cols` table), chrome cards, SVG cartography, benchmark cache
+    game/               — game-style UI: pixel scenery, viewport pan/zoom, animals, audio
+      animals/          — the six easter-egg creatures (see animals/README.md)
+
+  components/    — shared across both UIs
+    Guide.tsx         — Guide tab explainer (UCS → A* → heuristic → ensemble)
+    Tex.tsx           — shared KaTeX inline renderer
+    ModeToggle.tsx    — modern ⇄ game switch
+    guide/            — Figure, GuideNav, GuideSection, scroll-spy, section registry
+    ui/               — shadcn primitives (paths pinned by components.json)
+
+  lib/
+    utils.ts          — cn()
+    benchCache.ts     — session caches for the expensive benchmark/heatmap numbers
+
+  styles/
+    index.css         — Tailwind entry (components.json points here)
+    app.css           — modern layout
+    themes.css        — light/dark/D&D/space theme layer
+    game.css          — game UI styles (scoped under .game-root)
+docs/
+  HEURISTIC_GUIDE.md  — the LP + ALT derivation and its measurements
+scripts/
+  gen_heuristic_table.py — regenerates src/algorithms/heuristic_table.ts
 eval/
   independent-eval.ts — external measurement of heuristic informedness + expansions
 tests/
