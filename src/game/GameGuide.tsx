@@ -42,6 +42,7 @@ export default function GameGuide() {
           <a href="#g-ensemble">6 · The ensemble: max(LP, ALT)</a>
           <a href="#g-perf">7 · Does it perform better?</a>
           <a href="#g-map">8 · Reading the maps</a>
+          <a href="#g-complexity">9 · Time and space complexity</a>
         </nav>
 
         <div className="guide-sections">
@@ -185,12 +186,15 @@ export default function GameGuide() {
             </p>
             <div className="guide-eq"><Tex className="tex-display">{'h_{ALT}(n, goal) = \\max_{L} \\;\\big|\\, d(L,n) - d(L, goal) \\,\\big|'}</Tex></div>
             <p>
-              This is the <strong>triangle inequality</strong> doing the work. Going through
-              <Tex>{'L'}</Tex> is one (usually longer) way to get from <Tex>{'n'}</Tex> to the goal, so
-              <Tex>{'d(n, goal) \\ge |d(L,n) - d(L,goal)|'}</Tex>. The right side never exceeds the
-              true distance, so it is admissible by construction, no empirical checking needed. It
-              uses only road kilometres. Taking the <Tex>{'\\max'}</Tex> over landmarks keeps it a lower
-              bound while making it tighter.
+              Forming a triangle over <Tex>{'n'}</Tex>, <Tex>{'L'}</Tex> and the goal, the{' '}
+              <strong>triangle inequality</strong> gives two bounds. The first,{' '}
+              <Tex>{'d(n, goal) \\le d(n,L) + d(L,goal)'}</Tex>, is an upper bound: it can exceed the
+              true distance, so it is not admissible as a heuristic. The second,{' '}
+              <Tex>{'d(n, goal) \\ge |d(n,L) - d(L,goal)|'}</Tex>, is a lower-bound term that never
+              exceeds the true optimal distance. Because it is a lower bound, taking the largest value
+              across landmarks gives the closest estimate to the true optimal distance that still never
+              overshoots it. Every term is road kilometres, so the bound never leaves the map's own edge
+              weights — nothing is measured off the page.
             </p>
             <p><strong>More landmarks, tighter bound.</strong> The app ships three presets:</p>
             <table className="guide-table">
@@ -210,6 +214,10 @@ export default function GameGuide() {
             <figure className="guide-figure" data-spec="GIF-5">
               <img src="/gifs/alt-triangle-inequality.gif" alt="Triangle inequality via a landmark" loading="lazy" />
               <figcaption>Any real route through the landmark is at least as long as the difference the landmark certifies.</figcaption>
+            </figure>
+            <figure className="guide-figure" data-spec="GIF-8">
+              <img src="/gifs/alt-worked-example.gif" alt="A landmark's own route to the goal, with the two legs of the bound added up" loading="lazy" />
+              <figcaption>One landmark priced end to end: the shared node→goal path is 80 + 99 = 179 km, the bound this landmark contributes.</figcaption>
             </figure>
           </section>
 
@@ -330,6 +338,55 @@ export default function GameGuide() {
               Landmarks tool sets that city for both lanes; with Merge off, click on map A or map B to
               set it for that lane only.
             </p>
+          </section>
+
+          {/* ── 9. Complexity ── */}
+          <section className="section guide-section" id="g-complexity">
+            <h3>9 · Time and space complexity</h3>
+            <p>
+              Two costs, and they behave differently. <strong>Time</strong> is how many nodes the
+              search expands before it settles the goal — one expansion per pop from the frontier.{' '}
+              <strong>Space</strong> is everything it holds while doing that: the frontier, the closed
+              set, and the accumulated cost of every node it has reached. On a 20-city graph both are
+              small enough to watch, which is what makes lane A against lane B worth looking at.
+            </p>
+            <p>
+              In the usual asymptotic form — <Tex>{'b'}</Tex> the branching factor, <Tex>{'d'}</Tex>{' '}
+              the depth of the shallowest goal, <Tex>{'m'}</Tex> the maximum depth, <Tex>{'C^*'}</Tex>{' '}
+              the optimal cost, <Tex>{'\\varepsilon'}</Tex> the smallest edge weight:
+            </p>
+            <table className="guide-table">
+              <thead>
+                <tr><th>Algorithm</th><th>Time</th><th>Space</th><th>Optimal</th><th>Complete</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>BFS</td><td><Tex>{'O(b^d)'}</Tex></td><td><Tex>{'O(b^d)'}</Tex></td><td>Yes*</td><td>Yes</td></tr>
+                <tr><td>DFS</td><td><Tex>{'O(b^m)'}</Tex></td><td><Tex>{'O(bm)'}</Tex></td><td>No</td><td>No*</td></tr>
+                <tr><td>UCS</td><td><Tex>{'O(b^{1+\\lfloor C^*/\\varepsilon \\rfloor})'}</Tex></td><td><Tex>{'O(b^{1+\\lfloor C^*/\\varepsilon \\rfloor})'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Greedy</td><td><Tex>{'O(b^m)'}</Tex></td><td><Tex>{'O(b^m)'}</Tex></td><td>No</td><td>No*</td></tr>
+                <tr><td>A★ (LP)</td><td><Tex>{'O(b^d)'}</Tex></td><td><Tex>{'O(b^d)'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>A★ (ALT only)</td><td><Tex>{'O(b^d)'}</Tex></td><td><Tex>{'O(b^d)'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>A★ (LP+ALT)</td><td><Tex>{'O(b^d)'}</Tex></td><td><Tex>{'O(b^d)'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Bidirectional UCS</td><td><Tex>{'O(b^{1 + C/2\\varepsilon})'}</Tex></td><td><Tex>{'O(b^{1 + C/2\\varepsilon})'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+                <tr><td>Bidirectional A★ (LP+ALT)</td><td><Tex>{'O(b^{d/2})'}</Tex></td><td><Tex>{'O(b^{d/2})'}</Tex></td><td>Yes</td><td>Yes</td></tr>
+              </tbody>
+            </table>
+            <div className="guide-note">
+              <strong>Read the A★ rows carefully.</strong> The asymptotic class is the same{' '}
+              <Tex>{'O(b^d)'}</Tex> as BFS, which makes the heuristic sound worthless on paper. It is
+              not. Class says nothing about the exponent that actually bites: an admissible{' '}
+              <Tex>{'h'}</Tex> that is close to the true distance makes the search expand a thin
+              corridor toward the goal instead of a ball around the start. The class is unchanged; the
+              constant and the effective depth are not. That gap is what section 7 measures.
+            </div>
+            <div className="guide-note">
+              <strong>What the heuristic costs in space.</strong> ALT precomputes one Dijkstra
+              distance table per landmark — <Tex>{'|L| \\times |V|'}</Tex> numbers, built once and
+              reused for every query. That is the only place a heuristic buys time with memory here:
+              eight landmarks cost eight tables, and in exchange <Tex>{'h'}</Tex>/road rises from 0.87
+              to 0.99. The tables never change after precomputation, so they are pure overhead paid up
+              front, not per expansion.
+            </div>
           </section>
 
           <p className="guide-foot">
