@@ -1367,6 +1367,44 @@ html.theme-anim *::after {
   box-sizing: border-box;
 }
 
+/* Split view: give the map area the whole row minus a fixed comparison column,
+   which is the shape the game's .map-row takes once Merge is off — its
+   `minmax(520px, 1fr)` rule is scoped to :has(.compare-wrap:not(.is-split)), so
+   unmerging grows the map column from ~456px to ~876px. Modern's 1:2 ratio
+   applies in both modes, so its unmerged lanes were being squeezed into the 1fr
+   and came out roughly half the size of the game's unmerged maps. Merged is
+   untouched, and the 1:2 ratio is what already matches the game's merged
+   proportions.
+
+   556px = the game's 520px comparison column + 36px, the difference in what
+   each UI spends on framing: the game's map panel carries 48px of wood frame
+   plus a 12px gap between its maps, while the modern lanes carry only a 24px
+   gap. Both then compute the same lane width.
+
+   Scoped to >=1201px so it cannot out-specify the stacked layout below, and to
+   match the breakpoint at which the game stops keeping a side column. */
+@media (min-width: 1201px) {
+  .app-body:has(.lanes:not(.lanes-merged)) {
+    grid-template-columns: minmax(0, 1fr) 556px;
+  }
+  /* At this width the comparison's two lane blocks get ~258px each, which
+     splits into ~123px per card — narrower than the word "Generated". Stack
+     the blocks instead, so each keeps the full column and the cards stay
+     legible. The panel is the only thing that gets taller; the maps are
+     unaffected. */
+  .app-body:has(.lanes:not(.lanes-merged)) .stats-panel .grid.grid-cols-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Grid and flex children default to min-width:auto, so a card whose content is
+   wider than its column pushes the whole panel out instead of shrinking. The
+   Landmarks card (widest row 271px) did exactly that once the comparison
+   column narrowed for the split view. Let the boxes shrink; the rows inside
+   keep their own spacing. */
+.stats-panel .ck-card,
+.stats-panel .ck-card > * { min-width: 0; }
+
 /* The SVG's own preserveAspectRatio="xMidYMid meet" fits and centres the
    drawing inside the box, so the map reflows when the sidebar opens/closes. */
 .lane-merged .map-wrap { padding: var(--sp-4); }
