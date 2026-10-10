@@ -1,7 +1,7 @@
 // ponytail: static markup — wired in stage 3
 import type { ReactNode } from 'react'
 
-export default function GameMap({ playback, children }: { playback?: ReactNode; children?: ReactNode }) {
+export default function GameMap({ playback, children, showHeat = false }: { playback?: ReactNode; children?: ReactNode; showHeat?: boolean }) {
   return (
     <div className="map-row">
       <div className="section map-panel">
@@ -30,6 +30,11 @@ export default function GameMap({ playback, children }: { playback?: ReactNode; 
                 <span className="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
                 <button className="map-reset" title="Reset view" type="button">RESET</button>
               </div>
+              <div className="heatmap-legend" aria-label="Heatmap scale" hidden={!showHeat}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </div>
               <p className="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
               {/* Peeking cat (just for fun): 1-in-10 chance on each Merge toggle, peeks up from
                   the bottom edge of a visible map; click = meow (script.js moves/animates it) */}
@@ -50,6 +55,11 @@ export default function GameMap({ playback, children }: { playback?: ReactNode; 
                 <span className="map-readout">X: 600, Y: 600, Scale: 1.0x</span>
                 <button className="map-reset" title="Reset view" type="button">RESET</button>
               </div>
+              <div className="heatmap-legend" aria-label="Heatmap scale" hidden={!showHeat}>
+                <span className="heatmap-legend-label">Near</span>
+                <span className="heatmap-legend-bar" aria-hidden="true" />
+                <span className="heatmap-legend-label">Far</span>
+              </div>
               <p className="map-hint">Drag to move map, and scroll/pinch to zoom in or out.</p>
             </div>
           </div>
@@ -64,11 +74,11 @@ export default function GameMap({ playback, children }: { playback?: ReactNode; 
           <span><span className="dot" style={{ background: 'var(--state-unvisited)' }}></span>Unvisited</span>
           <span><span className="dot dot-hollow" style={{ borderColor: 'var(--marker-start)' }}></span>Start</span>
           <span><span className="dot dot-hollow" style={{ borderColor: 'var(--marker-goal)' }}></span>Goal</span>
+          <span><span className="dot dot-landmark" style={{ borderColor: 'var(--marker-landmark)' }}></span>Landmark</span>
           {/* merged map only (script.js hides these when Merge is off) */}
           <span className="legend-merged"><span className="dot dot-split" aria-hidden="true"></span>Left A / right B</span>
           <span className="legend-merged"><svg className="road-dash" viewBox="0 0 24 10" aria-hidden="true"><line x1="3" y1="3" x2="21" y2="3" stroke="var(--road-tree)" strokeWidth="3" strokeLinecap="round" /><line x1="3" y1="7" x2="21" y2="7" stroke="var(--road-path)" strokeWidth="3" strokeLinecap="round" /></svg>Roads: explored / route</span>
         </div>
-
         {/* playback bar lives inside the map panel (source nesting, index.html 163) */}
         {playback}
       </div>

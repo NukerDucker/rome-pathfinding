@@ -82,7 +82,7 @@ export function ThemeMenu({ theme, onSelect, busy }: { theme: Theme; onSelect: (
       >
         <ThemeIcon theme={theme} />
       </SelectTrigger>
-      <SelectContent align="end">
+      <SelectContent align="end" className="theme-select-content">
         {THEME_ORDER.map((t) => (
           <SelectItem key={t} value={t}>
             <ThemeIcon theme={t} />

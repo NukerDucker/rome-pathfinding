@@ -117,8 +117,8 @@ function labelWidth(km: number): number {
 function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boolean, path: NodeId[]): NodeState {
   if (isFinalFrame && found && path.includes(node)) return 'path'
   if (node === step.current) return 'current'
-  if (step.frontier.includes(node)) return 'frontier'
   if (step.visited.includes(node)) return 'visited'
+  if (step.frontier.includes(node)) return 'frontier'
   return 'unvisited'
 }
 // ── D&D theme: wooden board-game tabletop ──────────────────────────────

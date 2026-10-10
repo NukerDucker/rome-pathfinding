@@ -31,7 +31,7 @@ export function ToolbarRow(props: ToolbarRowProps) {
           <Button
             variant={showHeatmap ? 'default' : 'outline'} size="sm"
             onClick={onToggleHeatmap} aria-pressed={showHeatmap}
-            title="h-value heatmap — stronger red = nearer the goal (lower h)"
+            title="h-value heatmap — red near the goal through yellow/green to blue farther away"
           >
             <Thermometer size={14} aria-hidden="true" /> Heatmap
           </Button>

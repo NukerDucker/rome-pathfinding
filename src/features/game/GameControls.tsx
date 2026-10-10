@@ -126,9 +126,9 @@ export default function GameControls(props: Props) {
       {/* Overlay toggles are checkboxes styled as buttons. */}
       <div className="section tools-bar" role="toolbar" aria-label="Tools">
         <label className="tool-toggle"><input type="checkbox" id="straightLineChk" checked={props.showLine} onChange={(e) => props.onShowLine(e.target.checked)} /><img src="/assets/icon-straightline.png" className="overlay-icon" alt="" />Straight Line</label>
-        <label className="tool-toggle" title="ALT h-value per city: red = near goal, blue = far"><input type="checkbox" id="heatmapChk" checked={props.showHeat} onChange={(e) => props.onShowHeat(e.target.checked)} /><img src="/assets/icon-heatmap.png" className="overlay-icon" alt="" />Heatmap</label>
+        <label className="tool-toggle" title="ALT h-value per city: red near the goal through yellow/green to blue farther away"><input type="checkbox" id="heatmapChk" checked={props.showHeat} onChange={(e) => props.onShowHeat(e.target.checked)} /><img src="/assets/icon-heatmap.png" className="overlay-icon" alt="" />Heatmap</label>
         <label className="tool-toggle" title="Road distance (km) on every road"><input type="checkbox" id="distanceChk" checked={props.showDistances} onChange={(e) => props.onShowDistances(e.target.checked)} />Distances</label>
-        <label className="tool-toggle" title="On: one merged map. Off: map A and map B side by side"><input type="checkbox" id="mergeChk" checked={props.merged} onChange={(e) => props.onMerged(e.target.checked)} />Merge</label>
+        <label className="tool-toggle" title="On: one merged map. Off: map A and map B side by side"><input type="checkbox" id="mergeChk" checked={props.merged} onChange={(e) => props.onMerged(e.target.checked)} />Merge Maps</label>
         <span className="tools-sep" aria-hidden="true"></span>
         <button
           className={`tool-toggle${props.pickLandmarks ? ' active' : ''}`}
@@ -137,7 +137,7 @@ export default function GameControls(props: Props) {
           type="button"
           onClick={props.onTogglePick}
         >
-          Landmarks: {props.pickLandmarks ? 'ON' : 'OFF'}
+          Edit Landmarks: {props.pickLandmarks ? 'ON' : 'OFF'}
         </button>
       </div>
     </>

@@ -286,7 +286,7 @@ export default function GameGuide() {
               <li><strong>Node colours:</strong> current · frontier · visited · path · unvisited, with start and goal rings (legend under the map).</li>
               <li><strong>Landmarks:</strong> each lane has a landmark dropdown. Algorithms that need landmarks choose 2 / 4 / 8; the others can pick Off / 2 / 4 / 8 to show landmarks on the map (visual only). Turn on the <em>Landmarks</em> tool and click cities to build a custom set; the dropdown then shows <em>Custom (n)</em>.</li>
               <li><strong>Distances:</strong> each road's length in km. A badge turns pink-purple when a lane has explored that road and orange-red when it is on the final route.</li>
-              <li><strong>Heatmap:</strong> each city coloured by its lane's <Tex>{'h'}</Tex>-value: red near the goal, blue far away.</li>
+              <li><strong>Heatmap:</strong> each city coloured by its lane's <Tex>{'h'}</Tex>-value: red near the goal, transitioning through yellow/green to blue farther away.</li>
               <li><strong>Straight Line:</strong> the SLD arc from start to goal that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
             </ul>
             <p>

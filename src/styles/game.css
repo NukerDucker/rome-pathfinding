@@ -21,7 +21,7 @@
 /* Search node states: shared by the legend dots and the map node discs.
    Palette: Okabe-Ito (colour-blind safe), spread from light to dark so the
    states differ in brightness as well as hue:
-   frontier (light) > visited > current > path > unvisited (dark). */
+   visited > frontier > current > path > unvisited (dark). */
 --state-current:#CC79A7; --state-frontier:#F0E442; --state-visited:#56B4E9;
 --state-path:#D55E00; --state-unvisited:#1a1a1a;
 --marker-start:#E69F00; --marker-goal:#0072B2; --marker-landmark:#ffd43b;
@@ -152,8 +152,8 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 display:flex; flex-direction:column; gap:2px;
 }
 .game-root .theme-menu button{
-display:flex; align-items:center; gap:8px; width:100%;
-padding:6px 10px; font-size:14px; text-align:left;
+display:flex; align-items:flex-start; gap:8px; width:100%; min-width:0;
+padding:6px 10px; font-size:14px; text-align:left; white-space:normal; overflow-wrap:anywhere;
 color:#4a3a20; background:none; border:none; border-radius:var(--r-sm); cursor:pointer;
 }
 .game-root .theme-menu button:hover, .game-root .theme-menu button:focus-visible{ background:rgba(201,137,63,.35); }
@@ -392,12 +392,15 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
    equation block here but had no rule in any stylesheet, so it rendered at
    inline size. */
 .game-root .guide-eq .tex-display{ font-size:1.25em; line-height:2; }
-.game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:18px; }
+.game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:16px; }
 .game-root .guide-table th{
 font-family:'Minecraft', monospace; font-size:15px; font-weight:normal; text-transform:uppercase;
 letter-spacing:1px; color:var(--text-soft); text-align:left;
 }
-.game-root .guide-table th, .game-root .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
+.game-root .guide-table th, .game-root .guide-table td{ 
+font-family:'Minecraft', monospace; font-size:16px; font-weight:normal;
+padding:5px 14px 5px 14px; border-bottom:1px solid rgba(120,70,20,.2); 
+}
 .game-root .guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
 .game-root .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:var(--r-sm); background:#fff; }
 .game-root .guide-figure figcaption{ font-size:17px; color:var(--text-soft); margin-top:6px; }
@@ -627,8 +630,21 @@ width:11px; height:11px; border-radius:50%; display:inline-block; margin-right:5
 border:1px solid #333; vertical-align:middle;
 }
 .game-root .legend-bar .dot-hollow{ background:#fff; border-width:2px; }
+.game-root .legend-bar .dot-landmark{ background:#fff; border:2px solid var(--marker-landmark); }
 .game-root .legend-bar .dot-split{ background:linear-gradient(90deg, var(--state-frontier) 50%, var(--state-visited) 50%); }
 .game-root .legend-bar .road-dash{ width:24px; height:10px; margin-right:5px; vertical-align:middle; overflow:visible; }
+.game-root .heatmap-legend{
+display:flex; align-items:center; justify-content:center; gap:8px; margin:0;
+padding:4px 8px; width:max-content; max-width:100%;
+background:rgba(255,255,255,.8); border:1px solid var(--border); border-radius:var(--r-sm);
+position:absolute; top:52px; right:8px; z-index:20; pointer-events:none;
+}
+.game-root .heatmap-legend .heatmap-legend-label{ font-size:12px; white-space:nowrap; }
+.game-root .heatmap-legend .heatmap-legend-bar{
+display:inline-block; width:100px; height:10px; border-radius:5px;
+background:linear-gradient(to right, hsl(0 85% 55%), hsl(60 85% 55%), hsl(120 85% 45%), hsl(180 85% 50%), hsl(240 85% 55%));
+border:1px solid var(--border); flex-shrink:0;
+}
 .game-root .legend-merged[hidden]{ display:none; }
 
 /* Merged map: tell the lanes apart. Each city disc is split down the middle
@@ -639,7 +655,7 @@ border:1px solid #333; vertical-align:middle;
 	Negative insets keep the landmark outline that sits outside the disc. */
 .game-root .compare-wrap:not(.is-split) .lane-A .node-disc{ clip-path:inset(-8px 50% -8px -8px); }
 .game-root .compare-wrap:not(.is-split) .lane-B .node-disc{ clip-path:inset(-8px -8px -8px 50%); }
-.game-root .playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:nowrap; } /* buttons + slider on one line, centred; the slider shrinks to fit */
+.game-root .playback-bar{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; } /* keep the controls on one line until the bar is too narrow, then wrap the speed row below */
 .game-root .playback-bar .playback-row{ margin:0; }
 .game-root .playback-bar .speed-row{ flex:0 1 auto; min-width:0; }
 /* Split view: same width as in merged view (one map wide, --split-map), centred,

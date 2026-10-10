@@ -12,6 +12,7 @@
   --marker-start: #15803d;
   --lm-ink: #a16207;
   --marker-goal: #dc2626;
+  --marker-landmark: #f0b429;
 
   --map-road: #cfcdc4;
 
@@ -55,6 +56,7 @@
   --state-path: #4ade80;
   --marker-start: #4ade80;
   --marker-goal: #f87171;
+  --marker-landmark: #f0b429;
 
   --map-road: #3c3f4b;
 
@@ -109,12 +111,14 @@
   position: relative;
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: var(--sp-5);
   align-items: start;
 
-  @media (max-width: 1100px) {
+  @media (max-width: 999px) {
     grid-template-columns: 1fr;
+    & > .lane-a,
+    & > .lane-b { grid-column: auto; }
   }
 }
 
@@ -213,6 +217,19 @@
 /* the trigger's built-in chevron has no room in a 34px square */
 .theme-picker svg.text-muted-foreground {
   display: none;
+}
+
+/* Theme names are longer than the icon-only trigger. Keep the popup wide
+   enough for the label, while still allowing it to wrap on narrow screens. */
+.theme-select-content[data-slot="select-content"] {
+  width: max-content;
+  min-width: 180px;
+  max-width: calc(100vw - 16px);
+}
+.theme-select-content [data-slot="select-item"] > :first-child {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .app-title-sep {
@@ -375,7 +392,7 @@
   box-sizing: border-box;
   align-items: start;
 
-  @media (max-width: 1100px) {
+  @media (max-width: 999px) {
     grid-template-columns: 1fr;
   }
 }
@@ -403,7 +420,7 @@
   text-transform: uppercase;
   color: var(--text);
 
-  @media (max-width: 1100px) {
+  @media (max-width: 999px) {
     display: none;
   }
 }
@@ -414,12 +431,28 @@
 .lanes-container > .lane-a { grid-column: 1; }
 .lanes-container > .lane-b { grid-column: 3; }
 
+/* When the lanes stack, clear the split-view column assignments explicitly;
+   otherwise lane A/B can remain pinned to columns 1/3 and one lane falls out
+   of the single-column layout. */
+@media (max-width: 999px) {
+  .lanes-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lanes-container > .lane-a,
+  .lanes-container > .lane-b {
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+  }
+}
+
 /* ── Lane ───────────────────────────────────────────────────────────── */
 .lane {
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border-radius: var(--radius);
+  width: 100%;
   min-width: 0;
   overflow: hidden;
 }
@@ -467,6 +500,10 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--text-h);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -760,6 +797,7 @@
 .swatch-unvisited { background: var(--bg); }
 .swatch-start-ring { background: transparent; border-color: var(--marker-start); border-width: 2px; }
 .swatch-goal-ring { background: transparent; border-color: var(--marker-goal); border-width: 2px; }
+.swatch-landmark { background: #fff; border-color: var(--marker-landmark); border-width: 2px; border-style: solid; }
 .swatch-arc { background: #f5c518; border-color: #f5c518; }
 
 /* ── Transport controls ──────────────────────────────────────────────── */
@@ -1398,6 +1436,98 @@ html.theme-anim *::after {
      unaffected. */
   .app-body:has(.lanes:not(.lanes-merged)) .stats-panel .grid.grid-cols-2 {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Split maps need the full width at smaller desktop viewports. Keep the
+   lanes and playback together in the map column, then place comparison stats
+   beneath them instead of beside lane B. */
+@media (max-width: 1300px) and (max-height: 950px) {
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .app-main {
+    overflow-y: visible;
+  }
+  .workspace > .app {
+    min-height: auto;
+    overflow: visible;
+  }
+  .app-body {
+    min-height: auto;
+    grid-template-rows: auto;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) .lanes {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) .lanes-container {
+    position: relative;
+    z-index: 1;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) .lanes,
+  .app-body:has(.lanes:not(.lanes-merged)) .lanes-container {
+    min-height: auto;
+    align-items: start;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) {
+    grid-template-columns: 1fr;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) .stats-panel {
+    contain: none;
+    overflow: visible;
+    display: block;
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    margin-top: 0;
+    border-top: 1px solid var(--border);
+    animation: none;
+  }
+  .app-body:has(.lanes:not(.lanes-merged)) .stats-panel > .compare-panel {
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  /* Apply the same normal-flow and repaint safeguards when maps are merged. */
+  .app-body:has(.lanes.lanes-merged) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .app-body:has(.lanes.lanes-merged) .lanes {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+  .app-body:has(.lanes.lanes-merged) .stats-panel {
+    contain: none;
+    overflow: visible;
+    display: block;
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    margin-top: 0;
+    border-top: 1px solid var(--border);
+    animation: none;
+  }
+  .app-body:has(.lanes.lanes-merged) .stats-panel > .compare-panel {
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+    transform: none;
+    animation: none;
   }
 }
 

@@ -58,6 +58,7 @@ function Legend() {
       <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
       <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>
       <li><span className="swatch swatch-goal-ring" aria-hidden="true" />Goal</li>
+      <li><span className="swatch swatch-landmark" aria-hidden="true" />Landmark</li>
     </ul>
   )
 }
