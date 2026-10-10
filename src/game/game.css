@@ -388,6 +388,10 @@ background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
 .game-root .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:var(--r-sm); }
+/* Display equation. <Tex className="tex-display"> is passed on every standalone
+   equation block here but had no rule in any stylesheet, so it rendered at
+   inline size. */
+.game-root .guide-eq .tex-display{ font-size:1.25em; line-height:2; }
 .game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:18px; }
 .game-root .guide-table th{
 font-family:'Minecraft', monospace; font-size:15px; font-weight:normal; text-transform:uppercase;

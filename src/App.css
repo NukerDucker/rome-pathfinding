@@ -1173,12 +1173,26 @@ html.theme-anim *::after {
     grid-row: 3;
   }
 }
-.guide p { font-size: 15px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
-.guide ul, .guide ol { margin: 0 0 var(--sp-2); padding-left: 20px; }
-.guide li { font-size: 15px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
-.guide strong { color: var(--text-h); font-weight: 650; }
-.guide code { font-size: 13px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
-.guide .katex { font-size: 1.05em; }
+/* Prose scale. These were written as `.guide p` and friends, but no element
+   carries the bare class `guide` — the article is `.guide-page` inside a
+   `.guide-page-wrap` tab panel — so every one of them matched nothing and the
+   guide rendered at the :root 18px instead of 15px.
+   Scoped to .guide-page-wrap rather than .guide-page: this file is unscoped,
+   so a bare `.guide-page p` would also restyle the game guide, and
+   .guide-page-wrap exists only in the modern tab. */
+.guide-page-wrap p { font-size: 15px; line-height: 1.6; color: var(--text); margin: 0 0 var(--sp-2); }
+.guide-page-wrap ul, .guide-page-wrap ol { margin: 0 0 var(--sp-2); padding-left: 20px; }
+.guide-page-wrap li { font-size: 15px; line-height: 1.55; color: var(--text); margin-bottom: 2px; }
+.guide-page-wrap strong { color: var(--text-h); font-weight: 650; }
+.guide-page-wrap code { font-size: 13px; line-height: 1.4; padding: 0 var(--sp-1); background: var(--code-bg); border-radius: 4px; }
+.guide-page-wrap .katex { font-size: 1.05em; }
+/* Display equation. <Tex className="tex-display"> is passed on the standalone
+   equation blocks but had no rule anywhere, so a display equation rendered at
+   inline size. Scoped under the guide so the unscoped file cannot leak it. */
+.guide-page-wrap .tex-display {
+  font-size: 1.3em;
+  line-height: 2.1;
+}
 .guide-eq {
   overflow-x: auto;
   margin: var(--sp-2) 0 var(--sp-3);
@@ -1199,8 +1213,12 @@ html.theme-anim *::after {
   margin: var(--sp-2) 0 var(--sp-3);
 }
 .guide-note strong { color: var(--text-h); font-weight: 650; }
+/* "Try it" callout. This rule was an empty placeholder, so the interactive
+   suggestion looked identical to an ordinary note. An accent edge separates
+   "go and do this" from "here is how it works". */
 .guide-try {
-  /* same as guide-note — interactive suggestion callout */
+  border-left: 3px solid var(--map-accent);
+  background: color-mix(in srgb, var(--map-accent) 7%, var(--card));
 }
 
 .guide-table {
@@ -1253,24 +1271,10 @@ html.theme-anim *::after {
 .swatch-lm-a { background: var(--map-accent); }
 .swatch-lm-b { background: var(--lane-b); }
 
-@media (max-width: 1100px) {
-  /* Below the breakpoint the guide is an overlay, not a column: hide it fully
-     when closed (a 0-width column would wrap its text into a huge scroll). */
-  .guide { display: none; }
-  .guide.guide-open {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: min(86vw, 360px);
-    height: 100vh;
-    flex-basis: auto;
-    z-index: 60;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  }
-  /* guide layout handled by .guide-body responsive grid above */
-}
+/* A slide-over guide overlay used to live here (`.guide` / `.guide.guide-open`,
+   fixed, 86vw wide). Nothing carries the bare class `guide` any more — the
+   modern guide is a tab panel and the responsive collapse is the .guide-body
+   grid at 860px above — so the whole block was dead. Removed. */
 
 /* ── Merged single-map view ────────────────────────────────────────── */
 .lanes-merged { display: flex; flex-direction: column; }

@@ -152,7 +152,7 @@
 :root.dnd .lane,
 :root.dnd .compare-panel,
 :root.dnd .stats-panel,
-:root.dnd .guide {
+:root.dnd .guide-page-wrap {
   background-image: radial-gradient(150% 120% at 0% 0%, rgba(255, 255, 255, 0.65), transparent 55%);
 }
 
@@ -489,7 +489,7 @@
 :root.theme-anim .lane,
 :root.theme-anim .compare-panel,
 :root.theme-anim .stats-panel,
-:root.theme-anim .guide {
+:root.theme-anim .guide-page-wrap {
   transition: background-color 0.45s ease, color 0.45s ease, border-color 0.45s ease;
 }
 

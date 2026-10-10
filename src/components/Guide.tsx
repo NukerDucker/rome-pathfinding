@@ -30,13 +30,16 @@ function Figure({ src, alt, caption, spec }: { src: string; alt: string; caption
 }
 
 const NAV: { id: string; label: string }[] = [
-  { id: 'g-ucs', label: '1 · Uniform-Cost Search' },
+  // Labels mirror the section headings verbatim: the sidebar used to promise
+  // "Our heuristic: ALT" and deliver "Our second bound: ALT", so clicking a
+  // topic landed you somewhere with a different name.
+  { id: 'g-ucs', label: '1 · Uniform-Cost Search (UCS)' },
   { id: 'g-astar', label: '2 · A★: adding a guess' },
-  { id: 'g-heuristic', label: '3 · What a heuristic is' },
-  { id: 'g-lp', label: '4 · Our heuristic: LP (vector)' },
-  { id: 'g-alt', label: '5 · Our heuristic: ALT (landmarks)' },
-  { id: 'g-ensemble', label: '6 · The ensemble: max(LP, ALT)' },
-  { id: 'g-perf', label: '7 · Does it perform better?' },
+  { id: 'g-heuristic', label: '3 · What a heuristic actually is' },
+  { id: 'g-lp', label: '4 · Our first bound: LP vector-decomposition' },
+  { id: 'g-alt', label: '5 · Our second bound: ALT (landmarks)' },
+  { id: 'g-ensemble', label: '6 · The ensemble: take the maximum' },
+  { id: 'g-perf', label: '7 · Does it perform better? (measured)' },
   { id: 'g-map', label: '8 · Reading the maps' },
   { id: 'g-complexity', label: '9 · Time and space complexity' },
 ]

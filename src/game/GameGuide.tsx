@@ -34,13 +34,15 @@ export default function GameGuide() {
       {/* two columns: sticky topic list box (left) | topic boxes (right) */}
       <div className="guide-layout">
         <nav className="section guide-nav" aria-label="Contents">
-          <a href="#g-ucs">1 · Uniform-Cost Search</a>
+          {/* Labels mirror the section headings verbatim, same as the modern
+              guide's NAV list — they had drifted apart. */}
+          <a href="#g-ucs">1 · Uniform-Cost Search (UCS)</a>
           <a href="#g-astar">2 · A★: adding a guess</a>
-          <a href="#g-heuristic">3 · What a heuristic is</a>
-          <a href="#g-lp">4 · Our heuristic: LP (vector)</a>
-          <a href="#g-alt">5 · Our heuristic: ALT (landmarks)</a>
-          <a href="#g-ensemble">6 · The ensemble: max(LP, ALT)</a>
-          <a href="#g-perf">7 · Does it perform better?</a>
+          <a href="#g-heuristic">3 · What a heuristic actually is</a>
+          <a href="#g-lp">4 · Our first bound: LP vector-decomposition</a>
+          <a href="#g-alt">5 · Our second bound: ALT (landmarks)</a>
+          <a href="#g-ensemble">6 · The ensemble: take the maximum</a>
+          <a href="#g-perf">7 · Does it perform better? (measured)</a>
           <a href="#g-map">8 · Reading the maps</a>
           <a href="#g-complexity">9 · Time and space complexity</a>
         </nav>
