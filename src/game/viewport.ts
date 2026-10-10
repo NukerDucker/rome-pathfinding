@@ -126,6 +126,19 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
     }
   }
 
+  // Scale limits only, pan left free. Pointer drags use this so the map can be
+  // pushed past its edge and springs back on release (endPointer). With the
+  // hard clamp below, a drag at scale 1 — where the map exactly fills the frame
+  // and x = y = 0 is the only legal view — could not move at all, which read as
+  // "zoom works, dragging does not".
+  function softClamp(v: View): View {
+    return { ...v, s: Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.s)) }
+  }
+
+  function outOfBounds(v: View): boolean {
+    return v.x > 0 || v.y > 0 || v.x < m.w * (1 - v.s) || v.y < m.h * (1 - v.s)
+  }
+
   // Keep scale in range and never let the map edge pull inside its frame
   function clamp(v: View): View {
     const s = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.s))
@@ -206,10 +219,13 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
     schedule()
   }
 
-  // Move immediately (follows the input 1:1), drawn on the next frame
-  function jumpTo(next: View): void {
+  // Move immediately (follows the input 1:1), drawn on the next frame.
+  // `soft` is for pointer drags: the pan is not bounded, and endPointer springs
+  // it back. Wheel/trackpad panning stays hard-clamped — it has no release
+  // event to trigger a spring, so it must never leave the map stranded.
+  function jumpTo(next: View, soft = false): void {
     tween = null
-    cur = target = clamp(next)
+    cur = target = soft ? softClamp(next) : clamp(next)
     schedule()
   }
 
@@ -254,7 +270,10 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
   }
 
   function onWheel(e: WheelEvent): void {
-    if (e.target === resetBtn) return
+    // No early return over the RESET button: it used to bail before
+    // preventDefault, so a wheel there scrolled the page under the cursor
+    // instead of zooming the map. The button still handles clicks (see
+    // onPointerDown); the wheel belongs to the map.
     e.preventDefault()
     hideMapHints()
 
@@ -329,7 +348,7 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
       let next: View = zoomAround(target, now.mid.x, now.mid.y, now.dist / pinch.dist)
       next = { ...next, x: next.x + now.mid.x - pinch.mid.x, y: next.y + now.mid.y - pinch.mid.y }
       pinch = now
-      jumpTo(next)
+      jumpTo(next, true)
       return
     }
 
@@ -338,7 +357,7 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
     vel = { x: vel.x * 0.7 + (dx / dt) * 0.3, y: vel.y * 0.7 + (dy / dt) * 0.3 } // smoothed px/ms
     lastMoveTime = t
     last = { x: e.clientX, y: e.clientY }
-    jumpTo({ s: target.s, x: target.x + dx, y: target.y + dy })
+    jumpTo({ s: target.s, x: target.x + dx, y: target.y + dy }, true)
   }
 
   function endPointer(e: PointerEvent): void {
@@ -362,8 +381,13 @@ export function createViewport(canvas: HTMLElement): ViewportApi {
     // coast in the drag direction, unless the pointer was held still before release
     if (performance.now() - lastMoveTime < 80 && Math.hypot(vel.x, vel.y) > 0.05) {
       const COAST_MS = 180
+      // tweenTo clamps its destination, so a flick past the edge coasts and lands home
       tweenTo({ s: target.s, x: target.x + vel.x * COAST_MS, y: target.y + vel.y * COAST_MS }, 500, EASE_COAST)
+      return
     }
+    // Dragged past the edge (softClamp let it go there): spring back. tweenTo
+    // clamps its destination, so passing the current view homes it.
+    if (outOfBounds(target)) tweenTo(target, 420, EASE_COAST)
   }
   function onPointerLeave(): void {
     hover = null
