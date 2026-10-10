@@ -29,6 +29,9 @@
 --better:#1f7a35; /* comparison table: winning value */
 --accent-deep:#9a6220; /* filled/active plate — white on it = 5.07:1 (AA+) */
 --disc-opacity:1; /* every node disc on the map, whatever its state */
+/* One corner language for the whole UI: --r-sm on every plate, button and
+   frame edge; --r-pill on the value chips. Dots and discs stay circles. */
+--r-sm:4px; --r-pill:999px;
 }
 @font-face {
   font-family: 'Minecraft';
@@ -92,7 +95,7 @@ background:#5a6ec8; mix-blend-mode:hue;
 .game-root[data-theme="space"] #prevBtn,
 .game-root[data-theme="space"] #nextBtn,
 .game-root[data-theme="space"] #restartBtn{ filter:hue-rotate(190deg) saturate(.55) brightness(.85); }
-.game-root[data-theme="space"] #playBtn{ border-image:none; border:2px solid #5a6ec8; border-radius:4px; background:#2c3763; color:#dfe6ff; }
+.game-root[data-theme="space"] #playBtn{ border-image:none; border:2px solid #5a6ec8; border-radius:var(--r-sm); background:#2c3763; color:#dfe6ff; }
 
 /* ── D&D skin ───────────────────────────────────────────────────────── */
 .game-root[data-theme="dnd"]{
@@ -121,7 +124,7 @@ background:#c9a6e8; mix-blend-mode:hue;
 .game-root[data-theme="dnd"] #prevBtn,
 .game-root[data-theme="dnd"] #nextBtn,
 .game-root[data-theme="dnd"] #restartBtn{ filter:hue-rotate(250deg) saturate(.5) brightness(1.08); }
-.game-root[data-theme="dnd"] #playBtn{ border-image:none; border:2px solid #a95fd0; border-radius:4px; background:#efe0ff; color:#4a3768; }
+.game-root[data-theme="dnd"] #playBtn{ border-image:none; border:2px solid #a95fd0; border-radius:var(--r-sm); background:#efe0ff; color:#4a3768; }
 
 /* Corner row (fixed): mode switch + theme button, pixel-styled like the tool
    buttons. The menu opens under the theme button (the row's right edge). */
@@ -132,7 +135,7 @@ background:#c9a6e8; mix-blend-mode:hue;
 .game-root .mode-toggle{
 width:40px; height:40px; display:flex; align-items:center; justify-content:center;
 padding:0; cursor:pointer;
-color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .mode-toggle svg{ width:20px; height:20px; }
 .game-root .mode-toggle:hover, .game-root .mode-toggle:focus-visible{ filter:brightness(1.06); }
@@ -140,13 +143,13 @@ color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
 .game-root .theme-menu{
 list-style:none; margin:6px 0 0; padding:4px;
 position:absolute; top:100%; right:0; min-width:132px;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 display:flex; flex-direction:column; gap:2px;
 }
 .game-root .theme-menu button{
 display:flex; align-items:center; gap:8px; width:100%;
 padding:6px 10px; font-size:14px; text-align:left;
-color:#4a3a20; background:none; border:none; border-radius:3px; cursor:pointer;
+color:#4a3a20; background:none; border:none; border-radius:var(--r-sm); cursor:pointer;
 }
 .game-root .theme-menu button:hover, .game-root .theme-menu button:focus-visible{ background:rgba(201,137,63,.35); }
 .game-root .theme-menu button.is-current{ background:var(--accent-deep); color:#fff; }
@@ -155,7 +158,7 @@ color:#4a3a20; background:none; border:none; border-radius:3px; cursor:pointer;
 position:static; transform:none; /* the modern stylesheet's unscoped .theme-toggle applies translateY(-50%) even to static elements — that lifted this button 20px above the mode button */
 width:40px; height:40px; display:flex; align-items:center; justify-content:center;
 font-size:22px; line-height:1; cursor:pointer;
-color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+color:#4a3a20; background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 /* Pixel art skin: every top-level box uses the vine-wood 9-slice frame.
 	Numbers below are measured from assets/panel-frame.png (410x388 source):
@@ -199,7 +202,7 @@ image-rendering:pixelated;
 .game-root .bread-btn{
 position:fixed; top:64px; right:max(16px, calc((100vw - 1600px) / 2 + 16px)); z-index:50; /* right under .theme-toggle */
 width:40px; height:40px; padding:4px; cursor:pointer;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .bread-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
 .game-root .bread-btn[hidden]{ display:none; } /* secret until unlocked */
@@ -245,7 +248,7 @@ display:block; margin:10px auto 0; padding:0; width:64px; height:64px;
 background:none; border:none; cursor:pointer;
 }
 .game-root .duck-btn img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; } /* keeps the wide lying-down sprite in proportion, on the same ground line */
-.game-root .duck-btn:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .duck-btn:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 .game-root .duck-btn.hop{ animation:duck-hop .35s ease-out; }
 @keyframes duck-hop{ 0%,100%{ transform:translateY(0); } 40%{ transform:translateY(var(--hop, -12px)) rotate(-6deg); } }
 .game-root .map-row:has(.compare-wrap.is-split) .duck-btn{ display:none; } /* split view: no duck */
@@ -267,15 +270,15 @@ display:flex; align-items:flex-end; justify-content:center; pointer-events:none;
 .game-root .perch-bread{ width:56px; height:56px; padding:0; background:none; border:none; cursor:pointer; }
 .game-root .perch-bread[hidden]{ display:none; }
 .game-root .perch-bread img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
-.game-root .perch-bread:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .perch-bread:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 .game-root .perch-whale{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
 .game-root .perch-whale[hidden]{ display:none; }
 .game-root .perch-whale img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
-.game-root .perch-whale:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .perch-whale:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 .game-root .perch-capy{ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer; }
 .game-root .perch-capy[hidden]{ display:none; }
 .game-root .perch-capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; transform:scaleX(-1); } /* sprite faces right; its spot is right of centre, so face left (towards the centre) */
-.game-root .perch-capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .perch-capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 /* bird / cat once settled in a slot: normal flow inside the slot */
 .game-root .bird.in-slot, .game-root .cat-stand.in-slot{ position:static; pointer-events:auto; }
 .game-root .map-row:has(.compare-wrap.is-split) .duck-home-waiting{ display:none; }
@@ -302,7 +305,7 @@ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer
 }
 .game-root .cat-stand[hidden]{ display:none; }
 .game-root .cat-stand img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
-.game-root .cat-stand:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .cat-stand:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 
 /* ===================== CAPYBARA (just for fun) =====================
 	Stands on the top edge of the map box (near its right end) after rising out
@@ -315,7 +318,7 @@ width:80px; height:80px; padding:0; background:none; border:none; cursor:pointer
 }
 .game-root .capy[hidden]{ display:none; }
 .game-root .capy img{ width:100%; height:100%; image-rendering:pixelated; display:block; }
-.game-root .capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .capy:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 /* full-screen canvas the dust particles are drawn on (added/removed by script.js) */
 .game-root .capy-dust{ position:fixed; inset:0; z-index:970; pointer-events:none; }
 
@@ -331,13 +334,13 @@ background:none; border:none; cursor:pointer; pointer-events:none;
 .game-root .bird[hidden]{ display:none; }
 .game-root .bird img{ width:100%; height:100%; image-rendering:pixelated; display:block; object-fit:contain; object-position:center bottom; }
 .game-root .bird.bird-perched{ position:absolute; top:auto; bottom:calc(100% - 10px); z-index:40; pointer-events:auto; }
-.game-root .bird:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:4px; }
+.game-root .bird:focus-visible{ outline:2px solid #4a3a20; outline-offset:2px; border-radius:var(--r-sm); }
 
 /* ===================== TABS (Map | Guide) ===================== */
 .game-root .tab-bar{ display:flex; justify-content:center; gap:6px; margin:0 0 12px; background:none; padding:0; } /* App.css .tab-bar bg leaks in; the original game tabs floated on the sky */
 .game-root .tab-btn{
 padding:6px 18px; font-size:15px; letter-spacing:1px; cursor:pointer;
-background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:4px;
+background:#FFE9B8; color:#4a3a20; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .tab-btn.active{ background:var(--accent-deep); color:#fff; }
 .game-root .tab-panel[hidden]{ display:none; }
@@ -362,7 +365,7 @@ font-family:'Minecraft', monospace; font-size:19px; line-height:1.4;
 display:flex; flex-direction:column; gap:2px;
 position:sticky; top:12px; /* the list box follows you down the page */
 }
-.game-root .guide-nav a{ color:#4a3a20; text-decoration:none; padding:5px 8px; border-radius:4px; }
+.game-root .guide-nav a{ color:#4a3a20; text-decoration:none; padding:5px 8px; border-radius:var(--r-sm); }
 .game-root .guide-nav a:hover, .game-root .guide-nav a:focus-visible{ text-decoration:underline; }
 .game-root .guide-nav a.active{ background:#FFE9B8; box-shadow:inset 3px 0 0 #c9893f; font-weight:bold; } /* topic being read */
 .game-root .guide-sections{ min-width:0; }
@@ -376,10 +379,10 @@ margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid #c9893f;
 .game-root .guide-section li{ margin-bottom:6px; }
 .game-root .guide-note{
 margin:0 0 12px; padding:10px 14px;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .guide-try{ background:#f3f7e4; border-color:#7aa04a; } /* "Try it" / measured notes: leafy green */
-.game-root .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:4px; }
+.game-root .guide-eq{ margin:4px 0 14px; padding:8px 12px; overflow-x:auto; background:#FFE9B8; border-radius:var(--r-sm); }
 .game-root .guide-table{ border-collapse:collapse; margin:0 0 14px; font-size:18px; }
 .game-root .guide-table th{
 font-family:'Minecraft', monospace; font-size:15px; font-weight:normal; text-transform:uppercase;
@@ -387,14 +390,14 @@ letter-spacing:1px; color:var(--text-soft); text-align:left;
 }
 .game-root .guide-table th, .game-root .guide-table td{ padding:5px 14px 5px 0; border-bottom:1px solid rgba(120,70,20,.2); }
 .game-root .guide-figure{ margin:6px auto 0; max-width:600px; text-align:center; } /* images / GIFs centred in their topic box */
-.game-root .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:4px; background:#fff; }
+.game-root .guide-figure img{ max-width:100%; height:auto; border:2px solid #c9893f; border-radius:var(--r-sm); background:#fff; }
 .game-root .guide-figure figcaption{ font-size:17px; color:var(--text-soft); margin-top:6px; }
 .game-root .guide-figure-missing{
 padding:28px 14px; font-size:15px; color:var(--text-soft);
-border:2px dashed #c9893f; border-radius:4px; background:#FFE9B8;
+border:2px dashed #c9893f; border-radius:var(--r-sm); background:#FFE9B8;
 }
 .game-root .guide-foot{ font-size:16px; color:#fff; margin:4px 0 12px; text-shadow:0 1px 2px rgba(0,0,0,.6); } /* sits on the sky, below the last box */
-.game-root .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:3px; }
+.game-root .guide-body code{ font-size:.9em; background:#FFE9B8; padding:1px 4px; border-radius:var(--r-sm); }
 
 /* ===================== 2. CONTROL ROW =====================
 	Swap targets: Button/Start button.png (behind selects), Random button */
@@ -469,7 +472,7 @@ scrollbar-width:thin; scrollbar-color:#c9893f transparent;
 }
 .game-root .dd-option{
 padding:6px 10px; margin:2px 0; font-size:15px; font-weight:bold; color:#4a3a20;
-white-space:nowrap; cursor:pointer; border:2px solid transparent; border-radius:4px;
+white-space:nowrap; cursor:pointer; border:2px solid transparent; border-radius:var(--r-sm);
 }
 .game-root .dd-option[aria-selected="true"]{ background:#FFE9B8; border-color:#c9893f; }
 .game-root .dd-option[aria-selected="true"]::before{ content:'\25B8'; margin-right:4px; } /* marks the current choice */
@@ -509,7 +512,7 @@ padding:8px 10px; border:2px solid var(--border); background:#fff; cursor:pointe
 .game-root .algo-box{ flex:1; }
 .game-root .lane-pill{
 display:flex; align-items:center; gap:6px; padding:3px 6px 3px 4px;
-border-radius:4px; background:#FED788;
+border-radius:var(--r-sm); background:#FED788;
 }
 .game-root .lane-sign{ height:32px; width:auto; image-rendering:pixelated; display:block; }
 .game-root .route-arrow{ font-size:14px; color:var(--text-soft); }
@@ -528,7 +531,7 @@ border-radius:4px; background:#FED788;
 .game-root .tool-toggle{
 display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px;
 font:inherit; font-size:14px; color:#4a3a20; cursor:pointer; user-select:none;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .tool-toggle input{ position:absolute; opacity:0; width:0; height:0; margin:0; }
 .game-root .tool-toggle:has(input:checked), .game-root .tool-toggle.active{ background:var(--accent-deep); color:#fff; }
@@ -608,7 +611,7 @@ display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start;
 .game-root .map-row:has(.compare-wrap:not(.is-split)) > .map-panel{ width:calc(var(--split-map) + 2 * (var(--frame) + 8px)); }
 .game-root .legend-bar{
 display:flex; flex-wrap:wrap; justify-content:center; gap:4px 14px; font-size:14px;
-padding:6px 10px; background:#FFE9B8; border:2px solid #c9893f; border-radius:4px;
+padding:6px 10px; background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm);
 }
 .game-root .legend-bar .dot{
 width:11px; height:11px; border-radius:50%; display:inline-block; margin-right:5px;
@@ -636,7 +639,7 @@ border:1px solid #333; vertical-align:middle;
 .game-root .algo-canvas{
 flex:1; min-height:320px; display:flex; align-items:center; justify-content:center;
 color:var(--text-soft); font-size:16px; background:#12A2DF; /* sea blue, same as the map image edge: one seamless rectangle */ overflow:hidden;
-border-radius:8px; /* slightly rounded map corners (overflow:hidden clips the map to them) */
+border-radius:var(--r-sm); /* same radius as every wooden plate (overflow:hidden clips the map to them) */
 position:relative; touch-action:none; /* zoom engine owns wheel/pinch/drag inside the map */
 user-select:none; -webkit-user-select:none; /* nothing on the map is selectable... */
 }
@@ -686,7 +689,7 @@ text-shadow:1px 0 #222, -1px 0 #222, 0 1px #222, 0 -1px #222;
 .game-root .km-badge{
 position:absolute; left:0; top:0; pointer-events:none; white-space:nowrap;
 font-size:var(--km-font, 12px); line-height:1; padding:.2em .4em; /* live value set by scenery.ts KM_FONT_MIN — the fallback here is cosmetic */
-color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:3px;
+color:#4a3a20; background:#FFE9B8; border:1px solid #c9893f; border-radius:var(--r-sm);
 font-variant-numeric:tabular-nums;
 }
 .game-root .km-badge.km-tree{ background:var(--road-tree); border-color:var(--road-tree); color:#1a1a1a; } /* dark text: readable on the light pink-purple */
@@ -710,13 +713,13 @@ display:flex; align-items:center; gap:6px; pointer-events:none;
 }
 .game-root .map-hud > *{ pointer-events:auto; }
 .game-root .map-readout{
-padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
+padding:6px 8px; border:2px solid var(--border); border-radius:var(--r-sm); background:#fff; color:var(--text);
 font-size:13px; white-space:nowrap; pointer-events:none !important;
 font-variant-numeric:tabular-nums; transition:opacity .25s;
 }
 .game-root .map-readout.hidden{ opacity:0; } /* only visible once the view leaves its resting position/scale */
 .game-root .map-reset{
-padding:6px 8px; border:2px solid var(--border); background:#fff; color:var(--text);
+padding:6px 8px; border:2px solid var(--border); border-radius:var(--r-sm); background:#fff; color:var(--text);
 font-size:13px; cursor:pointer; transition:opacity .2s;
 }
 .game-root .map-reset:hover{ background:#eee; }
@@ -734,7 +737,7 @@ pointer-events:none; transition:opacity .6s ease;
 .game-root .overlay-icon{ width:16px; height:16px; object-fit:contain; image-rendering:pixelated; }
 .game-root .playback-row{ display:flex; gap:6px; justify-content:center; margin-bottom:10px; }
 .game-root .playback-row button{
-width:34px; height:34px; border:2px solid var(--border); background:#fff; cursor:pointer;
+width:34px; height:34px; border:2px solid var(--border); border-radius:var(--r-sm); background:#fff; cursor:pointer;
 }
 .game-root .playback-row button.playing{ background:#333; color:#fff; }
 
@@ -833,15 +836,15 @@ flex:1; min-height:0; overflow-y:auto; padding-right:6px;
 scrollbar-width:thin; scrollbar-color:#c9893f rgba(255,255,255,.35); /* track: white, 35% opacity */
 }
 .game-root .stats-scroll::-webkit-scrollbar{ width:8px; }
-.game-root .stats-scroll::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
-.game-root .stats-scroll::-webkit-scrollbar-track{ background:rgba(255,255,255,.35); border-radius:4px; }
+.game-root .stats-scroll::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:var(--r-sm); }
+.game-root .stats-scroll::-webkit-scrollbar-track{ background:rgba(255,255,255,.35); border-radius:var(--r-sm); }
 /* Whole page: <body> scrolls instead of the browser window, so its scrollbar
    sits over the sky background (the window's own scrollbar strip is painted
    by the browser and can't be see-through). Same thin brown handle as the
    cards, transparent track. script.js listens for scroll in the capture phase. */
 .game-root{ scrollbar-width:thin; scrollbar-color:#c9893f transparent; }
 .game-root::-webkit-scrollbar{ width:8px; }
-.game-root::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:4px; }
+.game-root::-webkit-scrollbar-thumb{ background:#c9893f; border-radius:var(--r-sm); }
 .game-root::-webkit-scrollbar-track{ background:transparent; }
 .game-root .stats-title{ text-align:center; margin:0 0 4px; font-size:24px; }
 .game-root .stats-route{ text-align:center; margin:0 0 12px; color:#5a4630; font-size:17px; }
@@ -849,10 +852,10 @@ scrollbar-width:thin; scrollbar-color:#c9893f rgba(255,255,255,.35); /* track: w
 .game-root .stats-col{ display:flex; flex-direction:column; gap:8px; min-width:0; }
 .game-root .stats-head{
 display:flex; align-items:center; gap:8px; padding:6px 8px; min-width:0;
-background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; font-size:18px; color:#4a3a20;
+background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm); font-size:18px; color:#4a3a20;
 }
 .game-root .stats-head span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:bold; } /* lane name, bold */
-.game-root .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:4px; padding:8px 10px 6px; }
+.game-root .stats-card{ background:#FFE9B8; border:2px solid #c9893f; border-radius:var(--r-sm); padding:8px 10px 6px; }
 /* Card heading: bigger, bold, dark, underlined, so it reads as a heading, not a row */
 .game-root .stats-card h3{
 margin:0 0 6px; padding-bottom:4px; font-size:17px; letter-spacing:1px; text-transform:uppercase;
@@ -864,7 +867,7 @@ padding:4px 0; font-size:17px; border-bottom:1px solid rgba(120,70,20,.15);
 }
 .game-root .stat-row:last-child{ border-bottom:none; }
 .game-root .stat-row > span{ color:#5a4630; white-space:nowrap; } /* label: darker than --text-soft for readability */
-.game-root .stat-row > b{ font-weight:bold; color:#111; text-align:right; white-space:nowrap; padding:1px 6px; border-radius:999px; }
+.game-root .stat-row > b{ font-weight:bold; color:#111; text-align:right; white-space:nowrap; padding:1px 6px; border-radius:var(--r-pill); }
 /* Long values (path, KaTeX complexity) go under their label instead of overflowing */
 .game-root .stat-row-wrap{ flex-direction:column; align-items:flex-start; gap:2px; }
 .game-root .stat-row-wrap > b{ white-space:normal; text-align:left; padding-left:0; overflow-wrap:anywhere; }
