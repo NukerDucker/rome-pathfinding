@@ -54,6 +54,11 @@ background-color:#1c2a44; /* behind the sky photo while it loads */
 background-image:var(--page-bg);
 background-size:cover; background-position:center; background-repeat:no-repeat;
 background-attachment:fixed;
+/* Stacking context so the dnd aurora / space starfield (fixed, inset 0,
+   z-index -1 — the same components the modern UI mounts) paint above this
+   page background and below the game's content. Without it they would render
+   behind the background and never be seen. */
+isolation:isolate;
 }
 /* ===================== THEMES =====================
 	Shared with the modern UI through App (one `theme` key in localStorage).

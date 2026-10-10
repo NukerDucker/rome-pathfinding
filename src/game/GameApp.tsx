@@ -13,7 +13,7 @@ import { createWhale, type WhaleHandle } from '@/game/animals/whale'
 import { createCapybara, type CapybaraHandle } from '@/game/animals/capybara'
 import { createBird, type BirdHandle } from '@/game/animals/bird'
 import { createBread, type BreadHandle, BREAD_UNLOCK_SWITCHES } from '@/game/animals/bread'
-import { THEME_ORDER, type Theme } from '@/theme'
+import { THEME_ORDER, DndAurora, SpaceField, type Theme } from '@/theme'
 import ModeToggle from '@/components/ModeToggle'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
@@ -222,6 +222,12 @@ export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
 
   return (
     <div className="game-root" data-theme={theme} ref={setRootEl}>
+      {/* Same atmospherics the modern UI gets, so dnd and space read as the same
+          two themes in both UIs. They are position:fixed, inset:0, z-index:-1,
+          pointer-events:none — and .game-root is isolated (game.css) so they
+          paint above its page background and below its content. */}
+      {theme === 'dnd' && <DndAurora />}
+      {theme === 'space' && <SpaceField />}
       <div className="app-shell">
         <div className="section title-bar">
           <h1 id="titleText">
