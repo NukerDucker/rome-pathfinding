@@ -4,8 +4,7 @@ import { ALGORITHMS } from '@/search'
 import { type LandmarkPreset } from '@/heuristic'
 import { Guide } from '@/components/Guide'
 // Shared with the game guide (which passes no argument and gets #tabGuide).
-// Belongs in src/components/guide/ once the two guides share a shell.
-import { attachGuideExtras } from '@/game/guideScrollSpy'
+import { attachGuideExtras } from '@/components/guide/guideScrollSpy'
 import {
   ThemeRoll, DndAurora,
   SpaceField,

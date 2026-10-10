@@ -1,48 +1,15 @@
-import { useState } from 'react'
 import { Tex } from './Tex'
+import { Figure } from './guide/Figure'
+import { GuideNav } from './guide/GuideNav'
+import { GuideSection } from './guide/GuideSection'
 
 // ── Left-hand guide ─────────────────────────────────────────────────────────
 // A scrollable explainer that walks from Uniform-Cost Search, through A*, into
 // the heuristic, how this app builds one (LP + ALT), why combining them works,
 // and whether the combination actually performs better (measured, not asserted).
 //
-// Each animation lives in public/gifs/; if one fails to load the <Figure>
-// placeholder falls back to a labelled "pending" box naming the missing asset.
-
-function Figure({ src, alt, caption, spec }: { src: string; alt: string; caption: string; spec: string }) {
-  const [failed, setFailed] = useState(false)
-  return (
-    <figure className="guide-figure">
-      {failed ? (
-        <div className="guide-figure-missing" aria-label={`${alt} (animation pending)`}>
-          <span>
-            {alt}
-            <br />
-            GIF pending · <code>{spec}</code>
-          </span>
-        </div>
-      ) : (
-        <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />
-      )}
-      <figcaption>{caption}</figcaption>
-    </figure>
-  )
-}
-
-const NAV: { id: string; label: string }[] = [
-  // Labels mirror the section headings verbatim: the sidebar used to promise
-  // "Our heuristic: ALT" and deliver "Our second bound: ALT", so clicking a
-  // topic landed you somewhere with a different name.
-  { id: 'g-ucs', label: '1 · Uniform-Cost Search (UCS)' },
-  { id: 'g-astar', label: '2 · A★: adding a guess' },
-  { id: 'g-heuristic', label: '3 · What a heuristic actually is' },
-  { id: 'g-lp', label: '4 · Our first bound: LP vector-decomposition' },
-  { id: 'g-alt', label: '5 · Our second bound: ALT (landmarks)' },
-  { id: 'g-ensemble', label: '6 · The ensemble: take the maximum' },
-  { id: 'g-perf', label: '7 · Does it perform better? (measured)' },
-  { id: 'g-map', label: '8 · Reading the maps' },
-  { id: 'g-complexity', label: '9 · Time and space complexity' },
-]
+// Section shells, the contents list and the figure all come from
+// components/guide/, shared with the game guide so the two cannot drift apart.
 
 export function Guide() {
   return (
@@ -52,7 +19,9 @@ export function Guide() {
     >
       <div className="guide-head">
         <span className="guide-eyebrow">Romania Pathfinding</span>
-        <span className="guide-title">How the search works</span>
+        {/* h2, not a span: the app title is the h1 and the sections are h3s, so
+            the page had no h2 and skipped a heading level. */}
+        <h2 className="guide-title">How the search works</h2>
       </div>
 
       <div className="guide-body">
@@ -63,17 +32,12 @@ export function Guide() {
           Every number below was measured on all 380 ordered city pairs.
         </p>
 
-        <nav className="guide-nav" aria-label="Contents">
-          {NAV.map((n) => (
-            <a key={n.id} href={`#${n.id}`}>{n.label}</a>
-          ))}
-        </nav>
+        <GuideNav />
 
         <div className="guide-sections">
 
         {/* ── 1. UCS ─────────────────────────────────────────────────── */}
-        <section className="guide-section" id="g-ucs">
-          <h3>1 · Uniform-Cost Search (UCS)</h3>
+        <GuideSection id="g-ucs">
           <p>
             Keep a <strong>frontier</strong> of nodes to explore. Always expand the node with the
             smallest known cost from the start, <Tex>g(n)</Tex>, the kilometres already driven.
@@ -97,11 +61,10 @@ export function Guide() {
             caption="UCS expands in expanding cost rings, blind to the goal."
             spec="GIF-1"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 2. A* ──────────────────────────────────────────────────── */}
-        <section className="guide-section" id="g-astar">
-          <h3>2 · A★: adding a guess</h3>
+        <GuideSection id="g-astar">
           <p>
             A★ keeps the same <Tex>g(n)</Tex> but adds a <strong>heuristic</strong>{' '}
             <Tex>h(n)</Tex>: our estimate of the remaining cost from <Tex>n</Tex> to the goal.
@@ -137,11 +100,10 @@ export function Guide() {
             caption="A★ uses h to head for the goal; UCS can't."
             spec="GIF-2"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 3. Heuristic ───────────────────────────────────────────── */}
-        <section className="guide-section" id="g-heuristic">
-          <h3>3 · What a heuristic actually is</h3>
+        <GuideSection id="g-heuristic">
           <p>
             A heuristic <Tex>h(n)</Tex> is a cheap estimate of the cost still to go, computed
             <em> without</em> solving the rest of the search. Two properties matter:
@@ -176,11 +138,10 @@ export function Guide() {
             caption="Admissible = h never pokes above the true cost. Consistent = it can only rise by as much as a road costs."
             spec="GIF-3"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 4. LP ──────────────────────────────────────────────────── */}
-        <section className="guide-section" id="g-lp">
-          <h3>4 · Our first bound: LP vector-decomposition</h3>
+        <GuideSection id="g-lp">
           <p>
             Draw each road as a little arrow (a vector) whose length is its real kilometre value,
             laid out using the map's schematic pixel coordinates. To get from <Tex>a</Tex> to{' '}
@@ -210,11 +171,10 @@ export function Guide() {
             caption="The chord a→b rewritten as a combination of road vectors; the LP prices that combination."
             spec="GIF-4"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 5. ALT ─────────────────────────────────────────────────── */}
-        <section className="guide-section" id="g-alt">
-          <h3>5 · Our second bound: ALT (landmarks)</h3>
+        <GuideSection id="g-alt">
           <p>
             Pick a few <strong>landmark</strong> cities <Tex>L</Tex>, far-flung corners of the map.
             Then precompute the true shortest road distance <Tex>d(L,n)</Tex> from each landmark to
@@ -265,11 +225,10 @@ export function Guide() {
             caption="One landmark priced end to end: the shared node→goal path is 80 + 99 = 179 km, the bound this landmark contributes."
             spec="GIF-8"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 6. Ensemble ────────────────────────────────────────────── */}
-        <section className="guide-section" id="g-ensemble">
-          <h3>6 · The ensemble: take the maximum</h3>
+        <GuideSection id="g-ensemble">
           <p>
             We have two admissible bounds that come from <em>different evidence</em>. Combine them
             by taking whichever is larger:
@@ -310,11 +269,10 @@ export function Guide() {
             caption="Each bound certifies “the answer is at least this much”; the max keeps the strongest certificate."
             spec="GIF-6"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 7. Performance ─────────────────────────────────────────── */}
-        <section className="guide-section" id="g-perf">
-          <h3>7 · Does it perform better? (measured)</h3>
+        <GuideSection id="g-perf">
           <p>
             An independent evaluation re-ran everything over all 380 ordered city pairs with its
             own Dijkstra oracle and a standard A★. Two things matter:{' '}
@@ -366,11 +324,10 @@ export function Guide() {
             caption="Informedness rises and expansions fall as the heuristic tightens; the ensemble tops it off."
             spec="GIF-7"
           />
-        </section>
+        </GuideSection>
 
         {/* ── 8. Reading the maps ────────────────────────────────────── */}
-        <section className="guide-section" id="g-map">
-          <h3>8 · Reading the maps</h3>
+        <GuideSection id="g-map">
           <p>
             <strong>Two lanes.</strong> Pick any two algorithms, A (purple) and B (teal), and run
             them on the same start/goal. The comparison table rates each metric and highlights the
@@ -392,11 +349,10 @@ export function Guide() {
             means B did. Use the ⬓ <em>Merged map</em> toggle to switch back to the side-by-side
             split view.
           </p>
-        </section>
+        </GuideSection>
 
         {/* ── 9. Complexity ──────────────────────────────────────────── */}
-        <section className="guide-section" id="g-complexity">
-          <h3>9 · Time and space complexity</h3>
+        <GuideSection id="g-complexity">
           <p>
             Two costs, and they behave differently. <strong>Time</strong> is how many nodes the
             search expands before it settles the goal — one expansion per pop from the frontier.{' '}
@@ -441,7 +397,7 @@ export function Guide() {
             The tables never change after precomputation, so they are pure overhead paid up front,
             not per expansion.
           </div>
-        </section>
+        </GuideSection>
 
         </div>{/* /guide-sections */}
 
