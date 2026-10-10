@@ -117,6 +117,8 @@ function labelWidth(km: number): number {
 function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boolean, path: NodeId[]): NodeState {
   if (isFinalFrame && found && path.includes(node)) return 'path'
   if (node === step.current) return 'current'
+  // visited wins: the A* variants use lazy deletion, so an expanded city can
+  // still have a stale (worse-cost) entry left in the frontier list
   if (step.visited.includes(node)) return 'visited'
   if (step.frontier.includes(node)) return 'frontier'
   return 'unvisited'
@@ -361,9 +363,10 @@ export function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, 
           >
             <title>{city}{isLandmark ? ' ★ landmark' : ''}</title>
             {isHovered && <circle className="node-glow" cx={coord.x} cy={coord.y} r={NODE_R} />}
+            {/* landmark ring under start/goal: those rings paint last, so they win */}
+            {isLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
             {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
             {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
-            {isLandmark && <circle className="marker-ring marker-landmark" cx={coord.x} cy={coord.y} r={70} />}
             {planet?.ring && (
               <ellipse className="node-orbit" cx={coord.x} cy={coord.y} rx={NODE_R + 24} ry={NODE_R * 0.45}
                 transform={`rotate(${planet.ringRot} ${coord.x} ${coord.y})`} />
@@ -562,8 +565,7 @@ export function MergedSVGMap({
             onClick={() => onCityClick?.(city)}
           >
             <title>{city}{lmInA || lmInB ? ' ★ landmark' : ''}</title>
-            {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
-            {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
+            {/* landmark rings under start/goal: those rings paint last, so they win */}
             {lmInA && (
               <g clipPath={`url(#mclipL-${code})`}>
                 <circle className="marker-ring marker-lm-a" cx={coord.x} cy={coord.y} r={70} />
@@ -574,6 +576,8 @@ export function MergedSVGMap({
                 <circle className="marker-ring marker-lm-b" cx={coord.x} cy={coord.y} r={70} />
               </g>
             )}
+            {isStart && <circle className="marker-ring marker-start" cx={coord.x} cy={coord.y} r={60} />}
+            {isGoal && <circle className="marker-ring marker-goal" cx={coord.x} cy={coord.y} r={60} />}
             <g clipPath={`url(#mclipL-${code})`} className={`mhalf node node-${cA}${spaceTheme ? ' node-space' : ''}`}>
               <circle className="node-disc" cx={coord.x} cy={coord.y} r={NODE_R}
                 style={planet ? ({ ['--planet']: `url(#${planet.id})` } as CSSProperties) : undefined} />

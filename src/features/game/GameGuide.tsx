@@ -284,7 +284,7 @@ export default function GameGuide() {
             </p>
             <ul>
               <li><strong>Node colours:</strong> current · frontier · visited · path · unvisited, with start and goal rings (legend under the map).</li>
-              <li><strong>Landmarks:</strong> each lane has a landmark dropdown. Algorithms that need landmarks choose 2 / 4 / 8; the others can pick Off / 2 / 4 / 8 to show landmarks on the map (visual only). Turn on the <em>Landmarks</em> tool and click cities to build a custom set; the dropdown then shows <em>Custom (n)</em>.</li>
+              <li><strong>Landmarks:</strong> each lane has a landmark dropdown. Algorithms that need landmarks choose 2 / 4 / 8; the others can pick Off / 2 / 4 / 8 to show landmarks on the map (visual only). Turn on <em>Edit Landmarks</em> and click cities to build a custom set; the dropdown then shows <em>Custom (n)</em>.</li>
               <li><strong>Distances:</strong> each road's length in km. A badge turns pink-purple when a lane has explored that road and orange-red when it is on the final route.</li>
               <li><strong>Heatmap:</strong> each city coloured by its lane's <Tex>{'h'}</Tex>-value: red near the goal, transitioning through yellow/green to blue farther away.</li>
               <li><strong>Straight Line:</strong> the SLD arc from start to goal that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
@@ -296,8 +296,8 @@ export default function GameGuide() {
               as <strong>two parallel strands</strong>, one per lane, nudged to either side of the
               centreline — so a road both lanes explored shows both colours side by side, and a road
               only one lane used shows a single strand. Turn <em>Merge</em> off to put
-              map A and map B side by side, each showing only its own lane. With Merge on, a click with the
-              Landmarks tool sets that city for both lanes; with Merge off, click on map A or map B to
+              map A and map B side by side, each showing only its own lane. With Merge on, a click with
+              Edit Landmarks on sets that city for both lanes; with Merge off, click on map A or map B to
               set it for that lane only.
             </p>
           </GuideSection>
@@ -332,6 +332,12 @@ export default function GameGuide() {
                 <tr><td>Bidirectional A★ (LP+ALT)</td><td><Tex>{'O(b^{d/2})'}</Tex></td><td><Tex>{'O(b^{d/2})'}</Tex></td><td>Yes</td><td>Yes</td></tr>
               </tbody>
             </table>
+            <p className="guide-table-note">
+              <strong>*</strong> BFS is optimal only when every step costs the same: it finds the
+              fewest hops, not the fewest km, so on this map it can return a longer road route.
+              DFS and Greedy are complete only on a finite graph with a visited set to stop cycles,
+              which is the case here.
+            </p>
             <div className="guide-note">
               <strong>Read the A★ rows carefully.</strong> The asymptotic class is the same{' '}
               <Tex>{'O(b^d)'}</Tex> as BFS, which makes the heuristic sound worthless on paper. It is

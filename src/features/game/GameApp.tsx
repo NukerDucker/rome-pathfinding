@@ -284,6 +284,7 @@ export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
             onMerged={onMerged}
           />
           <GameMap
+            showLine={g.showLine}
             showHeat={g.showHeat}
             playback={
               <GamePlayback

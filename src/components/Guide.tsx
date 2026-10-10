@@ -381,6 +381,12 @@ export function Guide() {
               <tr><td>Bidirectional A★ (LP+ALT)</td><td><Tex>{'O(b^{d/2})'}</Tex></td><td><Tex>{'O(b^{d/2})'}</Tex></td><td>Yes</td><td>Yes</td></tr>
             </tbody>
           </table>
+          <p className="guide-table-note">
+            <strong>*</strong> BFS is optimal only when every step costs the same: it finds the
+            fewest hops, not the fewest km, so on this map it can return a longer road route.
+            DFS and Greedy are complete only on a finite graph with a visited set to stop cycles,
+            which is the case here.
+          </p>
           <div className="guide-note">
             <strong>Read the A★ rows carefully.</strong> The asymptotic class is the same{' '}
             <Tex>{'O(b^d)'}</Tex> as BFS, which makes the heuristic sound worthless on paper. It is

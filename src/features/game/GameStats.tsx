@@ -76,6 +76,8 @@ export default function GameStats() {
           </div>
         </div>
 
+        {/* filled by syncTable: explains the * on Yes* / No* for the lanes' algorithms */}
+        <p className="stats-caption stats-notes" id="algoNotes" hidden></p>
         <p className="stats-caption">Time = mean of 400 runs (&mu;s) &middot; Peak Memory = largest frontier &middot; Landmarks 2/4/8 = nodes generated per preset &middot; live step metrics compared at final frame.</p>
 
         {/* Duck (just for fun): merged view only (CSS); click = quack (script.js).

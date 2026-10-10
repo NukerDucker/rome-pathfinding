@@ -199,6 +199,13 @@ const betterYes = (sa: string, sb: string): Lane | undefined => {
   return a && !b ? 'A' : b && !a ? 'B' : undefined
 }
 
+// What the * means on an Optimal/Complete value (only these algorithms carry one)
+const STAR_NOTES: Record<string, string> = {
+  bfs: 'BFS Yes* = optimal only when every step costs the same (fewest hops, not fewest km).',
+  dfs: 'DFS No* = complete only on a finite graph with a visited set (true here).',
+  greedy: 'Greedy No* = complete only on a finite graph with a visited set (true here).',
+}
+
 function setCell(id: string, lane: Lane, content: string, better: Lane | undefined, html = false): void {
   const el = document.getElementById(id + lane)
   if (!el) return
@@ -277,6 +284,14 @@ export function syncTable(
   if (rowB) rowB.textContent = 'B · ' + B.meta.label + laneLmSuffix(B.meta, laneB)
   // renderControls()' text writes (the buttons/labels that stay React-owned
   // live in props; these three sit in static markup)
+  const algoNotes = document.getElementById('algoNotes')
+  if (algoNotes) {
+    const notes = [...new Set([A.meta, B.meta])]
+      .map((m) => Object.entries(STAR_NOTES).find(([k]) => ALGORITHMS[k] === m)?.[1])
+      .filter(Boolean)
+    algoNotes.textContent = notes.join(' ')
+    algoNotes.hidden = notes.length === 0
+  }
   const routeLabel = document.getElementById('routeLabel')
   if (routeLabel) routeLabel.textContent = start + ' → ' + goal
   const algoALabel = document.getElementById('algoALabel')

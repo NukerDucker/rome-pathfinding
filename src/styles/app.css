@@ -683,9 +683,9 @@
   pointer-events: none;
 }
 
-.node .marker-start { stroke: var(--marker-start); }
-.node .marker-goal { stroke: var(--marker-goal); }
-.node .marker-landmark { stroke: #f0b429; stroke-dasharray: 12 6; }
+.node .marker-start { stroke: var(--marker-start); stroke-width: 11; }
+.node .marker-goal { stroke: var(--marker-goal); stroke-width: 11; }
+.node .marker-landmark { stroke: #f0b429; stroke-dasharray: 12 6; stroke-width: 6; }
 
 .node-clickable { cursor: pointer; }
 
@@ -1292,6 +1292,7 @@ html.theme-anim *::after {
   font-weight: 600;
 }
 .guide-table strong { color: var(--text-h); }
+.guide-table-note { font-size: 12px; color: var(--text); margin: calc(-1 * var(--sp-2)) 0 var(--sp-3); }
 
 .guide-figure { margin: var(--sp-2) auto var(--sp-1); max-width: 480px; text-align: center; }
 .guide-figure img {
@@ -1381,10 +1382,10 @@ html.theme-anim *::after {
 .mroad-seam { stroke: var(--bg); stroke-linecap: butt; }
 
 /* Split landmark rings: purple half = lane A picked it, teal half = lane B */
-.node-split .marker-start { stroke: var(--marker-start); }
-.node-split .marker-goal { stroke: var(--marker-goal); }
-.node-split .marker-lm-a { stroke: var(--map-accent); stroke-dasharray: 12 6; }
-.node-split .marker-lm-b { stroke: var(--lane-b); stroke-dasharray: 12 6; }
+.node-split .marker-start { stroke: var(--marker-start); stroke-width: 11; }
+.node-split .marker-goal { stroke: var(--marker-goal); stroke-width: 11; }
+.node-split .marker-lm-a { stroke: var(--map-accent); stroke-dasharray: 12 6; stroke-width: 6; }
+.node-split .marker-lm-b { stroke: var(--lane-b); stroke-dasharray: 12 6; stroke-width: 6; }
 
 /* ── Workspace: centre map (+ optional right stats sidebar) ────────── */
 .workspace {
@@ -1528,6 +1529,15 @@ html.theme-anim *::after {
     opacity: 1;
     transform: none;
     animation: none;
+  }
+}
+
+/* 1101-1200px on tall screens (the <=950px-high case is handled above by
+   moving stats under the maps): the 1:2 split left each unmerged map ~170px
+   wide; a narrower fixed comparison column gives them ~300px. */
+@media (min-width: 1101px) and (max-width: 1200px) and (min-height: 951px) {
+  .app-body:has(.lanes:not(.lanes-merged)) {
+    grid-template-columns: minmax(0, 1fr) 420px;
   }
 }
 

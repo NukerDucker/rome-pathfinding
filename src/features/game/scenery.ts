@@ -249,6 +249,8 @@ function pathEdgeKeys(path: NodeId[]): Set<string> {
 function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boolean, path: NodeId[]): string {
   if (isFinalFrame && found && path.includes(node)) return 'path'
   if (node === step.current) return 'current'
+  // visited wins: the A* variants use lazy deletion, so an expanded city can
+  // still have a stale (worse-cost) entry left in the frontier list
   if (step.visited.includes(node)) return 'visited'
   if (step.frontier.includes(node)) return 'frontier'
   return 'unvisited'
