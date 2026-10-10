@@ -2,8 +2,13 @@
 // typesets the formulas — done at render time now):
 //   1. a GIF that fails to load becomes a "pending" box naming its spec
 //   2. the contents list highlights the section crossing the upper screen
-export function attachGuideExtras(): () => void {
-  const tabGuide = document.getElementById('tabGuide')
+// `root` defaults to the game guide's tab panel, so the existing call site is
+// unchanged; the modern guide passes its own .guide-page-wrap element to get
+// the same two behaviours.
+export function attachGuideExtras(
+  root: ParentNode | null = document.getElementById('tabGuide'),
+): () => void {
+  const tabGuide = root
   if (!tabGuide) return () => {}
   const cleanups: Array<() => void> = []
 

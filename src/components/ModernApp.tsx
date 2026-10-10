@@ -3,6 +3,9 @@ import { type NodeId } from '@/romania'
 import { ALGORITHMS } from '@/search'
 import { type LandmarkPreset } from '@/heuristic'
 import { Guide } from '@/components/Guide'
+// Shared with the game guide (which passes no argument and gets #tabGuide).
+// Belongs in src/components/guide/ once the two guides share a shell.
+import { attachGuideExtras } from '@/game/guideScrollSpy'
 import {
   ThemeRoll, DndAurora,
   SpaceField,
@@ -174,6 +177,14 @@ function ModernApp({ theme, mode, onSelectTheme, onToggleMode }: {
       if (themeRef.current === 'dnd') playExpand()
     }
   }, [stepIdx])
+
+  // Guide extras — contents highlight and the broken-GIF fallback — which the
+  // game guide has always had and the modern one never did. Re-attached on each
+  // visit to the tab, because the guide unmounts when you leave it.
+  useEffect(() => {
+    if (tab !== 'guide') return
+    return attachGuideExtras(document.querySelector('.guide-page-wrap'))
+  }, [tab])
 
 
   // Audio: unlock the context on the first gesture (pointer OR keyboard) — browsers

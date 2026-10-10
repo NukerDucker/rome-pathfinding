@@ -1111,6 +1111,15 @@ html.theme-anim *::after {
   border-left-color: var(--map-accent);
   background: color-mix(in srgb, var(--map-accent) 6%, transparent);
 }
+/* Section currently being read. The game guide has had this all along
+   (game.css .guide-nav a.active); the modern guide had no rule, so wiring the
+   scroll-spy up to it would have highlighted nothing. */
+.guide-page-wrap .guide-nav a.active {
+  color: var(--text-h);
+  font-weight: 600;
+  border-left-color: var(--map-accent);
+  background: color-mix(in srgb, var(--map-accent) 6%, transparent);
+}
 
 /* Main content column */
 .guide-sections {
