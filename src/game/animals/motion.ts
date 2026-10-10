@@ -51,8 +51,9 @@ export interface ArcOptions {
   face: string
   /**
    * The 5th (leaving) jump: y the whale exits at, above the screen top.
-   * When set, returns the leaving variant — the rise (t 0..0.5) plus one
-   * launch frame off the top of the screen, still spinning.
+   * When set, the arc rises to the apex at t 0.5, then keeps launching up off
+   * the top of the screen, still spinning — one continuous motion rather than
+   * the apex frames spliced onto a line.
    */
   exitY?: number
 }
@@ -68,18 +69,22 @@ export function arcFrames({ start, end, peakY, goingRight, face, exitY }: ArcOpt
     const t = i / N
     const x = start.x + (end.x - start.x) * t
     const base = start.y + (end.y - start.y) * t
-    const y = base + (peakY - base) * 4 * t * (1 - t) // parabola through the apex
-    // one full flip over the jump, rolling forward in its direction of travel
+    const arc = base + (peakY - base) * 4 * t * (1 - t) // parabola through the apex
+    // Leaving jump: past the apex the whale keeps launching straight up off the
+    // top of the screen, still spinning. Both the extra height and the extra
+    // spin ramp in as u^2, so they start from nothing at the apex — the
+    // parabola's vertical speed is already zero there, and a linear join would
+    // snap from a standstill to full speed and double the spin in one frame.
+    const u = exitY === undefined || t <= 0.5 ? 0 : (t - 0.5) * 2
+    const y = exitY === undefined || u === 0 ? arc : peakY + (exitY - peakY) * u * u
+    // one full flip over the jump, rolling forward in its direction of travel,
+    // plus a further half turn while it launches away
+    const spin = (goingRight ? 360 : -360) * t + (goingRight ? 1 : -1) * 180 * u * u
     frames.push({
-      transform: whaleAt({ x, y }, ` rotate(${(goingRight ? 360 : -360) * t}deg)${face}`),
+      transform: whaleAt({ x, y }, ` rotate(${spin}deg)${face}`),
       opacity: Math.min(1, t / 0.08),
       offset: t,
     })
   }
-  if (exitY === undefined) return frames
-  const rise = frames.slice(0, N / 2 + 1) // t 0..0.5: up to the top of the arc
-  const spin = goingRight ? 360 : -360
-  const gone = { x: start.x + (end.x - start.x) * 0.75, y: exitY } // above the screen's top
-  rise.push({ transform: whaleAt(gone, ` rotate(${spin * 1.5}deg)${face}`), opacity: 1, offset: 1 })
-  return rise
+  return frames
 }
