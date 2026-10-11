@@ -154,6 +154,10 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
   for (const [node, par] of Object.entries(parF)) parent[node] = par
   for (const [node, par] of Object.entries(parB)) if (!(node in parent)) parent[node] = par
 
+  // Landing frame. `current` is the meeting node (where the frontiers crossed),
+  // not the goal — unlike BFS/DFS/UCS/A*, which land on the goal. Inert on screen:
+  // nodeState paints every path node as 'path' on the final frame before it consults
+  // `current`, and the meeting node is always on the path.
   steps.push({ ...emit(muNode), frontier: [] })
   return { steps, parent, path, found: true, generated: generatedCount() }
 }

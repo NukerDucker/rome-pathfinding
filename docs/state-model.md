@@ -75,3 +75,13 @@ frames, 0 cost-vs-UCS violations, 0 not-found, 0 bad endpoints.
   do it (per-direction records) exists in `biastar.ts` / `biucs.ts`.
 - `stepViolations()` intentionally recomputes sets from the arrays rather than
   trusting producers — the test failing is the alarm, not a runtime guard.
+- `SearchResult.parent` is a start-rooted tree only for the single-direction
+  searches. `biastar` stores a mix of forward- and backward-oriented parent links,
+  and `biucs`'s shared `parentToNode` can contain cycles — so
+  `reconstructPath(result.parent, goal)` is wrong for `biastar` and non-terminating
+  for `biucs`. The renderers only ever walk `parent` one hop (`treeEdgeKeys`), so the
+  app is unaffected; route reconstruction uses each algorithm's own `path`.
+- The bidirectional landing frames set `current` to the meeting node, not the goal
+  (BFS/DFS/UCS/A* land on the goal). Inert on screen — the final frame paints every
+  path node as `path` before `nodeState` consults `current` — but a consumer reading
+  that field expecting the goal would be wrong. `tests/algorithms.test.ts` pins it.

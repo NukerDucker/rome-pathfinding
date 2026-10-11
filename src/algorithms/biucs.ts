@@ -201,7 +201,10 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
   for(const [to, path] of Object.entries(parentToNode))
     result.parent[to] = path.from;
   // Synthetic landing frame: final found-frame must carry an empty frontier
-  // (Step contract), like every other algorithm's goal frame.
+  // (Step contract), like every other algorithm's goal frame. Its `current` is the
+  // meeting node (snapshot(meeting.v)), not the goal, unlike BFS/DFS/UCS/A* — inert
+  // on screen, since nodeState paints every path node as 'path' on the final frame
+  // before it consults `current`, and the meeting node is always on the path.
   result.steps.push({...snapshot(meeting.v), frontier: []});
   result.found = true;
   return result;
