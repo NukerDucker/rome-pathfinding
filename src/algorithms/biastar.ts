@@ -123,7 +123,6 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
       if (!closedF.has(u) && gf <= (gF[u] ?? Infinity)) {
         expand(u, gf, gF, parF, closedF, frontF, gB, goal, hPF)
       }
-      steps.push(emit(u))
     }
 
     if (Math.max(minF(frontF), minF(frontB)) >= mu) break
