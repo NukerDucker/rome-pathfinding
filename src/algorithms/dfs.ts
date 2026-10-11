@@ -34,11 +34,11 @@ export function dfs(start: NodeId, goal: NodeId): SearchResult {
       discovered.add(neighbor)
       parent[neighbor] = current
       generated += 1
+      stack.push(neighbor)
       if (neighbor === goal) {
         found = true
         break
       }
-      stack.push(neighbor)
     }
 
     expanded.push(current)

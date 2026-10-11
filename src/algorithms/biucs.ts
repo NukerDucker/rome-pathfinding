@@ -159,7 +159,6 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
       muMeeting = forwardWalkReturn.meeting;
     }
     if(forwardWalkReturn.visitedNode === null) break;
-    result.steps.push(snapshot(forwardWalkReturn.visitedNode));
 
     const backwardWalkReturn: IterateDijkstraReturn = iterateDijsktra(
       visitedBackwardPaths, pendingVisitBackwardPaths, visitedForwardPaths, parentToNode, true
@@ -169,6 +168,7 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
       muMeeting = backwardWalkReturn.meeting;
     }
     if(backwardWalkReturn.visitedNode === null) break;
+    // Forward and backward expansions are one bidirectional search step.
     result.steps.push(snapshot(backwardWalkReturn.visitedNode));
   }
 
