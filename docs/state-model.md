@@ -20,6 +20,7 @@ Invariants, enforced for **all 9 algorithms × all 380 ordered city pairs**:
 2. no duplicates in either array
 3. `|frontier ∪ visited| ≤ generated`
 4. a found run's final frame has an empty `frontier`
+5. a run's `visited` never shrinks between frames — `closed` is final (no re-open)
 
 `nodeState()` and `countStates()` in `search.ts` are the single derivation used
 by both the map paint (`svgMap.tsx`) and the comparison table
@@ -46,7 +47,9 @@ open in some direction that no direction has closed.
 - `astar-core.ts`: one shared A* loop; `frontier` derived as `discovered ∧ ¬closed`;
   optional **pathmax** (`h′(n) = max(h(n), h′(parent) − c(parent,n))`) on the LP
   lane — restores consistency, so `closed` is final (no re-open flicker, optimality kept: eval mismatches = 0).
-- `biastar.ts` / `biucs.ts`: set-derived emission (R1), `generated` = distinct discovered.
+- `biastar.ts`: set-derived emission (R1); per-direction **pathmax** so each direction's
+  `closed` stays final even when `h` is inconsistent (the LP component always is).
+- `biucs.ts`: set-derived emission (R1), `generated` = distinct discovered.
 - `biucs.ts`: adjacency shortcut requires the frontier entry to have been generated
   *by start*; termination is now μ-based with **node meetings and crossing-edge
   meetings**, reconstruction through the optimal meeting (including the crossing hop `u → v`).

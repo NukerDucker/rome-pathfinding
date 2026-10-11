@@ -11,8 +11,9 @@ import { h } from './heuristic'
 // Each frontier minimum bounds the WHOLE start-to-goal distance. Halt when
 //   max(min_f(forward_frontier), min_f(backward_frontier)) ≥ μ
 // where μ = best complete path cost seen so far.
-// Adding these independent bounds double-counts the trip. With admissible h
-// and reopening on improvements, either search can certify the incumbent.
+// Adding these independent bounds double-counts the trip. Each direction applies
+// pathmax so its h′ is consistent along its own parent tree, keeping closed final
+// (the re-open line below is retained only as a safety net).
 
 function popMin(frontier: [number, number, NodeId][]): [number, number, NodeId] | null {
   if (frontier.length === 0) return null
@@ -51,13 +52,19 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
   const gF: Record<NodeId, number> = { [start]: 0 }
   const parF: Record<NodeId, NodeId | null> = { [start]: null }
   const closedF = new Set<NodeId>()
-  const frontF: [number, number, NodeId][] = [[h(start, goal), 0, start]]
+  // Per-direction pathmax h (h′(n) = max(h(n), h′(parent) − c)), carried with its own
+  // parent tree. The combined LP+ALT h is admissible but NOT consistent (LP alone:
+  // 39/920 pairs; custom landmark sets worse), so without pathmax a settled node could
+  // re-open. With it, each direction's `closed` stays final.
+  const hPF: Record<NodeId, number> = { [start]: h(start, goal) }
+  const frontF: [number, number, NodeId][] = [[hPF[start], 0, start]]
 
   // Backward
   const gB: Record<NodeId, number> = { [goal]: 0 }
   const parB: Record<NodeId, NodeId | null> = { [goal]: null }
   const closedB = new Set<NodeId>()
-  const frontB: [number, number, NodeId][] = [[h(goal, start), 0, goal]]
+  const hPB: Record<NodeId, number> = { [goal]: h(goal, start) }
+  const frontB: [number, number, NodeId][] = [[hPB[goal], 0, goal]]
 
   let mu = Infinity
   let muNode: NodeId | null = null
@@ -84,6 +91,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
     closedSelf: Set<NodeId>, frontSelf: [number, number, NodeId][],
     gOther: Record<NodeId, number>,
     hTarget: NodeId,
+    hPA: Record<NodeId, number>,
   ) {
     closedSelf.add(u)
     if (u in gOther) {
@@ -93,11 +101,15 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
     for (const edge of ROMANIA[u].edges) {
       const ng = gu + edge.km
       if (ng < (gSelf[edge.to] ?? Infinity)) {
+        const base = h(edge.to, hTarget)
+        const hEff = Math.max(base, (hPA[u] ?? base) - edge.km) // pathmax along this tree
         gSelf[edge.to] = ng
         parSelf[edge.to] = u
-        // Reopen improved states: admissibility alone does not imply consistency.
+        hPA[edge.to] = hEff
+        // Kept for safety, but unreachable while h′ is consistent along the tree
+        // (the pathmax above) — so a settled node stays settled (no re-open).
         closedSelf.delete(edge.to)
-        frontSelf.push([ng + h(edge.to, hTarget), ng, edge.to])
+        frontSelf.push([ng + hEff, ng, edge.to])
       }
     }
   }
@@ -109,7 +121,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
     if (fe) {
       const [, gf, u] = fe
       if (!closedF.has(u) && gf <= (gF[u] ?? Infinity)) {
-        expand(u, gf, gF, parF, closedF, frontF, gB, goal)
+        expand(u, gf, gF, parF, closedF, frontF, gB, goal, hPF)
       }
       steps.push(emit(u))
     }
@@ -120,7 +132,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
     if (be) {
       const [, gb, u] = be
       if (!closedB.has(u) && gb <= (gB[u] ?? Infinity)) {
-        expand(u, gb, gB, parB, closedB, frontB, gF, start)
+        expand(u, gb, gB, parB, closedB, frontB, gF, start, hPB)
       }
       steps.push(emit(u))
     }

@@ -63,6 +63,26 @@ describe('Step contract: visited / frontier / generated', () => {
     }
     expect(failures).toEqual([])
   })
+
+  // `closed` is final: once a node is expanded it never returns to the frontier.
+  // This is what the code relies on to paint a stable visited set — it holds with
+  // the pathmax on the A* lanes and on biastar's two directions. If an h/config ever
+  // forces a re-open, this fails rather than letting a node flicker visited→frontier.
+  test('closed is final — visited never shrinks (no re-open) on any run', () => {
+    const failures: string[] = []
+    for (const [key, meta] of Object.entries(ALGORITHMS)) {
+      for (const [s, g] of PAIRS) {
+        const r = meta.run(s, g)
+        let prev = new Set(r.steps[0]?.visited ?? [])
+        r.steps.forEach((step, i) => {
+          const cur = new Set(step.visited)
+          for (const n of prev) if (!cur.has(n)) failures.push(`${key} ${s}->${g} frame ${i}: ${n} left visited`)
+          prev = cur
+        })
+      }
+    }
+    expect(failures).toEqual([])
+  })
 })
 
 describe('optimality: cost-optimal algorithms match UCS on every pair', () => {
