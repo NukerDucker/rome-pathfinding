@@ -734,6 +734,15 @@ transform-origin:0 0; will-change:transform; cursor:grab;
 .game-root .map-svg-layer .arc{ fill:none; stroke:var(--arc); stroke-linecap:round; }
 .game-root .map-svg-layer .arc-chord{ stroke:var(--arc); stroke-dasharray:6 8; opacity: 1;; }
 .game-root .map-svg-layer .heat{ opacity:.6; }
+/* Heatmap on: dim the map and its castles/flags to 50% so the heat colours stand out.
+   The filter sits on .map-stage (not .map-img) so it stacks on the space/dnd image tint;
+   [data-entity] skips the node-disc/label layers, which share .map-entity-layer.
+   The canvas sea gets the same 50% so the map edge stays seamless. */
+.game-root .map-stage,
+.game-root .map-entity-layer[data-entity]{ transition:filter .25s; }
+.game-root.show-heat .map-stage,
+.game-root.show-heat .map-entity-layer[data-entity]{ filter:brightness(.5); }
+.game-root.show-heat .algo-canvas{ background-image:linear-gradient(rgb(0 0 0 / .5), rgb(0 0 0 / .5)); }
 /* Node disc: oval on each city's road junction; fill = state, ring = start/goal */
 .game-root .node-disc{
 position:absolute; left:0; top:0; z-index: 3; box-sizing:border-box; border-radius:50%;
