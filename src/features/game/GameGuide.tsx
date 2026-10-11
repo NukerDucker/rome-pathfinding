@@ -335,8 +335,9 @@ export default function GameGuide() {
             <p className="guide-table-note">
               <strong>*</strong> BFS is optimal only when every step costs the same: it finds the
               fewest hops, not the fewest km, so on this map it can return a longer road route.
-              DFS and Greedy are complete only on a finite graph with a visited set to stop cycles,
-              which is the case here.
+            </p>
+            <p className="guide-table-note">
+              DFS No* = complete only on a finite graph with a visited set (true here).
             </p>
             <div className="guide-note">
               <strong>Read the A★ rows carefully.</strong> The asymptotic class is the same{' '}

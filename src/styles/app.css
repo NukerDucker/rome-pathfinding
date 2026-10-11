@@ -1059,6 +1059,7 @@ html.theme-anim *::after {
 }
 .guide-page-wrap .guide-page {
   width: 100%;
+  min-width: 0;
   padding: 0 var(--sp-4) var(--sp-6);
   box-sizing: border-box;
 }
@@ -1105,6 +1106,7 @@ html.theme-anim *::after {
   grid-template-rows: auto auto;
   gap: 0;
   align-items: start;
+  min-width: 0;
 }
 
 .guide-lede {
@@ -1167,6 +1169,7 @@ html.theme-anim *::after {
   flex-direction: column;
   gap: var(--sp-3);
   padding-left: var(--sp-5);
+  min-width: 0;
 }
 
 /* Prose sections — one card each, like the game guide's boxes */
@@ -1176,6 +1179,8 @@ html.theme-anim *::after {
   border-radius: 12px;
   padding: var(--sp-4) var(--sp-5);
   scroll-margin-top: 56px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .guide-section h3 {
   font-size: 17px;
@@ -1218,6 +1223,23 @@ html.theme-anim *::after {
   .guide-sections {
     grid-column: 1;
     grid-row: 3;
+  }
+}
+
+@media (max-width: 550px) {
+  .guide-page-wrap .guide-page {
+    padding-inline: var(--sp-2);
+  }
+  .guide-section {
+    padding-inline: var(--sp-3);
+  }
+  .guide-sections {
+    padding-left: 0;
+  }
+  .guide-lede,
+  .guide-section p,
+  .guide-section li {
+    overflow-wrap: anywhere;
   }
 }
 /* Prose scale. These were written as `.guide p` and friends, but no element
