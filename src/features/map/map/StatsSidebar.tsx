@@ -201,6 +201,9 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
   }, [])
 
   const chipBase = 'font-mono text-[12px] px-2 py-[2px] rounded-full whitespace-nowrap'
+  // Wrapping rows (the Path row): drop nowrap so a long route flows onto
+  // multiple lines inside the card instead of overflowing it.
+  const chipWrap = 'font-mono text-[12px] px-2 py-[2px] rounded-lg whitespace-normal break-words max-w-full'
 
   const renderKanbanCol = (side: 'a' | 'b', label: string, badgeCls: string, accentCls: string, winnerCls: string, winnerBg: string) => (
     <div className="flex flex-col gap-2">
@@ -221,13 +224,14 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
               const rowCls = c.wrap
                 ? 'flex flex-col items-start gap-1 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
                 : 'flex items-center justify-between gap-2 py-[3px] border-b border-[rgba(255,255,255,0.04)] last:border-0'
+              const chipCls = c.wrap ? chipWrap : chipBase
               return (
                 <div key={c.label} className={rowCls}>
                   <span className="text-[12px] text-ink truncate">{c.label}</span>
-                  {isYes ? <span className={`${chipBase} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
-                   : isNo ? <span className={`${chipBase} text-ink opacity-40`}>{val}</span>
-                   : isBetter ? <span className={`${chipBase} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
-                   : <span className={`${chipBase} text-ink-bold`}>{val}</span>}
+                  {isYes ? <span className={`${chipCls} bg-state-path/20 text-state-path-ink font-semibold`}>{val}</span>
+                   : isNo ? <span className={`${chipCls} text-ink opacity-40`}>{val}</span>
+                   : isBetter ? <span className={`${chipCls} ${winnerBg} ${winnerCls} font-semibold`}>{val}</span>
+                   : <span className={`${chipCls} text-ink-bold`}>{val}</span>}
                 </div>
               )
             })}
