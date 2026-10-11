@@ -577,16 +577,12 @@
 }
 
 /* Elliptical-arc heuristic overlay (illustrative — greedy/astar only). */
-.edge-arc {
-  fill: none;
+/* Straight-line (SLD) overlay: a solid direct line from start to goal. */
+.edge-straight {
   stroke: #f5c518;
-  stroke-width: 12;
-}
-
-.edge-arc-chord {
-  stroke: #f5c51844;
   stroke-width: 7;
-  stroke-dasharray: 15 25;
+  stroke-linecap: round;
+  pointer-events: none;
 }
 
 /* Distance pill straddling the midpoint of each road. */

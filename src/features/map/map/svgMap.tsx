@@ -15,41 +15,11 @@ const NODE_R = 50
 const LABEL_H = 65
 const LABEL_RX = 18
 
-// Elliptical-arc heuristic overlay — illustrative, shown for greedy/astar.
-const ARC_BASE_BULGE = 0.02
-const ARC_BULGE_SCALE = 0.07
-const ARC_BULGE_CAP = 0.08
-
-function mapArcGeometry(start: NodeId, goal: NodeId) {
+// Straight-line (SLD) overlay — the direct start→goal chord, shown for intuition
+// only and never fed to the heuristic. Solid; no arc.
+function renderStraightLine(start: NodeId, goal: NodeId) {
   const ca = ROMANIA[start], cb = ROMANIA[goal]
-  const dx = cb.x - ca.x, dy = cb.y - ca.y
-  const chord = Math.hypot(dx, dy)
-  if (chord === 0) return null
-  const a = chord / 2, mx = ca.x + dx / 2, my = ca.y + dy / 2
-  const ux = dx / chord, uy = dy / chord
-  const bucharest = ROMANIA['Bucharest']
-  const vx = bucharest.x - mx, vy = bucharest.y - my
-  const dbuc = Math.hypot(vx, vy)
-  const bf = Math.min(ARC_BASE_BULGE + ARC_BULGE_SCALE * dbuc / chord, ARC_BULGE_CAP)
-  const b = chord * bf, wLen = dbuc || 1
-  return { mx, my, a, b, ux, uy, wx: vx / wLen, wy: vy / wLen }
-}
-
-function renderArcEdges(start: NodeId, goal: NodeId) {
-  const g = mapArcGeometry(start, goal)
-  if (!g) return null
-  const ca = ROMANIA[start], cb = ROMANIA[goal]
-  let pts = ''
-  const STEPS = 50
-  for (let i = 0; i <= STEPS; i++) {
-    const t = Math.PI * i / STEPS
-    const ct = Math.cos(t), st = Math.sin(t)
-    pts += (g.mx + g.a * ct * g.ux + g.b * st * g.wx) + ',' + (g.my + g.a * ct * g.uy + g.b * st * g.wy) + ' '
-  }
-  return [
-    <line key="arc-chord" className="edge-arc-chord" x1={ca.x} y1={ca.y} x2={cb.x} y2={cb.y} />,
-    <polyline key="arc-curve" className="edge-arc" points={pts.trim()} />,
-  ]
+  return <line className="edge-straight" x1={ca.x} y1={ca.y} x2={cb.x} y2={cb.y} />
 }
 
 // Later states paint over earlier ones, so a road on the solution path wins.
@@ -304,7 +274,7 @@ export function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, 
         />
       ))}
 
-      {showLine && renderArcEdges(start, goal)}
+      {showLine && renderStraightLine(start, goal)}
 
       {edgeViews.map((edge) => {
         const mx = (ROMANIA[edge.a].x + ROMANIA[edge.b].x) / 2
@@ -490,7 +460,7 @@ export function MergedSVGMap({
         )
       })}
 
-      {showLine && renderArcEdges(start, goal)}
+      {showLine && renderStraightLine(start, goal)}
 
       {/* km pills — tinted by the “busier” of the two lanes' states */}
       {BASE_EDGES.map((edge) => {
