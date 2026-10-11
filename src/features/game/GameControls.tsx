@@ -125,7 +125,7 @@ export default function GameControls(props: Props) {
 
       {/* Overlay toggles are checkboxes styled as buttons. */}
       <div className="section tools-bar" role="toolbar" aria-label="Tools">
-        <label className="tool-toggle" title="Dashed: straight line from start to goal. Solid: the same line drawn as a gentle arc. Visual aid only"><input type="checkbox" id="straightLineChk" checked={props.showLine} onChange={(e) => props.onShowLine(e.target.checked)} /><img src="/assets/icon-straightline.png" className="overlay-icon" alt="" />Straight Line</label>
+        <label className="tool-toggle" title="Straight line from start to goal; visual aid only"><input type="checkbox" id="straightLineChk" checked={props.showLine} onChange={(e) => props.onShowLine(e.target.checked)} /><img src="/assets/icon-straightline.png" className="overlay-icon" alt="" />Straight Line</label>
         <label className="tool-toggle" title="ALT h-value per city: red near the goal through yellow/green to blue farther away"><input type="checkbox" id="heatmapChk" checked={props.showHeat} onChange={(e) => props.onShowHeat(e.target.checked)} /><img src="/assets/icon-heatmap.png" className="overlay-icon" alt="" />Heatmap</label>
         <label className="tool-toggle" title="Road distance (km) on every road"><input type="checkbox" id="distanceChk" checked={props.showDistances} onChange={(e) => props.onShowDistances(e.target.checked)} />Distances</label>
         <label className="tool-toggle" title="On: one merged map. Off: map A and map B side by side"><input type="checkbox" id="mergeChk" checked={props.merged} onChange={(e) => props.onMerged(e.target.checked)} />Merge Maps</label>

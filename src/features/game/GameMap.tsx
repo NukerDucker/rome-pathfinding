@@ -84,7 +84,6 @@ export default function GameMap({ playback, children, showLine, showHeat }: {
           {showLine && (
             <span title="Visual aid only: no algorithm or heuristic reads it">
               <svg className="road-dash" viewBox="0 0 24 10" aria-hidden="true"><line x1="3" y1="5" x2="21" y2="5" stroke="var(--arc)" strokeWidth="3" strokeDasharray="3 3" /></svg>Straight line start → goal
-              <svg className="road-dash road-dash-gap" viewBox="0 0 24 10" aria-hidden="true"><path d="M3 8 Q12 0 21 8" fill="none" stroke="var(--arc)" strokeWidth="3" strokeLinecap="round" /></svg>same line, drawn as an arc
             </span>
           )}
           {/* merged map only (script.js hides these when Merge is off) */}

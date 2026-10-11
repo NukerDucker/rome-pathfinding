@@ -441,7 +441,6 @@ function makeLaneOverlay(
       const arc = arcPoints(state.start, state.goal)
       if (arc) {
         html += `<line class="arc-chord" x1="${arc.ca.x}" y1="${arc.ca.y}" x2="${arc.cb.x}" y2="${arc.cb.y}" stroke-width="${ARC_WIDTH * 0.8}"/>`
-        html += `<polyline class="arc" points="${arc.pts}" stroke-width="${ARC_WIDTH}"/>`
       }
     }
     world.innerHTML = html
