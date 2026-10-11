@@ -29,6 +29,12 @@ type IterateDijkstraReturn = {
 };
 
 export function biucs(start: NodeId, goal: NodeId): SearchResult {
+  // Same endpoint guard as every other algorithm — without it an unknown city
+  // reached ROMANIA[...] in the walk below and threw.
+  if(!(start in ROMANIA) || !(goal in ROMANIA)){
+    return {steps: [], parent: {}, path: [], found: false, generated: 0};
+  }
+
   function iterateDijsktra(
     visitedPaths: Record<NodeId, Path>, pendingVisitPaths: EdgeWithCost[],
     otherVisitedPaths: Record<NodeId, Path>, parentToNode: Record<NodeId, Path>,
