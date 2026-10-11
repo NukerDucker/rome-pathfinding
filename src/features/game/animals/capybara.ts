@@ -94,6 +94,10 @@ export function createCapybara({ capyEl, capyImg, mapPanelEl, perchSlot }: Capyb
       // the on-screen size must be set explicitly: a canvas doesn't stretch to inset:0,
       // so without this it shows at width*dpr CSS px and the dust looks enlarged
       canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px';
+      // In <body> the canvas is outside .game-root, so game.css's `.capy-dust`
+      // rule (fixed over the viewport) doesn't reach it; without these it sits in
+      // page flow below the screen and the dust is never seen.
+      Object.assign(canvas.style, { position: 'fixed', left: '0', top: '0', zIndex: '970', pointerEvents: 'none' });
       document.body.appendChild(canvas);
       dustCanvases.add(canvas);
       const ctx2d = canvas.getContext('2d');

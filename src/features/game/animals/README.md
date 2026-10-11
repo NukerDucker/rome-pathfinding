@@ -26,7 +26,7 @@ synth; no sound files.
 |---|---|---|---|
 | `duck.ts` | `createDuck` | click the duck (`#duckBtn`) ×10 | hop per click (grows, quack pitch rises); 10th click: rolls off screen, moves to its other home (Map ↔ Guide), rolls in when that spot is on screen |
 | `whale.ts` | `createWhale` | click the VS badge (split view) ×5 | parabola jump between the maps with splash; 5th: launches off the top, falls onto its Guide perch; after that, clicks on the perch = splash + hop |
-| `cat.ts` | `createCat` | Merge toggle (1-in-10) | peeks up from a map's bottom edge ~2s; ignored → stands on the A vs B box; click it → runs off, runs in to its Guide slot |
+| `cat.ts` | `createCat` | Merge toggle (1-in-10) | peeks up from a map's bottom edge ~2s; ignored → hides again; click it → jumps out of the map, runs off, runs in to its Guide slot (then no more peeks) |
 | `capybara.ts` | `createCapybara` | Next/Prev (1-in-10) | rises out of the map box; click → crumbles into pixel dust; rebuilds itself on the Guide slot; there, clicks crumble + rebuild in place |
 | `bird.ts` | `createBird` | Random (1-in-10) | flies in a bezier arc to the route box, flapping; click it → flies off to the Guide slot |
 | `bread.ts` | `createBread` | 5 theme changes, then the bread button | full-screen GET BREAD (CSS animation); first one sends a small bread to its Guide perch |

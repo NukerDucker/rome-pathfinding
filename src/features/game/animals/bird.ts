@@ -3,9 +3,10 @@
  * birdSound 2029-2056 lives in ./audio.
  *
  * Each Random click has a 1-in-10 chance to make the bird fly in (flapping)
- * and perch on the route box, above the Random button. Click it: tweet, it
- * flies off, and it lands on the Guide intro card once that card is on
- * screen. There it stays: clicks just chirp + hop.
+ * from below the bottom of the screen and perch on the route box, above the
+ * Random button. Click it: tweet, it flies off the top, and it lands on the
+ * Guide intro card once that card is on screen. There it stays: clicks just
+ * chirp + hop.
  *
  * Elements come in via props (React owns them). The factory re-parents the
  * button to <body> for its flights, so dispose() puts it back.
@@ -66,7 +67,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
   lc.onDispose(() => { birdBtn.classList.remove('bird-perched', 'in-slot'); });
   // back to its initial state: hidden, standing, no inline styles
   lc.onDispose(() => { birdBtn.hidden = true; });
-  lc.onDispose(() => { birdBtn.removeAttribute('style'); });
+  lc.onDispose(() => { birdBtn.removeAttribute('style'); birdImg.removeAttribute('style'); });
   lc.onDispose(() => { birdFacing = 'left'; birdImg.src = BIRD_SPRITES.left.stand; birdState = 'none'; });
   lc.restore(birdBtn, owner); // <body>-lifted button returns to its React-owned parent
 
@@ -83,6 +84,17 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
     birdBtn.classList.remove('bird-perched', 'in-slot');
     birdBtn.removeAttribute('style');
     document.body.appendChild(birdBtn);
+    // In <body> it is outside .game-root, so game.css's `.game-root .bird`
+    // rules (fixed, 64px, no button chrome) no longer apply: carry them inline
+    // or it flies at its native 48px in normal page flow.
+    Object.assign(birdBtn.style, {
+      position: 'fixed', left: '0', top: '0', margin: '0', padding: '0', zIndex: '950',
+      width: BIRD + 'px', height: BIRD + 'px', background: 'none', border: 'none', pointerEvents: 'none',
+    });
+    Object.assign(birdImg.style, {
+      width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated',
+      objectFit: 'contain', objectPosition: 'center bottom',
+    });
     birdBtn.hidden = false;
     const ctrl = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 90 };
     const frames: Keyframe[] = [];
@@ -106,9 +118,11 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
       .finally(() => { if (flapTimer !== null) { clearInterval(flapTimer); flapTimer = null; } birdImg.src = sprites.fly; });
   }
 
-  // A point off the top of the screen, to the left or right of `near`
-  const birdOffscreen = (near: { x: number; y: number }) =>
-    ({ x: near.x + (Math.random() < 0.5 ? -1 : 1) * window.innerWidth * 0.6, y: -40 }); // 2088
+  // A point off the bottom (fly in) or top (fly away) of the screen, to the
+  // left or right of `near`
+  const birdOffscreen = (near: { x: number; y: number }, edge: 'top' | 'bottom') =>
+    ({ x: near.x + (Math.random() < 0.5 ? -1 : 1) * window.innerWidth * 0.6,
+       y: edge === 'bottom' ? window.innerHeight + BIRD + 40 : -40 }); // 2088
 
   function flyIn(where: 'map' | 'guide'): void {
     birdState = 'flying';
@@ -116,11 +130,12 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
     const boxRect = box.getBoundingClientRect();
     // feet on the route box's top edge, or at the bottom of its Guide slot
     const feet = { x: perch.x(box), y: where === 'guide' ? boxRect.bottom : boxRect.top + 10 };
-    birdFly(birdOffscreen(feet), feet, 1400).then(() => {
+    birdFly(birdOffscreen(feet, 'bottom'), feet, 1400).then(() => {
       if (lc.disposed) return;
       // land: sit inside the box so it scrolls with the page
       birdBtn.getAnimations().forEach(an => an.cancel());
       birdBtn.removeAttribute('style');
+      birdImg.removeAttribute('style'); // back inside .game-root: game.css sizes it again
       box.appendChild(birdBtn);
       if (where === 'guide') birdBtn.classList.add('in-slot'); // stands in its slot
       else {
@@ -140,7 +155,7 @@ export function createBird({ btn: birdBtn, img: birdImg, routeBoxEl, randomBtnEl
     birdState = 'flying';
     const r = birdBtn.getBoundingClientRect();
     const feet = { x: r.left + r.width / 2, y: r.bottom };
-    birdFly(feet, birdOffscreen(feet), 1100).then(() => {
+    birdFly(feet, birdOffscreen(feet, 'top'), 1100).then(() => {
       if (lc.disposed) return;
       birdBtn.getAnimations().forEach(an => an.cancel());
       birdBtn.hidden = true;
