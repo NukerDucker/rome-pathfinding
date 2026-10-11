@@ -5,7 +5,7 @@
 // it is moved verbatim from ModernApp.tsx and must not be edited in place.
 import type { ReactNode } from 'react'
 import { cityCode, type NodeId } from '@/algorithms/romania'
-import { pathCost, type Step, type AlgoMeta, type SearchResult } from '@/algorithms/search'
+import { countStates, pathCost, type Step, type AlgoMeta, type SearchResult } from '@/algorithms/search'
 import { Tex } from '@/components/Tex'
 import { BENCH_ITERS, type CompareRow } from './bench'
 import { laneLmSuffix, type LandmarkCount } from './landmarks'
@@ -63,10 +63,16 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
   // Combined table — one row per selected algorithm (A and B), one column per
   // metric. Live step-dependent metrics are rated only once both runs are done.
   const atEnd = finalA && finalB
-  const finalVisitedA = atEnd ? (result.steps[lastIdx]?.visited.length ?? 0) : NaN
-  const finalVisitedB = atEnd ? (result2.steps[lastIdx2]?.visited.length ?? 0) : NaN
-  const finalFrontierA = atEnd ? (result.steps[lastIdx]?.frontier.length ?? 0) : NaN
-  const finalFrontierB = atEnd ? (result2.steps[lastIdx2]?.frontier.length ?? 0) : NaN
+  // Counts come from the same derived sets the map paints with (countStates).
+  // Note: `current` is painted as its own colour but counted inside Visited
+  // (it is expanded this frame), and path cities keep counting in Visited —
+  // the Frontier row matches the painted frontier exactly on every frame.
+  const countA = stepA ? countStates(stepA) : { visited: 0, frontier: 0 }
+  const countB = stepB ? countStates(stepB) : { visited: 0, frontier: 0 }
+  const finalVisitedA = atEnd ? countA.visited : NaN
+  const finalVisitedB = atEnd ? countB.visited : NaN
+  const finalFrontierA = atEnd ? countA.frontier : NaN
+  const finalFrontierB = atEnd ? countB.frontier : NaN
   const costA = result.found ? pathCost(result.path) : NaN
   const costB = result2.found ? pathCost(result2.path) : NaN
 
@@ -114,14 +120,14 @@ export function StatsSidebar({ theme, start, goal, algo, algo2, stepIdx, laneA, 
     { label: 'Current', a: stepA?.current ?? '—', b: stepB?.current ?? '—' },
     {
       label: 'Visited',
-      a: String(stepA?.visited.length ?? 0),
-      b: String(stepB?.visited.length ?? 0),
+      a: String(countA.visited),
+      b: String(countB.visited),
       better: atEnd ? betterLower(finalVisitedA, finalVisitedB) : undefined,
     },
     {
       label: 'Frontier',
-      a: String(stepA?.frontier.length ?? 0),
-      b: String(stepB?.frontier.length ?? 0),
+      a: String(countA.frontier),
+      b: String(countB.frontier),
       better: atEnd ? betterLower(finalFrontierA, finalFrontierB) : undefined,
     },
     {

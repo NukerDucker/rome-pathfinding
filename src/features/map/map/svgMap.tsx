@@ -3,10 +3,9 @@
 // merged `MergedSVGMap`. Pure render: all state arrives as props.
 import { useId, type CSSProperties, type ReactNode } from 'react'
 import { CITIES, ROMANIA, cityCode, type NodeId } from '@/algorithms/romania'
-import { ALGORITHMS, type Step, type SearchResult } from '@/algorithms/search'
+import { ALGORITHMS, nodeState, type Step, type SearchResult } from '@/algorithms/search'
 import { planetFor, type PlanetInfo } from '@/theme'
 
-type NodeState = 'unvisited' | 'frontier' | 'current' | 'visited' | 'path'
 type EdgeState = 'base' | 'tree' | 'path'
 type EdgePair = { a: NodeId; b: NodeId; km: number }
 type EdgeView = EdgePair & { state: EdgeState }
@@ -114,15 +113,6 @@ function labelWidth(km: number): number {
   return 60 + String(km).length * 27.5
 }
 
-function nodeState(node: NodeId, step: Step, isFinalFrame: boolean, found: boolean, path: NodeId[]): NodeState {
-  if (isFinalFrame && found && path.includes(node)) return 'path'
-  if (node === step.current) return 'current'
-  // visited wins: the A* variants use lazy deletion, so an expanded city can
-  // still have a stale (worse-cost) entry left in the frontier list
-  if (step.visited.includes(node)) return 'visited'
-  if (step.frontier.includes(node)) return 'frontier'
-  return 'unvisited'
-}
 // ── D&D theme: wooden board-game tabletop ──────────────────────────────
 // The map panel doubles as the table the graph sits on. Drawn as an in-SVG
 // <pattern> (userSpaceOnUse) so the grain/seams stay locked to graph coordinates
@@ -348,7 +338,7 @@ export function SVGMap({ algoKey, stepIdx, lastIdx, result, hoveredCity, start, 
       )}
 
       {CITIES.map((city) => {
-        const state = step ? nodeState(city, step, isFinalFrame, result.found, result.path) : 'unvisited'
+        const state = step ? nodeState(step, city, { isFinalFrame, found: result.found, path: result.path }) : 'unvisited'
         const coord = ROMANIA[city]
         const isHovered = city === hoveredCity
         const isStart = city === start && !isFinalFrame
@@ -550,8 +540,8 @@ export function MergedSVGMap({
       {CITIES.map((city) => {
         const coord = ROMANIA[city]
         const code = cityCode(city)
-        const cA = stepA ? nodeState(city, stepA, finalA, result.found, result.path) : 'unvisited'
-        const cB = stepB ? nodeState(city, stepB, finalB, result2.found, result2.path) : 'unvisited'
+        const cA = stepA ? nodeState(stepA, city, { isFinalFrame: finalA, found: result.found, path: result.path }) : 'unvisited'
+        const cB = stepB ? nodeState(stepB, city, { isFinalFrame: finalB, found: result2.found, path: result2.path }) : 'unvisited'
         const planet = spaceTheme ? planetFor(city, planetNs) : null
         const isHovered = city === hoveredCity
         const isStart = city === start && searching

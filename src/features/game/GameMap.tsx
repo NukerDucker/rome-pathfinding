@@ -73,8 +73,8 @@ export default function GameMap({ playback, children, showLine, showHeat }: {
         {/* colours come from the --state-* tokens, shared with the map node markers */}
         <div className="legend-bar" aria-label="Legend">
           <span><span className="dot" style={{ background: 'var(--state-current)' }}></span>Current</span>
-          <span><span className="dot" style={{ background: 'var(--state-frontier)' }}></span>Frontier</span>
-          <span><span className="dot" style={{ background: 'var(--state-visited)' }}></span>Visited</span>
+          <span><span className="dot" style={{ background: 'var(--state-frontier)' }}></span>Frontier (open)</span>
+          <span><span className="dot" style={{ background: 'var(--state-visited)' }}></span>Visited (expanded)</span>
           <span><span className="dot" style={{ background: 'var(--state-path)' }}></span>Path</span>
           <span><span className="dot" style={{ background: 'var(--state-unvisited)' }}></span>Unvisited</span>
           <span><span className="dot dot-hollow" style={{ borderColor: 'var(--marker-start)' }}></span>Start</span>

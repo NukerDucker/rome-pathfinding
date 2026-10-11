@@ -52,8 +52,8 @@ function Legend() {
   return (
     <ul className="legend" aria-label="Node state colors">
       <li><span className="swatch swatch-current" aria-hidden="true" />Current</li>
-      <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier</li>
-      <li><span className="swatch swatch-visited" aria-hidden="true" />Visited</li>
+      <li><span className="swatch swatch-frontier" aria-hidden="true" />Frontier (open)</li>
+      <li><span className="swatch swatch-visited" aria-hidden="true" />Visited (expanded)</li>
       <li><span className="swatch swatch-path" aria-hidden="true" />Path</li>
       <li><span className="swatch swatch-unvisited" aria-hidden="true" />Unvisited</li>
       <li><span className="swatch swatch-start-ring" aria-hidden="true" />Start</li>

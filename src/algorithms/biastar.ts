@@ -39,7 +39,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
 
   if (start === goal) {
     return {
-      steps: [{ current: start, frontier: [], visited: [] }],
+      steps: [{ current: start, frontier: [], visited: [start] }],
       parent: { [start]: null },
       path: [start],
       found: true,
@@ -62,7 +62,21 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
   let mu = Infinity
   let muNode: NodeId | null = null
   const steps: Step[] = []
-  let generated = 2
+
+  // Emitted state follows the Step contract (search.ts). R1 union rule for the
+  // two directions: a node closed by EITHER search is `visited`; `frontier` is
+  // every node still open in at least one direction that no direction has
+  // closed. Derived from the g-records, so superseded entries in the internal
+  // pop arrays can never leak into a frame (and no duplicates survive concat).
+  const emit = (current: NodeId): Step => {
+    const closed = new Set<NodeId>([...closedF, ...closedB])
+    const open = new Set<NodeId>()
+    for (const n of Object.keys(gF)) if (!closedF.has(n) && !closedB.has(n)) open.add(n)
+    for (const n of Object.keys(gB)) if (!closedF.has(n) && !closedB.has(n)) open.add(n)
+    return { current, frontier: [...open], visited: [...closed] }
+  }
+  // generated = DISTINCT nodes ever discovered by either direction.
+  const generatedCount = () => new Set([...Object.keys(gF), ...Object.keys(gB)]).size
 
   function expand(
     u: NodeId, gu: number,
@@ -84,7 +98,6 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
         // Reopen improved states: admissibility alone does not imply consistency.
         closedSelf.delete(edge.to)
         frontSelf.push([ng + h(edge.to, hTarget), ng, edge.to])
-        generated++
       }
     }
   }
@@ -98,11 +111,7 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
       if (!closedF.has(u) && gf <= (gF[u] ?? Infinity)) {
         expand(u, gf, gF, parF, closedF, frontF, gB, goal)
       }
-      steps.push({
-        current: u,
-        frontier: [...frontF.map(e => e[2]), ...frontB.map(e => e[2])],
-        visited: [...closedF, ...closedB],
-      })
+      steps.push(emit(u))
     }
 
     if (Math.max(minF(frontF), minF(frontB)) >= mu) break
@@ -113,15 +122,11 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
       if (!closedB.has(u) && gb <= (gB[u] ?? Infinity)) {
         expand(u, gb, gB, parB, closedB, frontB, gF, start)
       }
-      steps.push({
-        current: u,
-        frontier: [...frontF.map(e => e[2]), ...frontB.map(e => e[2])],
-        visited: [...closedF, ...closedB],
-      })
+      steps.push(emit(u))
     }
   }
 
-  if (muNode === null) return { steps, parent, path: [], found: false, generated }
+  if (muNode === null) return { steps, parent, path: [], found: false, generated: generatedCount() }
 
   // Reconstruct: forward chain start→muNode, backward chain muNode→goal
   const fwd: NodeId[] = []
@@ -137,8 +142,8 @@ export function biastar(start: NodeId, goal: NodeId): SearchResult {
   for (const [node, par] of Object.entries(parF)) parent[node] = par
   for (const [node, par] of Object.entries(parB)) if (!(node in parent)) parent[node] = par
 
-  steps.push({ current: muNode, frontier: [], visited: [...closedF, ...closedB] })
-  return { steps, parent, path, found: true, generated }
+  steps.push({ ...emit(muNode), frontier: [] })
+  return { steps, parent, path, found: true, generated: generatedCount() }
 }
 
 // ── self-check ───────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ export function ucs(start: NodeId, goal: NodeId): SearchResult {
   parent[start] = null
 
   if (start === goal) {
-    const steps: Step[] = [{ current: start, frontier: [], visited: [] }]
+    const steps: Step[] = [{ current: start, frontier: [], visited: [start] }]
     return { steps, parent, path: [start], found: true, generated: 1 }
   }
 
@@ -41,10 +41,13 @@ export function ucs(start: NodeId, goal: NodeId): SearchResult {
       const neighbor = edge.to
       const newCost = currentCost + edge.km
 
-      if (!(neighbor in reached) || newCost < reached[neighbor]) {
+      const firstDiscovery = !(neighbor in reached)
+      if (firstDiscovery || newCost < reached[neighbor]) {
         reached[neighbor] = newCost
         parent[neighbor] = current
-        generated += 1
+        // generated counts DISTINCT discoveries — only the first time
+        // (search.ts contract). Counting relaxations overcounts.
+        if (firstDiscovery) generated += 1
 
         const existingIndex = frontier.findIndex((f) => f.id === neighbor)
         if (existingIndex !== -1) {
@@ -60,6 +63,10 @@ export function ucs(start: NodeId, goal: NodeId): SearchResult {
   if (!found) {
     return { steps, parent, path: [], found: false, generated }
   }
+
+  // Synthetic landing frame: final found-frame must carry an empty frontier
+  // (Step contract), like BFS/A* goal frames.
+  steps.push({ current: goal, frontier: [], visited: [...expanded] })
 
   const path = reconstructPath(parent, goal)
   if (path.length === 0) return { steps, parent, path: [], found: false, generated }

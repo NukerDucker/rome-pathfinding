@@ -334,7 +334,7 @@ export function Guide() {
             better value.
           </p>
           <ul>
-            <li><strong>Node colours:</strong> current · frontier · visited · path (legend in the toolbar).</li>
+            <li><strong>Node colours:</strong> current · frontier (open — waiting to be expanded) · visited (expanded and closed) · path (legend under the map). <em>Generated</em> in the table is a running total of cities ever discovered — a superset of both frontier and visited, not a colour.</li>
             <li><strong>★ Landmarks:</strong> choose 2 / 4 / 8 per lane, or use the ★ tool to click cities and build a custom set.</li>
             <li><strong>Heatmap:</strong> each lane's <Tex>h</Tex>-values: red near the goal, blue far away.</li>
             <li><strong>Straight line:</strong> the SLD that would be “cheating”; shown only for intuition, never fed to the heuristic.</li>
