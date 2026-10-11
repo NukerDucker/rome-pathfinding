@@ -33,11 +33,11 @@ export function bfs(start: NodeId, goal: NodeId): SearchResult {
       discovered.add(neighbor)
       parent[neighbor] = current
       generated += 1
+      queue.push(neighbor)
       if (neighbor === goal) {
         found = true
         break
       }
-      queue.push(neighbor)
     }
 
     expanded.push(current)

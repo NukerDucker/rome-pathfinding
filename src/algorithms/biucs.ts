@@ -86,21 +86,6 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
     const fowardWalkNoPath = forwardWalkReturn.visitedNode === null;   
     if(fowardWalkNoPath) return result;
 
-    const frontierNodes: Set<NodeId> = new Set();
-    for(const edgeWithCost of pendingVisitForwardPaths)
-      frontierNodes.add(edgeWithCost.to);
-    for(const edgeWithCost of pendingVisitBackwardPaths)
-      frontierNodes.add(edgeWithCost.to);
-    const lastStep = result.steps.at(-1);
-    const visitedNodes: NodeId[] = lastStep ? Array.from(lastStep.visited) : [];
-    visitedNodes.push(forwardWalkReturn.visitedNode!);
-
-    result.steps.push({
-      current: forwardWalkReturn.visitedNode!,
-      frontier: Array.from(frontierNodes),
-      visited: visitedNodes
-    });
-
     const backwardWalkReturn: IterateDijkstraReturn = iterateDijsktra(
       visitedBackwardPaths, pendingVisitBackwardPaths, parentToNode
     );
@@ -108,10 +93,16 @@ export function biucs(start: NodeId, goal: NodeId): SearchResult {
     const backwardWalkNoPath = backwardWalkReturn.visitedNode === null;   
     if(backwardWalkNoPath) return result;
     
+    const frontierNodes: Set<NodeId> = new Set();
+    for(const edgeWithCost of pendingVisitForwardPaths)
+      frontierNodes.add(edgeWithCost.to);
     for(const edgeWithCost of pendingVisitBackwardPaths)
       frontierNodes.add(edgeWithCost.to);
-    visitedNodes.push(backwardWalkReturn.visitedNode!);
+    const lastStep = result.steps.at(-1);
+    const visitedNodes: NodeId[] = lastStep ? Array.from(lastStep.visited) : [];
+    visitedNodes.push(forwardWalkReturn.visitedNode!, backwardWalkReturn.visitedNode!);
 
+    // Forward and backward expansions are one bidirectional search step.
     result.steps.push({
       current: backwardWalkReturn.visitedNode!,
       frontier: Array.from(frontierNodes),

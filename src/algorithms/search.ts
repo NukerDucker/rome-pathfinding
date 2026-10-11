@@ -61,7 +61,7 @@ export function pathCost(path: NodeId[]): number {
 export const ALGORITHMS: Record<string, AlgoMeta> = {
   bfs: { label: 'BFS', run: bfs, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes*', complete: 'Yes' },
   dfs: { label: 'DFS', run: dfs, time: 'O(b^m)', space: 'O(bm)', optimal: 'No', complete: 'No*' },
-  greedy: { label: 'Greedy', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*', usesLandmarks: true },
+  greedy: { label: 'Greedy (LP+ALT only)', run: greedy, time: 'O(b^m)', space: 'O(b^m)', optimal: 'No', complete: 'No*', usesLandmarks: true },
   astar: { label: 'A* (LP)', run: astar, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes' },
   astaralt: { label: 'A* (LP+ALT)', run: astarAlt, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes', usesLandmarks: true },
   astaraltonly: { label: 'A* (ALT only)', run: astarAltOnly, time: 'O(b^d)', space: 'O(b^d)', optimal: 'Yes', complete: 'Yes', usesLandmarks: true },

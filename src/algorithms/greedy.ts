@@ -35,11 +35,11 @@ export function greedy(start: NodeId, goal: NodeId): SearchResult {
       discovered.add(neighbor)
       parent[neighbor] = current
       generated += 1
+      frontier.push(neighbor)
       if (neighbor === goal) {
         found = true
         break
       }
-      frontier.push(neighbor)
     }
 
     expanded.push(current)
