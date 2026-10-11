@@ -681,7 +681,7 @@
 
 .node .marker-start { stroke: var(--marker-start); stroke-width: 11; }
 .node .marker-goal { stroke: var(--marker-goal); stroke-width: 11; }
-.node .marker-landmark { stroke: #f0b429; stroke-dasharray: 12 6; stroke-width: 6; }
+.node .marker-landmark { stroke: var(--marker-landmark); stroke-dasharray: 12 6; stroke-width: 6; }
 
 .node-clickable { cursor: pointer; }
 
@@ -1395,15 +1395,15 @@ html.theme-anim *::after {
 .mroad-base { stroke: var(--map-road); stroke-width: 11; }
 .mroad-a-tree { stroke: var(--map-accent); stroke-width: 13; }
 .mroad-b-tree { stroke: var(--lane-b); stroke-width: 13; }
-.mroad-a-path { stroke: var(--state-path); }
-.mroad-b-path { stroke: var(--state-path); }
+.mroad-a-path { stroke: var(--map-accent); }
+.mroad-b-path { stroke: var(--lane-b); }
 .mroad-seam { stroke: var(--bg); stroke-linecap: butt; }
 
-/* Split landmark rings: purple half = lane A picked it, teal half = lane B */
+/* Split landmark rings use the same yellow landmark token on both lane halves. */
 .node-split .marker-start { stroke: var(--marker-start); stroke-width: 11; }
 .node-split .marker-goal { stroke: var(--marker-goal); stroke-width: 11; }
-.node-split .marker-lm-a { stroke: var(--map-accent); stroke-dasharray: 12 6; stroke-width: 6; }
-.node-split .marker-lm-b { stroke: var(--lane-b); stroke-dasharray: 12 6; stroke-width: 6; }
+.node-split .marker-lm-a { stroke: var(--marker-landmark); stroke-dasharray: 12 6; stroke-width: 6; }
+.node-split .marker-lm-b { stroke: var(--marker-landmark); stroke-dasharray: 12 6; stroke-width: 6; }
 
 /* ── Workspace: centre map (+ optional right stats sidebar) ────────── */
 .workspace {
