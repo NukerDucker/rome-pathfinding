@@ -171,6 +171,11 @@ export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
     rootEl?.classList.toggle('picking-landmarks', g.pickLandmarks)
   }, [rootEl, g.pickLandmarks])
 
+  // Heatmap on: the CSS dims the map and its castles so the h-value colours stand out.
+  useEffect(() => {
+    rootEl?.classList.toggle('show-heat', g.showHeat)
+  }, [rootEl, g.showHeat])
+
   // Theme dropdown: close on outside click or Escape.
   useEffect(() => {
     if (!themeOpen) return
