@@ -66,6 +66,10 @@ describe('all algorithms × all 380 ordered pairs', () => {
       // single-direction ones land on the goal itself.
       if (!r.path.includes(last)) failures.push(`${key} ${s}->${g}: final current ${last} is not on the path`)
       if (SINGLE_DIRECTION.includes(key) && last !== g) failures.push(`${key} ${s}->${g}: final current ${last} != goal`)
+      // No double landing: the goal frame must be the last one only (UCS regression).
+      if (SINGLE_DIRECTION.includes(key) && r.steps.length > 1 && r.steps.at(-2)!.current === g) {
+        failures.push(`${key} ${s}->${g}: goal frame duplicated at the end`)
+      }
     }
     expect(failures).toEqual([])
   })

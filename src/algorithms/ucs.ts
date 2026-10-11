@@ -31,7 +31,6 @@ export function ucs(start: NodeId, goal: NodeId): SearchResult {
 
     if (current === goal) {
       found = true
-      steps.push({ current, frontier: frontier.map((f) => f.id), visited: [...expanded] })
       break
     }
 
