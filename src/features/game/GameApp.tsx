@@ -15,6 +15,7 @@ import { createBird, type BirdHandle } from '@/features/game/animals/bird'
 import { createBread, type BreadHandle, BREAD_UNLOCK_SWITCHES } from '@/features/game/animals/bread'
 import { THEME_ORDER, DndAurora, SpaceField, type Theme } from '@/theme'
 import ModeToggle from '@/components/ModeToggle'
+import RepoLink from '@/components/RepoLink'
 
 /** Game-style UI, ported from origin/ui-game (index.html + script.js).
  *  React owns state/controls/tables; the map engine (viewport+scenery) and
@@ -312,6 +313,10 @@ export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
         </main>
       </div>
 
+      {/* Fixed top-left mirror of the corner row: link to the source repo */}
+      <div className="repo-link-wrap">
+        <RepoLink />
+      </div>
       {/* Fixed chrome (source index.html 18–29): mode switch + theme button */}
       <div className="theme-menu-wrap">
         <ModeToggle mode={mode} onToggle={onToggleMode} />

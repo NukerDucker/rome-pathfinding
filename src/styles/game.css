@@ -191,6 +191,19 @@ color:var(--plate-ink); background:var(--plate); border:2px solid var(--plate-ed
 .game-root .mode-toggle svg{ width:20px; height:20px; }
 .game-root .mode-toggle:hover, .game-root .mode-toggle:focus-visible{ filter:brightness(1.06); }
 .game-root .mode-toggle:active{ filter:brightness(.92); }
+/* Repo link: top-left mirror of the corner row, same wood plate as the mode switch */
+.game-root .repo-link-wrap{ position:fixed; top:16px; left:max(16px, calc((100vw - 1600px) / 2 + 16px)); z-index:60; }
+.game-root .repo-link{
+position:static; /* the modern stylesheet's unscoped .repo-link is absolute at top:16px */
+min-width:40px; height:40px; padding:0 9px; gap:8px; display:flex; align-items:center; justify-content:center;
+font-size:14px; text-decoration:none;
+color:var(--plate-ink); background:var(--plate); border:2px solid var(--plate-edge); border-radius:var(--r-sm);
+}
+.game-root .repo-link svg{ width:20px; height:20px; flex-shrink:0; }
+.game-root .repo-link-text{ display:inline; }
+@media (max-width: 1220px){ .game-root .repo-link-text{ display:none; } } /* the 560px title image needs the strip */
+.game-root .repo-link:hover, .game-root .repo-link:focus-visible{ filter:brightness(1.06); }
+.game-root .repo-link:active{ filter:brightness(.92); }
 .game-root .theme-menu{
 list-style:none; margin:6px 0 0; padding:4px;
 position:absolute; top:100%; right:0; min-width:132px;
@@ -991,11 +1004,15 @@ padding:4px 0; font-size:17px; border-bottom:1px solid rgba(120,70,20,.15);
 /* ===================== MOBILE BREAKPOINT =====================
 	Under 600px: stack the two maps (Merge off) and the playback bar, full-width title. */
 @media (max-width: 800px){
+/* No room beside the title for the fixed corner rows (top:16px, 40px tall):
+   start it below them. 16px root padding + 48px = 64px. */
+.game-root .title-bar{ padding-top:48px; }
 .game-root .guide-layout{ grid-template-columns:1fr; gap:0; } /* list box above the topic boxes */
 .game-root .guide-nav{ position:static; }
 }
 @media (max-width: 600px){
 .game-root{ padding:10px; padding-top:calc(10px + env(safe-area-inset-top,0px)); }
+.game-root .title-bar{ padding-top:54px; } /* still clears the corner rows with the 10px root padding */
 
 .game-root .compare-wrap{ flex-direction:column; }
 .game-root .algo-canvas{ min-height:200px; font-size:14px; text-align:center; padding:10px; }

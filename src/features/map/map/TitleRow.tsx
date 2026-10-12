@@ -2,6 +2,7 @@
 import { Volume2, VolumeX } from 'lucide-react'
 import { ThemeMenu, type Theme } from '@/theme'
 import ModeToggle from '@/components/ModeToggle'
+import RepoLink from '@/components/RepoLink'
 
 type TitleRowProps = {
   theme: Theme
@@ -16,6 +17,7 @@ type TitleRowProps = {
 export function TitleRow({ theme, onSelect, busy, muted, onToggleMute, mode, onToggleMode }: TitleRowProps) {
   return (
     <h1 className="app-title">
+      <RepoLink />
       <span>Uninformed &amp; Informed search</span>
       <span className="app-title-sep" aria-hidden="true">·</span>
       <span className="app-title-sub">Romania map</span>
