@@ -315,11 +315,11 @@ export default function GameApp({ theme, mode, onSelectTheme, onToggleMode }: {
 
       {/* Fixed top-left mirror of the corner row: link to the source repo */}
       <div className="repo-link-wrap">
-        <RepoLink />
+        <RepoLink pixel />
       </div>
       {/* Fixed chrome (source index.html 18–29): mode switch + theme button */}
       <div className="theme-menu-wrap">
-        <ModeToggle mode={mode} onToggle={onToggleMode} />
+        <ModeToggle mode={mode} onToggle={onToggleMode} pixel />
         <button
           type="button"
           className="theme-toggle"

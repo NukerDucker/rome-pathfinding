@@ -188,7 +188,7 @@ width:40px; height:40px; display:flex; align-items:center; justify-content:cente
 padding:0; cursor:pointer;
 color:var(--plate-ink); background:var(--plate); border:2px solid var(--plate-edge); border-radius:var(--r-sm);
 }
-.game-root .mode-toggle svg{ width:20px; height:20px; }
+.game-root .mode-toggle svg{ width:24px; height:24px; } /* pixel compass: 16px grid, like the repo link */
 .game-root .mode-toggle:hover, .game-root .mode-toggle:focus-visible{ filter:brightness(1.06); }
 .game-root .mode-toggle:active{ filter:brightness(.92); }
 /* Repo link: top-left mirror of the corner row, same wood plate as the mode switch */
@@ -196,10 +196,10 @@ color:var(--plate-ink); background:var(--plate); border:2px solid var(--plate-ed
 .game-root .repo-link{
 position:static; /* the modern stylesheet's unscoped .repo-link is absolute at top:16px */
 min-width:40px; height:40px; padding:0 9px; gap:8px; display:flex; align-items:center; justify-content:center;
-font-size:14px; text-decoration:none;
+font-family:inherit; font-size:16px; font-weight:normal; text-decoration:none; /* game font, not the modern rule's mono */
 color:var(--plate-ink); background:var(--plate); border:2px solid var(--plate-edge); border-radius:var(--r-sm);
 }
-.game-root .repo-link svg{ width:20px; height:20px; flex-shrink:0; }
+.game-root .repo-link svg{ width:24px; height:24px; flex-shrink:0; } /* 16px pixel grid: 1.5px cells, whole device pixels at 2x */
 .game-root .repo-link-text{ display:inline; }
 @media (max-width: 1220px){ .game-root .repo-link-text{ display:none; } } /* the 560px title image needs the strip */
 .game-root .repo-link:hover, .game-root .repo-link:focus-visible{ filter:brightness(1.06); }
