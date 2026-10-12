@@ -2,65 +2,97 @@
 
 Romania map pathfinding visualizer — AI assignment (KMITL Year 3, 2026).
 
-**Due:** 2026-10-13
+**Due:** 2026-10-13 · **Status:** feature-complete; `tsc -b` clean, `bun test` 44/44 green.
 
----
+Pure client-side SPA — no server routes, no SSR. One search core, two UIs over it.
 
 ## What it does
 
-Step-by-step animation of search algorithms on the Romania map. Bento two-lane layout for side-by-side algorithm comparison. Frontier/visited highlighting, arc overlay, speed slider, play/pause/step, H-value heatmap, click-to-set-landmark.
+**Modern UI** — step-by-step animation of search algorithms on the Romania map.
+Bento two-lane layout for side-by-side algorithm comparison: frontier / visited
+highlighting, solid straight-line overlay, speed slider, play/pause/step, h-value
+heatmap, click-to-set landmark, and a 17-metric comparison sidebar. The two lanes
+can be merged into one map (roads split down the middle, node discs and landmark
+rings split vertically, one colour per lane). Four themes: light, dark, D&D,
+space.
 
-Also ships a **Guide tab** that walks from Uniform-Cost Search to A\*, into the heuristic (LP + ALT), the `max` ensemble, and its measured performance, plus a **game-style UI** (pixel-art Romania, animals, day/night) reachable from the mode toggle in the top-left corner. The map view has an optional **merged single-map view** (roads split down the middle, node discs and landmark rings split vertically, one colour per lane).
+**Game UI** — pixel-art Romania with pan/zoom viewport, castles, day/night, and
+six easter-egg animals; reachable from the mode toggle in the top-left corner.
+Same algorithms, its own controls, stats and guide.
+
+**Guide tab** — a 9-section walk from Uniform-Cost Search to A\*, into the
+heuristic (LP + ALT), the `max` ensemble, and its measured performance, with 8
+animated figures (`public/gifs/`). Present in the DOM whether or not the tab is
+open, so the text is crawlable — see `public/llms.txt`.
 
 ## Stack
 
-- Vite 8 + React 19 + TypeScript ~6.0
-- shadcn/ui + lucide-react
-- Package manager: **bun**
-- React Compiler enabled (`babel-plugin-react-compiler`)
-- Pure client-side SPA, no SSR → Vercel
+- Vite 8 + React 19 + TypeScript ~6.0, React Compiler enabled
+- Tailwind v4 + shadcn/Base UI primitives + lucide-react icons
+- KaTeX (via `components/Tex.tsx`) for the guide's math
+- Self-hosted fonts: Geist, JetBrains Mono, Cinzel (`@fontsource`)
+- Package manager: **bun** · deploy target: static `dist/` → Vercel
 
 ## Run
 
 ```bash
 bun install
-bun dev
+bun dev            # dev server
+bun run build      # tsc -b && vite build
+bun run preview    # serve the built dist/
 ```
 
-Type-check + self-checks:
+Type-check, tests, and the heuristic evaluation:
 
 ```bash
-bun x tsc -b   # type-check
-bun test       # regression suite: a known-cost case, endpoint edge cases, and an
-               # all-pairs cross-check of every registry algorithm against a
-               # Floyd–Warshall oracle (25 assertions)
+bun x tsc -b                     # type-check (clean)
+bun test                         # 44 tests / 3 files, ~73k assertions
+bun run eval/independent-eval.ts # heuristic informedness + expansion counts
 ```
+
+`tests/` holds three suites: `algorithms.test.ts` (every registry algorithm over
+all 380 ordered city pairs, cross-checked against Floyd–Warshall and UCS
+oracles), `state-invariants.test.ts` (the `Step`/`SearchResult` contract the UI
+relies on), and `biastar.test.ts` (bidirectional-A\* regression plus a
+custom-landmark sweep).
 
 ## Algorithms
 
-| Key | Label | Heuristic | Optimal | Complete |
-|-----|-------|-----------|---------|----------|
-| bfs | BFS | — | Yes* | Yes |
-| dfs | DFS | — | No | No* |
-| ucs | UCS | — | Yes | Yes |
-| biucs | Bidirectional UCS | — | Yes | Yes |
-| greedy | Greedy | LP+ALT | No | No* |
-| astar | A* (LP) | LP only | Yes | Yes |
-| astaralt | A* (LP+ALT) | LP+ALT combined | Yes | Yes |
-| astaraltonly | A* (ALT only) | ALT (active preset) | Yes | Yes |
-| biastar | Bidirectional A* | LP+ALT | Yes | Yes |
+Every entry in the registry (`src/algorithms/search.ts`), which is also the
+source of the UI's complexity table:
+
+| Key | Label | Heuristic | Time | Space | Optimal | Complete |
+|-----|-------|-----------|------|-------|---------|----------|
+| bfs | BFS | — | O(b^d) | O(b^d) | Yes* | Yes |
+| dfs | DFS | — | O(b^m) | O(bm) | No | No* |
+| ucs | UCS | — | O(b^(1+⌊C*/ε⌋)) | same | Yes | Yes |
+| biucs | Bidirectional UCS | — | O(b^(1+C/2ε)) | same | Yes | Yes |
+| greedy | Greedy (LP+ALT only) | LP+ALT | O(b^m) | O(b^m) | No | No* |
+| astar | A\* (LP) | LP only | O(b^d) | O(b^d) | Yes | Yes |
+| astaralt | A\* (LP+ALT) | LP+ALT combined | O(b^d) | O(b^d) | Yes | Yes |
+| astaraltonly | A\* (ALT only) | ALT (active preset) | O(b^d) | O(b^d) | Yes | Yes |
+| biastar | Bidir. A\* (LP+ALT) | LP+ALT | O(b^(d/2)) | O(b^(d/2)) | Yes | Yes |
+
+\* Optimality/completeness caveats are on the UI's own complexity table.
 
 ## Heuristic
 
-`h = max(hLP, hALT)` — max of two independently admissible bounds.
+`h = max(hLP, hALT)` — max of two independently admissible bounds
+(`src/algorithms/heuristic.ts`).
 
-**LP (vector-decomposition):** offline scipy/HiGHS LP using pixel coords + edge km. Mean h/road = 0.729 as a mean of per-pair ratios, 0.683 as a ratio of sums (the definition the Guide's tables use). Both are printed by `eval/independent-eval.ts`.
+**LP (vector-decomposition):** offline scipy/HiGHS LP using pixel coords + edge
+km. Informedness on the 380 ordered pairs: **0.683** as a ratio of sums (the
+definition the Guide's tables use) and **0.729** as a mean of per-pair ratios.
+`eval/independent-eval.ts` prints both.
 
-**ALT (Landmarks + Triangle Inequality):** `h(n,goal) = max_L |d(L,n) − d(L,goal)|`. Three presets: lm2 / lm4 / lm8. Dijkstra precomputed at module load.
+**ALT (Landmarks + Triangle Inequality):** `h(n,goal) = max_L |d(L,n) − d(L,goal)|`.
+Three presets: lm2 / lm4 / lm8. Dijkstra precomputed at module load.
 
-Combined: mean h/road = **0.986** on 380 directed pairs.
+**Combined:** 0.986 informedness; 0 admissibility violations across every preset.
+Measured expansions over all 380 pairs: UCS 4180 → A\* (LP+ALT) 1922 (54% fewer).
 
-**Data source: PDF page 2 only. SLD and GPS are banned by assignment rules.**
+**Data source: PDF page 2 only. SLD and GPS are banned by assignment rules** —
+the straight-line overlay is illustrative geometry, never fed to the heuristic.
 
 ## Source layout
 
@@ -76,10 +108,11 @@ src/
 
   algorithms/    — pure search: no React, no DOM
     romania.ts          — graph data (edges + schematic SVG coords, no SLD)
-    search.ts           — SearchResult type, ALGORITHMS registry
-    heuristic.ts        — h() = max(hLP, hALT)
+    search.ts           — SearchResult type, ALGORITHMS registry (labels, time/space)
+    heuristic.ts        — h() = max(hLP, hALT), ALT preset state
     heuristic_table.ts  — LP lookup table (AUTO-GENERATED, see scripts/)
-    alt.ts              — ALT landmarks, Dijkstra, makeHALTArbitrary()
+    alt.ts              — ALT landmarks, Dijkstra, ALL_CITY_DIST, makeHALTArbitrary()
+    astar-core.ts       — shared A* loop used by the three A* variants
     bfs.ts / dfs.ts     — reference implementations
     ucs.ts / biucs.ts   — cost-based uninformed search
     greedy.ts           — greedy best-first (uses h)
@@ -93,16 +126,22 @@ src/
       ModernApp.tsx     — modern UI: state, handlers, layout skeleton
       audio.ts          — synthesised modern-UI audio (Web Audio, no files)
       map/              — modern UI parts: MapStage, StatsSidebar (the 17-metric
-                          `cols` table), chrome cards, SVG cartography, benchmark cache
-    game/               — game-style UI: pixel scenery, viewport pan/zoom, animals, audio
+                          `cols` table), AlgorithmCard, RouteCard, PlaybackBar,
+                          ToolbarRow, TitleRow, TabBar, LandmarkPicker,
+                          landmarks.ts, mapData.ts, bench.ts, svgMap.tsx
+    game/               — game UI: GameApp / GameMap / GameControls / GameSelect /
+                          GamePlayback / GameStats / GameGuide, scenery.ts (SVG
+                          world build), viewport.ts (pan/zoom), useGameState.ts,
+                          data/ (castle + path positions), animals/, audio
       animals/          — the six easter-egg creatures (see animals/README.md)
 
   components/    — shared across both UIs
     Guide.tsx         — Guide tab explainer (UCS → A* → heuristic → ensemble)
     Tex.tsx           — shared KaTeX inline renderer
     ModeToggle.tsx    — modern ⇄ game switch
-    guide/            — Figure, GuideNav, GuideSection, scroll-spy, section registry
-    ui/               — shadcn primitives (paths pinned by components.json)
+    guide/            — Figure, GuideNav, GuideSection, scroll-spy, sections.ts
+                        (the one list both guides render from)
+    ui/               — shadcn/Base UI primitives (paths pinned by components.json)
 
   lib/
     utils.ts          — cn()
@@ -113,12 +152,16 @@ src/
     app.css           — modern layout
     themes.css        — light/dark/D&D/space theme layer
     game.css          — game UI styles (scoped under .game-root)
+
 docs/
-  HEURISTIC_GUIDE.md  — the LP + ALT derivation and its measurements
+  rendering.md        — game-map zoom pixelation: cause, fix, rejected alternatives
+public/
+  gifs/               — the guide's 8 animations · assets/ — game sprites and art
+  llms.txt            — machine-readable summary of the app for agents
+eval/
+  independent-eval.ts — self-contained measurement: own Dijkstra, own A*, no repo deps
 scripts/
   gen_heuristic_table.py — regenerates src/algorithms/heuristic_table.ts
-eval/
-  independent-eval.ts — external measurement of heuristic informedness + expansions
 tests/
-  biastar.test.ts     — regression + all-pairs oracle cross-check (`bun test`)
+  algorithms.test.ts / state-invariants.test.ts / biastar.test.ts
 ```
