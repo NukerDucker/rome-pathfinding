@@ -2,6 +2,8 @@
 
 Romania map pathfinding visualizer — AI assignment (KMITL Year 3, 2026).
 
+## ▶ [Try it live → ro-pathfinding.netlify.app](https://ro-pathfinding.netlify.app/)
+
 **Due:** 2026-10-13 · **Status:** feature-complete; `tsc -b` clean, `bun test` 44/44 green.
 
 Pure client-side SPA — no server routes, no SSR. One search core, two UIs over it.
