@@ -101,7 +101,15 @@ isolation:isolate;
 content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
 background:#5a6ec8; mix-blend-mode:hue;
 }
-.game-root[data-theme="space"] .map-img{ filter:sepia(.6) hue-rotate(175deg) saturate(.65) brightness(.72); }
+/* Tint the map with a backdrop-filter layer on the stage, NOT a filter on the image:
+   a filter rasterises .map-img before the stage transform scales it, which defeats
+   image-rendering: pixelated and blurs the map when zoomed. isolation makes the stage
+   the backdrop root, so only the map art is tinted (the sea bands stay untouched). */
+.game-root[data-theme="space"] .map-stage{ isolation:isolate; }
+.game-root[data-theme="space"] .map-stage::after{
+content:''; position:absolute; inset:0; pointer-events:none;
+backdrop-filter:sepia(.6) hue-rotate(175deg) saturate(.65) brightness(.72);
+}
 /* Wood strips, buttons and plates that paint over the frame */
 .game-root[data-theme="space"] .legend-bar,
 .game-root[data-theme="space"] .tool-toggle:not(:has(input:checked)),
@@ -142,7 +150,11 @@ background:#5a6ec8; mix-blend-mode:hue;
 content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
 background:#c9a6e8; mix-blend-mode:hue;
 }
-.game-root[data-theme="dnd"] .map-img{ filter:hue-rotate(240deg) saturate(.5) brightness(1.05); }
+.game-root[data-theme="dnd"] .map-stage{ isolation:isolate; }
+.game-root[data-theme="dnd"] .map-stage::after{
+content:''; position:absolute; inset:0; pointer-events:none;
+backdrop-filter:hue-rotate(240deg) saturate(.5) brightness(1.05);
+}
 .game-root[data-theme="dnd"] .legend-bar,
 .game-root[data-theme="dnd"] .tool-toggle:not(:has(input:checked)),
 .game-root[data-theme="dnd"] .tab-btn:not(.active),

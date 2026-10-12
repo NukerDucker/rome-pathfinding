@@ -1,7 +1,7 @@
 # Game-map zoom rendering (pixelated)
 
-Status: **documented, not fixed** (2026-10-12). This records the root cause of the
-zoom blur in the game UI's themed maps and the one-fix-for-all-themes options.
+Status: **fixed** (2026-10-12) — see *Fix applied*, below. The rest of this doc keeps
+the root cause and the alternatives considered.
 
 ## Symptom
 
@@ -72,3 +72,24 @@ Options:
   `.map-img` filter rules.
 - `src/features/game/viewport.ts` — `draw()` sets the `.map-stage` transform.
 - `src/features/game/GameMap.tsx` — renders `<img class="map-img">`.
+
+## Fix applied
+
+The tint is no longer a `filter` on `.map-img`. It is a `backdrop-filter` layer on
+`.map-stage` (`::after`), plus `isolation: isolate` on the stage so it becomes the
+backdrop root and only the map art is tinted (the sea bands stay untouched):
+
+```css
+.game-root[data-theme="space"] .map-stage{ isolation:isolate; }
+.game-root[data-theme="space"] .map-stage::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  backdrop-filter:sepia(.6) hue-rotate(175deg) saturate(.65) brightness(.72);
+}
+/* …same shape for dnd… */
+```
+
+`backdrop-filter` takes the same filter functions but filters the *unfiltered, crisp*
+backdrop instead of rasterising the image first, so `image-rendering: pixelated` still
+applies and the map stays nearest-neighbour at every zoom — for **all four themes**
+(light/dark never had a filter; dnd/space now tint via the layer). Verified in the
+browser at 8× for both themes: hard pixels, correct tint, sea bands unchanged.
